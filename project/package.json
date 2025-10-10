@@ -1,0 +1,25 @@
+{
+  "name": "ossec-course",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "node serve.js",
+    "serve-dev": "node serve.js --hot"
+  },
+  "keywords": [],
+  "author": "MIT",
+  "license": "ISC",
+  "dependencies": {
+    "@asciidoctor/reveal.js": "^5.2.0",
+    "asciidoctor": "^3.0.4",
+    "chokidar": "^3.6.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}
