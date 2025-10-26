@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 import 'dotenv/config';
 import path from "path";
-import {ensureFolderExists, findExam, findLabs, findLectureNotes, findSlides, recreateFolder} from "./utils/fs.js";
+import {
+  ensureFolderExists,
+  findExam,
+  findLabs,
+  findLectureNotes,
+  findSlides,
+  readSlidesPdfOptions,
+  recreateFolder
+} from "./utils/fs.js";
 import {runWithConcurrency} from "./utils/exec.js";
 import {convertAdocToPdf, renderRevealPrintPdf} from "./utils/pdf.js";
 import {buildSlides} from "./build-slides.js"
-import {distRoot, examLinksPdfFileName, examPdfFileName, pdfOptions, publicRoot} from "./build-settings.js";
+import {distRoot, examLinksPdfFileName, examPdfFileName, publicRoot} from "./build-settings.js";
 
 // region Commands execution
 
@@ -53,6 +61,7 @@ async function cmdPublish(target) {
       console.log("\nℹ️ Publishing slides PDF files:");
       for (const htmlFilePath of outputHTMLFiles) {
         const outputPdfFilePath = path.join(path.dirname(htmlFilePath), "slides.pdf");
+        const pdfOptions = readSlidesPdfOptions();
         console.log(` → Publishing slide PDF ${outputPdfFilePath}`);
         // console.log(` → cmd: renderRevealPrintPdf(${htmlFilePath}, ${outputPdfFilePath}, pdfOptions)`)
         await renderRevealPrintPdf(htmlFilePath, outputPdfFilePath, pdfOptions);

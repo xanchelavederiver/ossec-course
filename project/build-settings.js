@@ -7,6 +7,9 @@ export const slidesPattern = path.posix.join('materials', 'lectures', '**', 'sli
 export const lectureNotesPattern = path.posix.join('materials', 'lectures', '**', 'lecture-notes.adoc');
 export const labsPattern = path.posix.join('materials', 'labs', '**', '*.adoc');
 export const examAdocPath = path.join(ROOT, 'materials', 'exam', 'exam.adoc');
+
+export const slidesPdfOptionsFilePath = path.join(ROOT, 'config', 'pdf', 'slides.json');
+
 export const distRoot = path.join(ROOT, "dist");
 export const publicRoot = path.join(ROOT, "..", "public");
 
@@ -31,12 +34,3 @@ export const docinfoChalkboardCssCDN = "https://cdn.jsdelivr.net/npm/reveal.js-p
 // output (PDF) file names
 export const examPdfFileName = 'Вопросы.pdf';
 export const examLinksPdfFileName = 'Вопросы-ссылки.pdf';
-
-// PDF export settings
-export const pdfOptions = {
-  format: 'A4',
-  landscape: true,
-  margin: {top: '6mm', right: '6mm', bottom: '6mm', left: '6mm'},
-  viewport: {width: 1600, height: 900},
-  waitFor: 700
-};

@@ -80,7 +80,7 @@ export function convertAdocToPdf(inputAdocPath, outputPdfPath, options = []) {
     '-o', `"${outputPdfPath}"`,
     ...options.map(kv => `-a ${kv}`)
   ].join(" ");
-  console.log('[asciidocUtils] running:', cmd);
+  // console.log('[asciidocUtils] running:', cmd);
   execSync(cmd, {stdio: 'inherit'});
   return outputPdfPath;
 }

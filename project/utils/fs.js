@@ -1,6 +1,12 @@
 import fs from "fs";
 import fg from "fast-glob"
-import {examAdocPath, labsPattern, lectureNotesPattern, slidesPattern} from "../build-settings.js"
+import {
+  examAdocPath,
+  labsPattern,
+  lectureNotesPattern,
+  slidesPattern,
+  slidesPdfOptionsFilePath
+} from "../build-settings.js"
 
 const ROOT = process.cwd();
 
@@ -35,4 +41,13 @@ export function findLabs() {
 
 export function findExam() {
   return fs.existsSync(examAdocPath) ? examAdocPath : null;
+}
+
+export function readJson(jsonFilePath) {
+  const data = fs.readFileSync(jsonFilePath);
+  return JSON.parse(data);
+}
+
+export function readSlidesPdfOptions() {
+  return readJson(slidesPdfOptionsFilePath);
 }

@@ -1,0 +1,15 @@
+{
+  "format": "A4",
+  "landscape": true,
+  "margin": {
+    "top": "6mm",
+    "right": "6mm",
+    "bottom": "6mm",
+    "left": "6mm"
+  },
+  "viewport": {
+    "width": 1600,
+    "height": 900
+  },
+  "waitFor": 700
+}
