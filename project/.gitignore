@@ -3,6 +3,6 @@ dist/
 
 .DS_Store
 
-docinfo/docinfo-footer.html
+config/docinfo/docinfo-footer.html
 
 reveal.js-plugins/plugins

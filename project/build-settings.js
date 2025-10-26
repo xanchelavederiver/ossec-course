@@ -19,7 +19,7 @@ export const revealjsPluginsLocalDir = "reveal.js-plugins";
 export const revealjsCDN = "https://cdn.jsdelivr.net/npm/reveal.js@5";
 
 // reveal.js plugins setup
-export const docinfoDir = "docinfo";
+export const docinfoDir = "config/docinfo";
 export const docinfoOutputFile = `${docinfoDir}/docinfo-footer.html`;
 export const docinfoDefaultsFile = `${docinfoDir}/docinfo-footer-defaults.html`;
 
