@@ -5,6 +5,10 @@ include::../00-template/title.adoc[]
 
 This is the *Intro* presentation.
 
+=== P1
+
+=== P2
+
 == Next Slide
 
 Use the **menu** or **chalkboard** if enabled.

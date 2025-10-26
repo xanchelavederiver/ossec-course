@@ -1,0 +1,13 @@
+= Final Exam
+
+Exam questions go here.
+
+
+ifdef::exam-links[]
+
+== Asciidoc Guides
+
+* link:guides/guides/syntax-quick-reference.htm[icon:video-camera[] Syntax Quick Reference]
+* link:guides/guides/reveal-my-asciidoc.htm[icon:video-camera[] Additional capabilities]
+
+endif::exam-links[]

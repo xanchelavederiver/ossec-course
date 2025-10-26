@@ -1,179 +1,167 @@
+#!/usr/bin/env node
 import 'dotenv/config';
-import {execSync} from "child_process";
 import path from "path";
-import * as fs from "fs";
+import {ensureFolderExists, findExam, findLabs, findLectureNotes, findSlides, recreateFolder} from "./utils/fs.js";
+import {runWithConcurrency} from "./utils/exec.js";
+import {convertAdocToPdf, renderRevealPrintPdf} from "./utils/pdf.js";
+import {buildSlides} from "./build-slides.js"
+import {distRoot, examLinksPdfFileName, examPdfFileName, pdfOptions, publicRoot} from "./build-settings.js";
 
-const slidesRoot = "materials/lectures";
-const distRoot = "dist";
-const revealjsLocalDir = "reveal.js";
+// region Commands execution
 
-const docinfoDir = "docinfo";
-const docinfoDefaultsFile = `${docinfoDir}/docinfo-footer-defaults.html`;
-const docinfoMenuFile = `${docinfoDir}/docinfo-footer-menu.html`;
-const docinfoChalkboardFile = `${docinfoDir}/docinfo-footer-chalkboard.html`;
-const docinfoOutputFile = `${docinfoDir}/docinfo-footer.html`;
+function cmdSlides(argPath) {
+  recreateFolder(distRoot);
 
-
-// 1. switch on the required reveal.js plugins
-class HTMLConcatenator {
-    constructor() {
-        this.files = [];
+  // 1. gather slides.adoc files
+  let slides;
+  if (argPath) {
+    const slidesFilePath = path.isAbsolute(argPath) ? argPath : path.join(process.cwd(), argPath);
+    slides = [slidesFilePath];
+    console.log("ℹ️ Building a single slides HTML:", slidesFilePath);
+  } else {
+    slides = findSlides()
+    if (!slides.length) {
+      console.log("⚠️ Found 0 slides.adoc files - nothing to build");
+      return;
     }
+  }
 
-    addFile(filePath, order = null) {
-        this.files.push({path: filePath, order});
-        return this; // for method chaining - fluency
-    }
+  // 2. build the slides
+  let useCDN = false;
+  if (process.env.USE_CDN_REVEALJS?.toLowerCase() === "true") {
+    useCDN = true;
+    console.log("Forcing CDN links usage for reveal.js (USE_CDN_REVEALJS is set)");
+  }
+  buildSlides(slides, distRoot, useCDN);
+}
 
-    concatenate(outputPath, options = {}) {
-        const {
-            separator = '\n',
-            addFileComments = true
-        } = options;
+async function cmdPublish(target) {
+  // 1. publish the slides (both HTML with CDN links and PDF files) and lecture notes
+  if (['lectures', 'all'].includes(target)) {
+    console.log("ℹ️ Publishing slides HTML files");
+    const slides = findSlides();
+    if (!slides.length) {
+      console.log('⚠️ Found 0 slides.adoc files - nothing to publish.');
+    } else {
+      const lecturesOutputFolderPath = path.join(publicRoot, 'lectures')
+      recreateFolder(lecturesOutputFolderPath);
 
-        const filesToProcess = this.files.sort((a, b) => {
-            if (a.order !== null && b.order !== null) return a.order - b.order;
-            return 0;
-        });
+      // i. build HTML files
+      const outputHTMLFiles = buildSlides(slides, lecturesOutputFolderPath, true);
 
-        let combinedContent = '';
-        for (const file of filesToProcess) {
-            try {
-                let content = fs.readFileSync(file.path, 'utf8');
-                if (addFileComments) {
-                    content = `<!-- File: ${path.basename(file.path)} -->\n${content}\n`;
-                }
-                combinedContent += content + separator;
-                console.log(`✓ Added: ${file.path}`);
+      // ii. render the built HTML files
+      console.log("\nℹ️ Publishing slides PDF files:");
+      for (const htmlFilePath of outputHTMLFiles) {
+        const outputPdfFilePath = path.join(path.dirname(htmlFilePath), "slides.pdf");
+        console.log(` → Publishing slide PDF ${outputPdfFilePath}`);
+        // console.log(` → cmd: renderRevealPrintPdf(${htmlFilePath}, ${outputPdfFilePath}, pdfOptions)`)
+        await renderRevealPrintPdf(htmlFilePath, outputPdfFilePath, pdfOptions);
+      }
 
-            } catch (error) {
-                console.error(`✗ Error reading ${file.path}:`, error.message);
-            }
+      // iii. gather and build lecture notes
+      const lectureNotes = findLectureNotes();
+      if (lectureNotes.length) {
+        console.log("\nℹ️ Publishing lecture notes PDF files:");
+        for (const lnFilePath of lectureNotes) {
+          const outputFolderPath = path.join(lecturesOutputFolderPath, path.basename(path.dirname(lnFilePath)));
+          const outputPdfFilePath = path.join(outputFolderPath, "lecture-notes.pdf");
+          console.log(` → Publishing lecture notes PDF ${outputPdfFilePath}`);
+          await convertAdocToPdf(lnFilePath, outputPdfFilePath);
         }
-
-        fs.writeFileSync(outputPath, combinedContent);
-        console.log(`🎉 Successfully created ${outputPath} with ${filesToProcess.length} files`);
+      }
     }
+  }
+
+  // 2. publish the labs' manuals
+  if (['labs', 'all'].includes(target)) {
+    console.log("\nℹ️ Publishing labs PDF files:");
+    const labs = findLabs();
+    if (!labs.length) {
+      console.log('⚠️  No labs found - nothing to publish.');
+    } else {
+      const labsOutputFolderPath = path.join(publicRoot, 'labs')
+      recreateFolder(labsOutputFolderPath);
+
+      // create a task for each lab
+      const tasks = labs.map(lab => async () => {
+        // TODO: export additional lab files
+
+        const pdfFileName = path.basename(lab, path.extname(lab));
+        const outputFolderName = path.basename(path.dirname(lab));
+        const outputFolderPath = path.join(labsOutputFolderPath, outputFolderName)
+        ensureFolderExists(outputFolderPath);
+
+        const outputPdfFilePath = path.join(outputFolderPath, `${pdfFileName}.pdf`);
+        console.log(` → Publishing lab ${outputPdfFilePath}`);
+        await convertAdocToPdf(lab, outputPdfFilePath);
+        return outputPdfFilePath;
+      });
+
+      const CONCURRENCY = parseInt(process.env.BUILD_CONCURRENCY || '3', 10) || 3;
+      await runWithConcurrency(tasks, CONCURRENCY);
+    }
+  }
+
+  // 3. publish the exam sheets
+  if (['exam', 'all'].includes(target)) {
+    console.log("\nℹ️ Publishing exam PDF files:");
+    const exam = findExam();
+    if (!exam) {
+      console.log('⚠️  Exam file exam.adoc not found - nothing to publish.');
+    } else {
+      const outputFolderPath = path.join(publicRoot, 'exam')
+      recreateFolder(outputFolderPath);
+
+      let outputPdfFilePath = path.join(outputFolderPath, examPdfFileName);
+      console.log(` → Publishing exam PDF ${outputPdfFilePath}`);
+      await convertAdocToPdf(exam, outputPdfFilePath);
+
+      outputPdfFilePath = path.join(outputFolderPath, examLinksPdfFileName);
+      console.log(` → Publishing exam PDF ${outputPdfFilePath}`);
+      await convertAdocToPdf(exam, outputPdfFilePath, ['exam-links']);
+    }
+  }
+
+  console.log("\n✅  Publishing complete.");
 }
 
-const pluginAttrs = [];
-const concat = new HTMLConcatenator();
-concat.addFile(docinfoDefaultsFile, 1)
+// endregion Commands execution
 
-// built-in plugins
-if (process.env.ENABLE_ZOOM?.toLowerCase() === "true") {
-    console.log("→ Zoom plugin enabled");
-} else {
-    pluginAttrs.push("revealjs_plugin_zoom=disabled");
-    console.log("→ Zoom plugin disabled (ENABLE_ZOOM not set)");
-}
-if (process.env.ENABLE_NOTES?.toLowerCase() === "true") {
-    console.log("→ Notes plugin enabled");
-} else {
-    pluginAttrs.push("revealjs_plugin_notes=disabled");
-    console.log("→ Notes plugin disabled (ENABLE_NOTES not set)");
+
+// region Main
+// cmd args parsing
+function usageAndExit() {
+  console.log("Usage: node build.js <command> [args]");
+  console.log("Commands:");
+  console.log("  slides  [<path-to-presentation>/slides.adoc]   build slides for local serving");
+  console.log("  publish [exam|labs|lectures|all]                 build & publish slides (HTMLs and PDFs) along with the lecture notes, labs, and the exam sheet");
+  process.exit(1);
 }
 
-// optional third-party plugins (controlled by env vars)
-if (process.env.ENABLE_MENU?.toLowerCase() === "true") {
-    concat.addFile(docinfoMenuFile, 2)
-    console.log("→ Menu plugin enabled");
-} else {
-    console.log("→ Menu plugin disabled (ENABLE_MENU not set)");
-}
-if (process.env.ENABLE_CHALKBOARD?.toLowerCase() === "true") {
-    concat.addFile(docinfoChalkboardFile, 3)
-    console.log("→ Chalkboard plugin enabled");
-} else {
-    console.log("→ Chalkboard plugin disabled (ENABLE_CHALKBOARD not set)");
-}
+const argv = process.argv.slice(2);
+if (!argv.length) usageAndExit();
 
-concat.concatenate(docinfoOutputFile, {
-    separator: '\n<hr>\n',
-    addFileComments: true
+// execute the given cmd
+(async () => {
+  const cmd = argv[0];
+  if (cmd === "slides") {
+    await cmdSlides(argv[1]);
+  } else if (cmd === "publish") {
+    let target = argv[1];
+    if (!target) {
+      target = "all";
+    }
+    if (!target || !["exam", "labs", "lectures", "all"].includes(target)) {
+      console.error("Error: publish requires one of: \"exam\" | \"labs\" | \"lectures\" | \"all\"");
+      process.exit(2);
+    }
+    await cmdPublish(target);
+  } else {
+    usageAndExit();
+  }
+})().catch(err => {
+  console.error('[build] error:', err);
+  process.exit(1);
 });
 
-
-// 2. set up reveal.js location
-let revealjsDir;
-if (process.env.USE_CDN_REVEALJS?.toLowerCase() === "true") {
-    revealjsDir = "https://cdn.jsdelivr.net/npm/reveal.js@5";
-    console.log("→ Using reveal.js from CDN %s", revealjsDir);
-} else {
-    // revealjsDir = path.resolve("reveal.js").replace(/\\/g, "/");
-    revealjsDir = `/${revealjsLocalDir}`;
-    console.log("→ Using local reveal.js (USE_CDN_REVEALJS not set): %s", revealjsDir);
-}
-
-
-// 3. find all the slides.adoc files and build them
-function findSlidesAdocFolders(rootDir, baseDir = rootDir, results = []) {
-    let hasSlidesAdoc = false;
-    const subDirs = [];
-
-    // first, check all items in the current directory
-    for (const item of fs.readdirSync(rootDir)) {
-        const itemPath = path.join(rootDir, item);
-        try {
-            if (fs.statSync(itemPath).isDirectory()) {
-                subDirs.push(itemPath);
-            } else if (item === 'slides.adoc') {
-                hasSlidesAdoc = true;
-            }
-        } catch (err) {
-            // handle permission errors or other issues by just logging it
-            console.error(`Error accessing ${itemPath}:`, err.message);
-        }
-    }
-
-    // if "slides.adoc" was found, add the relative path to results
-    if (hasSlidesAdoc) {
-        const relativePath = path.relative(baseDir, rootDir);
-        results.push(relativePath || '.'); // Use '.' for the base directory itself
-    }
-
-    // recursively search all subdirectories - just in case there will be "subpresentations" of sorts
-    for (const subDir of subDirs) {
-        findSlidesAdocFolders(subDir, baseDir, results);
-    }
-
-    return results;
-}
-
-/// gather slides.adoc files
-const presentations = findSlidesAdocFolders(slidesRoot)
-console.log(`\n🛠 Building ${presentations.length} presentation(s):`);
-
-// make sure the output folder exists
-if (!fs.existsSync(distRoot)) fs.mkdirSync(distRoot);
-
-// build the slides.adoc files
-for (const pres of presentations) {
-    const adocPath = path.join(slidesRoot, pres, "slides.adoc");
-    const outputDir = path.join(distRoot, pres);
-    const outputFile = path.join(outputDir, "slides.html");
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, {recursive: true});
-
-    if (!fs.existsSync(adocPath)) {
-        console.warn(`⚠️  No slides.adoc found for ${pres}`);
-        continue;
-    }
-
-    const cmd = [
-        "npx asciidoctor-revealjs",
-        `"${adocPath}"`,
-        `-o "${outputFile}"`,
-        `-a revealjsdir=${revealjsDir}`,
-        `-a docinfodir="${path.resolve(docinfoDir).replace(/\\\\/g, "/")}"`,
-        `-a docinfo=shared`,
-        ...pluginAttrs.map(kv => `-a ${kv}`)
-    ].join(" ");
-    console.log(` → Building ${pres}/slides.html`);
-    // console.log(cmd)
-    execSync(cmd, {stdio: "inherit"});
-}
-
-
-// TODO: build (make .pdf files) lecture notes, labs, and exam questions
-
-console.log("\n✅ Build complete.\n");
+// endregion Main

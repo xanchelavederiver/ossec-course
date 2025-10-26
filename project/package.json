@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "node build.js",
+    "build": "node build.js slides",
+    "publish": "node build.js publish",
     "serve": "node serve.js",
     "serve-dev": "node serve.js --hot"
   },
@@ -17,6 +18,8 @@
     "chokidar": "^3.6.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "fast-glob": "^3.3.3",
+    "puppeteer": "^24.26.1",
     "ws": "^8.18.3"
   },
   "devDependencies": {
