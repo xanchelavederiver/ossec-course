@@ -18,20 +18,20 @@ import {distRoot, examLinksPdfFileName, examPdfFileName, publicRoot} from "./bui
 // region Commands execution
 
 async function cmdSlides(argPath) {
-  recreateFolder(distRoot);
-
   // 1. gather slides.adoc files
   let slides;
   if (argPath) {
     const slidesFilePath = path.isAbsolute(argPath) ? argPath : path.join(process.cwd(), argPath);
     slides = [slidesFilePath];
     console.log("ℹ️ Building a single slides HTML:", slidesFilePath);
+    ensureFolderExists(distRoot);
   } else {
     slides = findSlides()
     if (!slides.length) {
       console.log("⚠️ Found 0 slides.adoc files - nothing to build");
       return;
     }
+    recreateFolder(distRoot);
   }
 
   // 2. build the slides

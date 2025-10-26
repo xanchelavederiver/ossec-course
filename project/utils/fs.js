@@ -1,3 +1,4 @@
+import path from "path";
 import fs from "fs";
 import fg from "fast-glob"
 import {
@@ -25,6 +26,35 @@ export function recreateFolder(folderPath) {
     fs.rmSync(folderPath, {recursive: true});
   }
   ensureFolderExists(folderPath);
+}
+
+export function checkIfFileIsWithinFolder(folderPath, filePath) {
+  const rel = path.relative(folderPath, filePath);
+  return rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+export function getFirstFolderFromRelativePath(relativePath) {
+  // check if the path is actually absolute - return null if it is
+  if (path.isAbsolute(relativePath)) {
+    return ''
+  }
+
+  // parse the path to get the first segment
+  // N.B. The 'dir' property will contain the directory path up to the filename.
+  //      We then split this path and take the first element after removing any leading dots.
+  const parsedPath = path.parse(relativePath);
+  // const pathParts = parsedPath.dir.split(path.sep).filter(part => part !== '.' && part !== '..');
+  const pathParts = parsedPath.dir.split(path.sep).filter(part => part !== '.');
+
+  if (pathParts.length > 0) {
+    return pathParts[0];
+  } else if (parsedPath.base && !parsedPath.ext) {
+    // if it's a single folder name without extension
+    return parsedPath.base;
+  } else {
+    // no folder found or path is just a file
+    return '';
+  }
 }
 
 export function findSlides() {

@@ -3,17 +3,19 @@ import path from "path";
 const ROOT = process.cwd();
 
 // project structure
+export const slidesFolderPath = path.posix.join(ROOT, 'materials', 'lectures');
+export const configFolderPath = path.join(ROOT, 'config');
+export const cssFolderPath = path.join(ROOT, 'css');
+export const docinfoFolderPath = path.join(ROOT, 'docinfo');
+export const distRoot = path.join(ROOT, "dist");
+export const publicRoot = path.join(ROOT, "..", "public");
+
 export const slidesPattern = path.posix.join('materials', 'lectures', '**', 'slides.adoc');
 export const lectureNotesPattern = path.posix.join('materials', 'lectures', '**', 'lecture-notes.adoc');
 export const labsPattern = path.posix.join('materials', 'labs', '**', '*.adoc');
 export const examAdocPath = path.join(ROOT, 'materials', 'exam', 'exam.adoc');
 
 export const slidesPdfOptionsFilePath = path.join(ROOT, 'config', 'pdf', 'slides.json');
-
-export const cssFolderPath = path.join(ROOT, 'css');
-
-export const distRoot = path.join(ROOT, "dist");
-export const publicRoot = path.join(ROOT, "..", "public");
 
 // reveal.js location
 export const revealjsLocalDir = "reveal.js";

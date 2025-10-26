@@ -21,4 +21,3 @@
 // :highlightjs-theme: a11y-dark.css
 
 :revealjs_center: false
-:revealjs_text_align: left

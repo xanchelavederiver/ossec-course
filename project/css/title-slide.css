@@ -1,19 +1,28 @@
 /* Center-align the title slide */
 .reveal section.title h1 {
-  margin-top: 2.3em;
+  text-align: center;
 }
 
-.reveal section.title small {
-  margin-top: 15.3em;
-  font-weight: bold;
-  color: white;
+.reveal section.title > .preamble > .paragraph > p {
+  text-align: center;
+}
+
+/* Subtitle block*/
+.title-slide-subtitle {
+  font-size: var(--r-heading3-size);
 }
 
 /* Author block */
-.author {
+.title-slide-author {
+  font-size: var(--r-heading3-size);
+}
+.title-slide-author > p {
+  margin: 2em 0 0 0;
 }
 
-.author-links {
-  /*font-weight: bold;*/
-  /*font-size: 16px;*/
+.title-slide-author-links {
+  font-size: calc(var(--r-heading4-size) * 0.8);
+}
+.title-slide-author-links > p {
+  margin: 0 0 0 0;
 }

@@ -89,7 +89,7 @@ export class CSSMerger {
       return;
     }
 
-    console.log(`\n📦 Merging ${this.cssFiles.length} CSS files...`);
+    console.log(`📦 Merging ${this.cssFiles.length} CSS files...`);
     this.mergedCSS = await mergeCSSFiles(this.cssFiles);
   }
 

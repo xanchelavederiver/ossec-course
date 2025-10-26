@@ -1,0 +1,4 @@
+/* Left-align slide captions and text */
+.reveal .slides {
+  text-align: left;
+}
