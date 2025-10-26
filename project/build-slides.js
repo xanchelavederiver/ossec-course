@@ -3,6 +3,7 @@ import fs from "fs";
 import {execSync} from "child_process";
 
 import {
+  cssFolderPath,
   docinfoChalkboardCssCDN,
   docinfoChalkboardFile,
   docinfoChalkboardJsCDN,
@@ -17,6 +18,7 @@ import {
   revealjsPluginsLocalDir,
 } from "./build-settings.js";
 import {DocInfoHTMLConcatenator} from "./utils/docinfo.js";
+import {CSSMerger} from "./utils/css.js";
 import {ensureFolderExists} from "./utils/fs.js";
 
 function setupPlugins(useCDN = false) {
@@ -103,7 +105,7 @@ function setupPlugins(useCDN = false) {
   return pluginAttrs
 }
 
-export function buildSlides(slides, outputDir, useCDN = false) {
+export async function buildSlides(slides, outputDir, useCDN = false) {
   // 1. switch on the required reveal.js plugins
   const pluginAttrs = setupPlugins(useCDN)
 
@@ -117,7 +119,11 @@ export function buildSlides(slides, outputDir, useCDN = false) {
     console.log(" → Using local reveal.js: %s", revealjsDir);
   }
 
-  // 3. build the gathered slides
+  // 3. gather and merge CSS files
+  const merger = new CSSMerger();
+  await merger.findAndMergeCSSFiles(cssFolderPath);
+
+  // 4. build the gathered slides
   // make sure the output folder exists
   ensureFolderExists(outputDir);
 
@@ -149,6 +155,9 @@ export function buildSlides(slides, outputDir, useCDN = false) {
     console.log(` → Building ${outputFilePath}`);
     // console.log(` → cmd: ${cmd}`)
     execSync(cmd, {stdio: "inherit"});
+
+    await merger.process(outputFilePath);
+
     outputHTMLFiles.push(outputFilePath);
   }
 

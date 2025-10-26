@@ -113,7 +113,7 @@ if (enableHot) {
         isBuilding = true;
         console.log("🔄 Rebuilding presentations...");
 
-        exec("node build.js", (err, stdout, stderr) => {
+        exec("node build.js slides", (err, stdout, stderr) => {
             if (err) console.error(stderr);
             else console.log(stdout);
 

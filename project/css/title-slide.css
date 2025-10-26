@@ -1,0 +1,19 @@
+/* Center-align the title slide */
+.reveal section.title h1 {
+  margin-top: 2.3em;
+}
+
+.reveal section.title small {
+  margin-top: 15.3em;
+  font-weight: bold;
+  color: white;
+}
+
+/* Author block */
+.author {
+}
+
+.author-links {
+  /*font-weight: bold;*/
+  /*font-size: 16px;*/
+}

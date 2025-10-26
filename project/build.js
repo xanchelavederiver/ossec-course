@@ -17,7 +17,7 @@ import {distRoot, examLinksPdfFileName, examPdfFileName, publicRoot} from "./bui
 
 // region Commands execution
 
-function cmdSlides(argPath) {
+async function cmdSlides(argPath) {
   recreateFolder(distRoot);
 
   // 1. gather slides.adoc files
@@ -40,7 +40,7 @@ function cmdSlides(argPath) {
     useCDN = true;
     console.log("Forcing CDN links usage for reveal.js (USE_CDN_REVEALJS is set)");
   }
-  buildSlides(slides, distRoot, useCDN);
+  await buildSlides(slides, distRoot, useCDN);
 }
 
 async function cmdPublish(target) {
@@ -55,7 +55,7 @@ async function cmdPublish(target) {
       recreateFolder(lecturesOutputFolderPath);
 
       // i. build HTML files
-      const outputHTMLFiles = buildSlides(slides, lecturesOutputFolderPath, true);
+      const outputHTMLFiles = await buildSlides(slides, lecturesOutputFolderPath, true);
 
       // ii. render the built HTML files
       console.log("\nℹ️ Publishing slides PDF files:");

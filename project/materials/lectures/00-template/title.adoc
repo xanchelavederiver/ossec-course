@@ -1,3 +1,0 @@
-= Безопасность операционных систем
-:author: Александр Владимирович Веричев @xanchelavederiver <alexanderverichev@gmail.com>
-:date: 2025-10-08

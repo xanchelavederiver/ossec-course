@@ -10,6 +10,8 @@ export const examAdocPath = path.join(ROOT, 'materials', 'exam', 'exam.adoc');
 
 export const slidesPdfOptionsFilePath = path.join(ROOT, 'config', 'pdf', 'slides.json');
 
+export const cssFolderPath = path.join(ROOT, 'css');
+
 export const distRoot = path.join(ROOT, "dist");
 export const publicRoot = path.join(ROOT, "..", "public");
 
@@ -19,7 +21,7 @@ export const revealjsPluginsLocalDir = "reveal.js-plugins";
 export const revealjsCDN = "https://cdn.jsdelivr.net/npm/reveal.js@5";
 
 // reveal.js plugins setup
-export const docinfoDir = "config/docinfo";
+export const docinfoDir = "docinfo";
 export const docinfoOutputFile = `${docinfoDir}/docinfo-footer.html`;
 export const docinfoDefaultsFile = `${docinfoDir}/docinfo-footer-defaults.html`;
 

@@ -1,5 +1,5 @@
 include::../../../config/revealjs-config.adoc[]
-include::../00-template/title.adoc[]
+include::../00 - title/title.adoc[]
 
 == Welcome
 

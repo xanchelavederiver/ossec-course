@@ -15,7 +15,10 @@
 // :docinfodir:
 // :docinfo:
 
-// highliter
+// highlighter
 :source-highlighter: highlightjs
 // :highlightjs-languages: asciidoc,python,yaml,Dockerfile,dockerfile,Bash
 // :highlightjs-theme: a11y-dark.css
+
+:revealjs_center: false
+:revealjs_text_align: left

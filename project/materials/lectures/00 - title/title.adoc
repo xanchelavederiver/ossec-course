@@ -1,0 +1,9 @@
+= Безопасность операционных систем
+
+Осень 2025
+
+[.author]
+Веричев Александр Владимирович
+
+[.author-links]
+link:https://t.me/s/xanchelavederiver[@xanchelavederiver] alexanderverichev@gmail.com
