@@ -135,7 +135,7 @@ export async function buildSlides(slides, outputDir, useCDN = false) {
     const adocFolderName = path.basename(adocFolderPath);
 
     if (!fs.existsSync(adocPath)) {
-      console.warn(` ⚠️  No slides.adoc found in ${adocFolderPath}`);
+      console.log(` ⚠️  No slides.adoc found in ${adocFolderPath}`);
       continue;
     }
 

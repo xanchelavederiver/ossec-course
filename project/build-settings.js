@@ -4,6 +4,7 @@ const ROOT = process.cwd();
 
 // project structure
 export const slidesFolderPath = path.posix.join(ROOT, 'materials', 'lectures');
+export const titleSlideFileName = 'title.adoc';
 export const configFolderPath = path.join(ROOT, 'config');
 export const cssFolderPath = path.join(ROOT, 'css');
 export const docinfoFolderPath = path.join(ROOT, 'docinfo');

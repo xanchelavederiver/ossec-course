@@ -4,7 +4,14 @@ import {exec} from "child_process";
 import {WebSocketServer} from "ws";
 import path from "path";
 import fs from "fs";
-import {configFolderPath, cssFolderPath, distRoot, docinfoFolderPath, slidesFolderPath} from "./build-settings.js";
+import {
+  configFolderPath,
+  cssFolderPath,
+  distRoot,
+  docinfoFolderPath,
+  slidesFolderPath,
+  titleSlideFileName
+} from "./build-settings.js";
 import {checkIfFileIsWithinFolder, getFirstFolderFromRelativePath} from "./utils/fs.js";
 import {isNullOrEmpty} from "./utils/misc.js";
 
@@ -108,16 +115,18 @@ if (enableHot) {
     isBuilding = true;
 
     // console.log(`path=${filePath}`);
+    // console.log(`path.basename(path)=${path.basename(filePath)}`);
     // console.log(`checkIfFileIsWithinFolder(slidesFolderPath, filePath) = ${checkIfFileIsWithinFolder(slidesFolderPath, filePath)}`)
     // console.log(`path.relative(slidesFolderPath, filePath) = ${path.relative(slidesFolderPath, filePath)}`)
     // console.log(`first(path.relative(slidesFolderPath, filePath)) = ${getFirstFolderFromRelativePath(path.relative(slidesFolderPath, filePath))}`)
 
     let cmd = 'node build.js slides';
+    const fileName = path.basename(filePath);
     const lectureNameFolder = getFirstFolderFromRelativePath(path.relative(slidesFolderPath, filePath));
-    if (checkIfFileIsWithinFolder(slidesFolderPath, filePath) && !isNullOrEmpty(lectureNameFolder)) {
+    if (fileName !== titleSlideFileName && checkIfFileIsWithinFolder(slidesFolderPath, filePath) && !isNullOrEmpty(lectureNameFolder)) {
       // a single slide needs to be rebuilt
       const filePath = path.join(slidesFolderPath, lectureNameFolder, 'slides.adoc');
-      cmd = `${cmd} ${filePath}`
+      cmd = `${cmd} "${filePath}"`
       console.log(`🔄 Rebuilding presentation ${filePath}`);
     } else {
       console.log("🔄 Rebuilding presentations...");
