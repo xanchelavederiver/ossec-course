@@ -1,0 +1,33 @@
+:root {
+  /*--r-background-color: #fff;*/
+  /*--r-main-font: Source Sans Pro, Helvetica, sans-serif;*/
+  --r-main-font-size: 32px;
+  /*--r-main-color: #222;*/
+  /*--r-block-margin: 20px;*/
+  /*--r-heading-margin: 0 0 20px 0;*/
+  /*--r-heading-font: Source Sans Pro, Helvetica, sans-serif;*/
+  /*--r-heading-color: #222;*/
+  /*--r-heading-line-height: 1.2;*/
+  /*--r-heading-letter-spacing: normal;*/
+  /*--r-heading-text-transform: uppercase;*/
+  /*--r-heading-text-shadow: none;*/
+  /*--r-heading-font-weight: 600;*/
+  /*--r-heading1-text-shadow: none;*/
+  /*--r-heading1-size: 2.5em;*/
+  /*--r-heading2-size: 1.6em;*/
+  /*--r-heading3-size: 1.3em;*/
+  /*--r-heading4-size: 1em;*/
+  /*--r-code-font: monospace;*/
+  /*--r-link-color: #2a76dd;*/
+  /*--r-link-color-dark: rgb(30.7720647773, 99.5566801619, 192.7779352227);*/
+  /*--r-link-color-hover: rgb(73.95, 138.55, 226.1);*/
+  /*--r-selection-background-color: rgb(95.25, 152.25, 229.5);*/
+  /*--r-selection-color: #fff;*/
+  /*--r-overlay-element-bg-color: 0, 0, 0;*/
+  /*--r-overlay-element-fg-color: 240, 240, 240;*/
+}
+
+/* Remove uppercase from title captions */
+.reveal h2 {
+  text-transform: none;
+}

@@ -2,3 +2,17 @@
 .reveal .slides {
   text-align: left;
 }
+
+/* Topic title slide */
+.topic-title-slide-caption {
+  text-align: center;
+  font-size: var(--r-heading2-size);
+  font-weight: var(--r-heading-font-weight);
+}
+
+/* Section title slide */
+.section-title-slide-caption {
+  text-align: center;
+  font-size: var(--r-heading2-size);
+  font-weight: var(--r-heading-font-weight);
+}
