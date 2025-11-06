@@ -1,0 +1,26 @@
+:von-neumann-automata: https://cba.mit.edu/events/03.11.ASE/docs/VonNeumann.pdf
+
+:darwin-corewar: https://corewar.co.uk/darwin.htm
+:darwin-wiki: https://en.wikipedia.org/wiki/Darwin_(programming_game)
+:darwin-survival-evolution: https://www.cs.dartmouth.edu/~doug/darwin.pdf
+
+
+// section 2 - Malware Classification
+
+:malware-definition-wiki: https://ru.wikipedia.org/wiki/Вредоносная_программа
+:malware-crowdstrike: https://www.crowdstrike.com/en-us/cybersecurity-101/malware
+:malware-types-kaspersky: https://www.kaspersky.ru/blog/klassifikaciya-vredonosnyx-programm/2200/
+
+:malware-virus-wiki: https://en.wikipedia.org/wiki/Computer_virus
+:malware-warm-wiki: https://en.wikipedia.org/wiki/Computer_worm
+:malware-warm-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/malware/computer-worm/
+:malware-trojan-wiki: https://en.wikipedia.org/wiki/Trojan_horse_(computing)
+:malware-trojan-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/malware/trojans/
+:malware-rootkit-wiki: https://en.wikipedia.org/wiki/Rootkit
+:malware-rootkit-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/malware/rootkits/
+:malware-spyware-wiki: https://en.wikipedia.org/wiki/Spyware
+:malware-spyware-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/malware/spyware/
+:malware-keylogger-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/cyberattacks/keylogger/
+:malware-ransomware-wiki: https://en.wikipedia.org/wiki/Ransomware
+:malware-ransomware-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/ransomware/
+:malware-ransomware-viper-cs: https://www.crowdstrike.com/en-us/cybersecurity-101/malware/wiper-attack/

@@ -19,7 +19,7 @@ import {
 } from "./build-settings.js";
 import {DocInfoHTMLConcatenator} from "./utils/docinfo.js";
 import {CSSMerger} from "./utils/css.js";
-import {ensureFolderExists} from "./utils/fs.js";
+import {copyAllNotHiddenFolders, ensureFolderExists} from "./utils/fs.js";
 
 function setupPlugins(useCDN = false) {
   const pluginAttrs = [];
@@ -142,6 +142,8 @@ export async function buildSlides(slides, outputDir, useCDN = false) {
     const outputSlidesDir = path.join(outputDir, adocFolderName);
     const outputFilePath = path.join(outputSlidesDir, "slides.html");
     ensureFolderExists(outputSlidesDir);
+
+    copyAllNotHiddenFolders(adocFolderPath, outputSlidesDir);
 
     const cmd = [
       "npx asciidoctor-revealjs",

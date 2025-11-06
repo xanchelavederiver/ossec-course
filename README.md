@@ -34,3 +34,10 @@ gem install text-hyphen
 
 gem install asciidoctor-pdf-mathjax
 ```
+
+## TODO
+
+1. Экспорт в виде одного файла с помощью https://github.com/gildas-lormeau/SingleFile
+   ```terminal
+   $ npx single-file-cli ./index.html -o offline.html
+   ```

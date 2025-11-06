@@ -57,6 +57,37 @@ export function getFirstFolderFromRelativePath(relativePath) {
   }
 }
 
+/**
+ * Copies all folders from sourceDir to destDir, skipping folders that start with '.'
+ * @param {string} sourceDir - Path to the folder containing folders to copy
+ * @param {string} destDir - Path to the folder where copies will be placed
+ */
+export function copyAllNotHiddenFolders(sourceDir, destDir) {
+  // Ensure destination exists
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+
+  // Get all items in source directory
+  const items = fs.readdirSync(sourceDir, { withFileTypes: true });
+
+  // Filter only visible folders (not starting with '.')
+  const folders = items.filter(
+    item => item.isDirectory() && !item.name.startsWith('.')
+  );
+
+  for (const folder of folders) {
+    const srcFolder = path.join(sourceDir, folder.name);
+    const destFolder = path.join(destDir, folder.name);
+
+    // Recursively copy the folder
+    fs.cpSync(srcFolder, destFolder, { recursive: true });
+    console.log(`Copied folder: ${folder.name}`);
+  }
+
+  console.log('✅ All visible folders copied successfully!');
+}
+
 export function findSlides() {
   return fg.sync([slidesPattern], {cwd: ROOT, absolute: true});
 }
