@@ -1,28 +1,24 @@
 {
-  "name": "ossec-course",
-  "type": "module",
-  "version": "1.0.0",
-  "description": "",
-  "scripts": {
-    "build": "node build.js slides",
-    "publish": "node build.js publish",
-    "serve": "node serve.js",
-    "serve-dev": "node serve.js --hot"
+  "name": "ossec-slidev-lectures",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portable multi-topic Slidev lecture collection",
+  "engines": {
+    "node": ">=20.12.0"
   },
-  "keywords": [],
-  "author": "MIT",
-  "license": "ISC",
-  "dependencies": {
-    "@asciidoctor/reveal.js": "^5.2.0",
-    "asciidoctor": "^3.0.4",
-    "chokidar": "^3.6.0",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "fast-glob": "^3.3.3",
-    "puppeteer": "^24.26.1",
-    "ws": "^8.18.3"
+  "scripts": {
+    "list": "node scripts/lectures.mjs list",
+    "dev": "node scripts/lectures.mjs dev",
+    "build": "node scripts/lectures.mjs build",
+    "export": "node scripts/lectures.mjs export",
+    "build:all": "node scripts/lectures.mjs build --all",
+    "export:all": "node scripts/lectures.mjs export --all --format all",
+    "setup:browser": "playwright install chromium"
   },
   "devDependencies": {
-    "cross-env": "^10.1.0"
+    "@slidev/cli": "^52.19.1",
+    "@vue/compiler-sfc": "^3.5.42",
+    "markdown-it-github-alerts": "^1.0.1",
+    "playwright-chromium": "^1.58.0"
   }
 }

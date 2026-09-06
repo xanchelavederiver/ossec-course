@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --ossec-ink: #172033;
+  --ossec-accent: #0b7285;
+  --ossec-muted: #5d6b82;
+  --ossec-surface: #f5f8fc;
+}
+
+.slidev-layout {
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ossec-ink);
+}
+
+.slidev-layout h1, .slidev-layout h2 { color: var(--ossec-accent); }
+.slidev-layout code { font-family: 'JetBrains Mono', monospace; }
+.slidev-layout.cover { background: linear-gradient(135deg, #eef8fa, #f8faff); }
+.slidev-layout.cover h1 { font-size: 2.5em; max-width: 80%; }
+.slidev-layout.cover p { color: var(--ossec-muted); }

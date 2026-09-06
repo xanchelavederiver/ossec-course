@@ -1,0 +1,41 @@
+{
+  "$schema": "./schemas/lectures.schema.json",
+  "course": {
+    "title": "Operating System Security",
+    "shortTitle": "OSSec",
+    "language": "en",
+    "defaultTheme": "default"
+  },
+  "topics": [
+    {
+      "id": "01-physical-security",
+      "title": "Тема 1. Физическая безопасность сервера на базе ОС Linux",
+      "lectures": [
+        { "id": "01-physical-security", "title": "Лекция 1. Физическая безопасность сервера на базе ОС Linux" }
+      ]
+    },
+    {
+      "id": "02-identity-and-access-management",
+      "title": "Тема 2. Управление и безопасность УЗ пользователя в ОС Linix",
+      "lectures": [
+        { "id": "02-classical-unix-mechanisms", "title": "Лекция 2. Классические механизмы управления пользователями в ОС Unix" },
+        { "id": "03-pam", "title": "Лекция 3. Pluggable Authentication Module" }
+      ]
+    },
+    {
+      "id": "03-access-control",
+      "title": "Тема 3. Механизмы разграничения доступа ОС Linux",
+      "lectures": []
+    },
+    {
+      "id": "04-resources-management",
+      "title": "Тема 4. Разграничение ресурсов и изоляция процессов ОС Linux",
+      "lectures": []
+    },
+    {
+      "id": "05-processes-isolation",
+      "title": "Тема 5. Изоляция процессов ОС Linux",
+      "lectures": []
+    }
+  ]
+}

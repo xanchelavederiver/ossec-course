@@ -1,0 +1,11 @@
+/* Scoped to this deck: tables, terminal transcripts and C structures. */
+.slidev-layout.lecture-iam { font-size: 19px; line-height: 1.4; }
+.slidev-layout.lecture-iam h1 { font-size: 30px; line-height: 1.15; margin-bottom: 18px; }
+.slidev-layout.lecture-iam table { font-size: 17px; line-height: 1.3; }
+.slidev-layout.lecture-iam th, .slidev-layout.lecture-iam td { padding: 5px 9px; }
+.slidev-layout.lecture-iam pre { font-size: 14px; line-height: 1.35; }
+.slidev-layout.lecture-iam p { margin: 10px 0; }
+.slidev-layout.lecture-iam li { margin: 5px 0; }
+.slidev-layout.lecture-iam.dense pre { font-size: 12px; line-height: 1.15; }
+.slidev-layout.lecture-iam.dense p { font-size: 16px; }
+.slidev-layout.cover.lecture-iam h1 { max-width: 100%; font-size: 44px; }

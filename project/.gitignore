@@ -1,8 +1,5 @@
 node_modules/
 dist/
-
+playwright/.cache/
+*.log
 .DS_Store
-
-docinfo/docinfo-footer.html
-
-reveal.js-plugins/plugins

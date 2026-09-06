@@ -1,0 +1,7 @@
+{
+  "name": "slidev-addon-ossec-theme",
+  "private": true,
+  "engines": {
+    "slidev": "^52.0.0"
+  }
+}
