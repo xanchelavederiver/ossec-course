@@ -12,11 +12,13 @@
     "build": "node scripts/lectures.mjs build",
     "export": "node scripts/lectures.mjs export",
     "build:all": "node scripts/lectures.mjs build --all",
+    "copy:slides": "node scripts/lectures.mjs copy --all",
     "export:all": "node scripts/lectures.mjs export --all --format all",
     "setup:browser": "playwright install chromium"
   },
   "devDependencies": {
     "@slidev/cli": "^52.19.1",
+    "@slidev/theme-default": "^0.25.0",
     "@vue/compiler-sfc": "^3.5.42",
     "markdown-it-github-alerts": "^1.0.1",
     "playwright-chromium": "^1.58.0"

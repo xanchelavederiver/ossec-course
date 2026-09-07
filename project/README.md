@@ -29,6 +29,11 @@ npm run export -- 02-identity-and-access-management/03-pam --format all
 
 The commands run through Node.js rather than shell scripts, making the same invocations work in PowerShell, cmd, Bash, and Linux CI.
 
+From the repository root, `make lectures-slides` (or `make lectures`) builds every
+catalogued lecture and copies its output to
+`public/lectures/slides/<topic>/<lecture>/`. The copy step is also available as
+`npm run copy:slides` after a successful build; it only copies catalogued decks.
+
 ## Add a lecture
 
 1. Add the topic and lecture metadata to `lectures.json`.

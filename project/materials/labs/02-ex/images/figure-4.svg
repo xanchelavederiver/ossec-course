@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="746" viewBox="0 0 860 746" role="img">
+<title>Рис. 4. Адресное пространство после переполнения. Адрес возврата из функции my_func перезаписан адресом инструкции ret – 0x4005b7. После завершения функции управление будет передано на ret по адресу 0x4005b7, на ret по адресу 0x40069d, откуда по адресу 0x7ffff7a2e830 – на неисполняемый сегмент, что приведёт к аварийному завершению работы программы</title>
+<rect x="1" y="1" width="155" height="42" fill="#e8edf2" stroke="#64748b"/>
+<rect x="156" y="1" width="285" height="42" fill="#e8edf2" stroke="#64748b"/>
+<text x="168" y="29" font-family="sans-serif" font-size="18" fill="#172033" font-weight="bold">Адресное пространство</text>
+<rect x="441" y="1" width="418" height="42" fill="#e8edf2" stroke="#64748b"/>
+<text x="453" y="29" font-family="sans-serif" font-size="18" fill="#172033" font-weight="bold">Комментарии</text>
+<rect x="1" y="43" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="43" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="441" y="43" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="85" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="85" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="113" font-family="sans-serif" font-size="18" fill="#172033">...</text>
+<rect x="441" y="85" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="127" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="155" font-family="monospace" font-size="18" fill="#172033">0x4005b7:</text>
+<rect x="156" y="127" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="155" font-family="sans-serif" font-size="18" fill="#172033">ret</text>
+<rect x="441" y="127" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="155" font-family="sans-serif" font-size="18" fill="#172033">гаджет #1</text>
+<rect x="1" y="169" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="169" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="197" font-family="sans-serif" font-size="18" fill="#172033">...</text>
+<rect x="441" y="169" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="211" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="239" font-family="monospace" font-size="18" fill="#172033">0x40069d:</text>
+<rect x="156" y="211" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="239" font-family="sans-serif" font-size="18" fill="#172033">ret</text>
+<rect x="441" y="211" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="239" font-family="sans-serif" font-size="18" fill="#172033">гаджет #2</text>
+<rect x="1" y="253" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="253" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="281" font-family="sans-serif" font-size="18" fill="#172033">...</text>
+<rect x="441" y="253" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="295" width="155" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="323" font-family="monospace" font-size="18" fill="#172033">my_func:</text>
+<rect x="156" y="295" width="285" height="112" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="323" font-family="sans-serif" font-size="18" fill="#172033">push rbp</text>
+<text x="168" y="347" font-family="sans-serif" font-size="18" fill="#172033">mov rsp, rbp</text>
+<text x="168" y="371" font-family="sans-serif" font-size="18" fill="#172033">sub rsp, 0x40</text>
+<text x="168" y="395" font-family="sans-serif" font-size="18" fill="#172033">...</text>
+<rect x="441" y="295" width="418" height="112" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="407" width="155" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="435" font-family="monospace" font-size="18" fill="#172033">rip =&gt;</text>
+<rect x="156" y="407" width="285" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="435" font-family="sans-serif" font-size="18" fill="#172033">pop rbp</text>
+<text x="168" y="459" font-family="sans-serif" font-size="18" fill="#172033">ret</text>
+<rect x="441" y="407" width="418" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="435" font-family="sans-serif" font-size="18" fill="#172033">выполняющаяся функция</text>
+<rect x="1" y="471" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="471" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="441" y="471" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="513" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="541" font-family="monospace" font-size="18" fill="#172033">rsp =&gt;</text>
+<rect x="156" y="513" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="541" font-family="sans-serif" font-size="18" fill="#172033">&quot;AAAAAAAA&quot;</text>
+<rect x="441" y="513" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="541" font-family="sans-serif" font-size="18" fill="#172033">текущая вершина стека</text>
+<rect x="1" y="555" width="155" height="64" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="555" width="285" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="583" font-family="sans-serif" font-size="18" fill="#172033">0x4005b7</text>
+<rect x="441" y="555" width="418" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="583" font-family="sans-serif" font-size="18" fill="#172033">адрес возврата (перезаписанный</text>
+<text x="453" y="607" font-family="sans-serif" font-size="18" fill="#172033">адресом гаджета #1)</text>
+<rect x="1" y="619" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="619" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="647" font-family="sans-serif" font-size="18" fill="#172033">0x40069d</text>
+<rect x="441" y="619" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="647" font-family="sans-serif" font-size="18" fill="#172033">адрес гаджета #2</text>
+<rect x="1" y="661" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="661" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="689" font-family="sans-serif" font-size="18" fill="#172033">0x7ffff7a2e830</text>
+<rect x="441" y="661" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="453" y="689" font-family="sans-serif" font-size="18" fill="#172033">мусор???</text>
+<rect x="1" y="703" width="155" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="156" y="703" width="285" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="168" y="731" font-family="sans-serif" font-size="18" fill="#172033">...</text>
+<rect x="441" y="703" width="418" height="42" fill="#ffffff" stroke="#64748b"/>
+</svg>

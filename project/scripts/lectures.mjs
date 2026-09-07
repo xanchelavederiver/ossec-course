@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -23,7 +23,7 @@ const lectures = catalog.topics.flatMap((topic) => topic.lectures.map((lecture) 
 
 function usage(message) {
   if (message) console.error(`Error: ${message}\n`)
-  console.log('Usage: npm run <list|dev|build|export> -- <topic>/<lecture> [--format html|pdf|all]')
+  console.log('Usage: node scripts/lectures.mjs <list|dev|build|export|copy> [<topic>/<lecture>|--all] [--format html|pdf|all]')
   process.exit(message ? 1 : 0)
 }
 
@@ -53,12 +53,18 @@ if (command === 'list') {
   for (const lecture of lectures) console.log(`${lecture.key}\t${lecture.title}`)
   process.exit(0)
 }
-if (!['dev', 'build', 'export'].includes(command)) usage(`Unknown command '${command}'.`)
+if (!['dev', 'build', 'export', 'copy'].includes(command)) usage(`Unknown command '${command}'.`)
 if (command === 'export' && !formats.has(format)) usage(`Unsupported format '${format}'.`)
 
 for (const lecture of select()) {
   const entry = entryFor(lecture)
   const outputDir = join(root, 'dist', lecture.topicId, lecture.id)
+  if (command === 'copy') {
+    if (!existsSync(join(outputDir, 'index.html'))) usage(`Missing build for ${lecture.key}. Run npm run build:all first.`)
+    const publicDir = resolve(root, '../public/lectures/slides', lecture.topicId, lecture.id)
+    cpSync(outputDir, publicDir, { recursive: true })
+    console.log(`Copied ${lecture.key} to ${publicDir}`)
+  }
   if (command === 'dev') slidev(['--open', entry])
   if (command === 'build' || (command === 'export' && ['html', 'all'].includes(format))) {
     mkdirSync(outputDir, { recursive: true })

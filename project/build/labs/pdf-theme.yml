@@ -1,0 +1,32 @@
+extends: default
+font:
+  catalog:
+    merge: true
+    DejaVu Sans: &sans
+      normal: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+      bold: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+      italic: /usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf
+      bold_italic: /usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf
+    DejaVu Sans Mono: &mono
+      normal: /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+      bold: /usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf
+      italic: /usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf
+      bold_italic: /usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf
+    # Prawn SVG maps generic sans-serif/monospace to these PDF font names.
+    Helvetica: *sans
+    Courier: *mono
+  fallbacks: [DejaVu Sans]
+page:
+  size: A4
+base:
+  font_family: DejaVu Sans
+  font_size: 10
+heading:
+  font_family: DejaVu Sans
+code:
+  font_family: DejaVu Sans Mono
+  font_size: 8
+codespan:
+  font_family: DejaVu Sans Mono
+svg:
+  font_family: DejaVu Sans

