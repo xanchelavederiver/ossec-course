@@ -1,0 +1,53 @@
+
+===== Значения по умолчанию (useradd -D читает /etc/default/useradd) =====
+
+# useradd -D
+GROUP=100
+HOME=/home
+INACTIVE=-1
+EXPIRE=
+SHELL=/bin/sh
+SKEL=/etc/skel
+CREATE_MAIL_SPOOL=no
+LOG_INIT=yes
+
+===== Кладём файл-образец в /etc/skel =====
+
+# echo 'echo Добро пожаловать!' > /etc/skel/.hello
+
+===== Создаём пользователя frank с домашней директорией =====
+
+# useradd -m -s /bin/bash -c 'Frank Smith' frank
+
+# grep '^frank:' /etc/passwd
+frank:x:1001:1001:Frank Smith:/home/frank:/bin/bash
+
+===== Содержимое /etc/skel скопировано в домашнюю директорию =====
+
+# ls -a /home/frank
+.
+..
+.bash_logout
+.bashrc
+.hello
+.profile
+
+===== usermod: меняем комментарий (GECOS) и добавляем в группу users =====
+
+# usermod -c 'Frank the Tester' -aG users frank
+
+# grep '^frank:' /etc/passwd; groups frank
+frank:x:1001:1001:Frank the Tester:/home/frank:/bin/bash
+frank : frank users
+
+===== userdel: удаляем пользователя вместе с домашней директорией (-r) =====
+
+# userdel -r frank
+userdel: frank mail spool (/var/mail/frank) not found
+
+# grep '^frank:' /etc/passwd || echo 'frank удалён из /etc/passwd'
+frank удалён из /etc/passwd
+
+# ls -d /home/frank 2>&1 || echo 'домашняя директория удалена'
+ls: cannot access '/home/frank': No such file or directory
+домашняя директория удалена

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared by the numbered demos. Run only in a disposable Ubuntu 24.04 VM.
+# Shared by the numbered demos. Run only in a disposable Ubuntu 26.04 VM.
 set -Eeuo pipefail
 export LC_ALL=C
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
@@ -9,7 +9,7 @@ demo_init() {
   if [[ ${1:-} == --help ]]; then
     printf '%s\n' "$(basename "$0"): ${DEMO_DESCRIPTION:-OSSec demo}" \
       'Usage: sudo env OSSEC_DEMO_VM=1 bash NN-name.sh' \
-      'Only on a disposable Ubuntu 24.04 VM. See README.md for prerequisites and cleanup.'
+      'Only on a disposable Ubuntu 26.04 VM. See README.md for prerequisites and cleanup.'
     exit 0
   fi
   [[ $# == 0 ]] || die 'Unsupported argument; use --help'
@@ -17,7 +17,7 @@ demo_init() {
   [[ ${OSSEC_DEMO_VM:-} == 1 ]] || die 'Set OSSEC_DEMO_VM=1 only in a disposable VM'
   # shellcheck source=/dev/null
   source /etc/os-release
-  [[ $ID == ubuntu && $VERSION_ID == 24.04 ]] || die 'Expected Ubuntu 24.04'
+  [[ $ID == ubuntu && $VERSION_ID == 26.04 ]] || die 'Expected Ubuntu 26.04'
   need flock mktemp
   exec 9>/run/lock/ossec-iam-demo.lock
   flock -n 9 || die 'Another OSSec demo is running on this VM'

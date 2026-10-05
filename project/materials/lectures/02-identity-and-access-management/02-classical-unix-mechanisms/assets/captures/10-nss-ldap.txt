@@ -1,0 +1,72 @@
+
+===== 1. Устанавливаем сервер (slapd) и клиента (libnss-ldapd, nslcd) =====
+
+# debconf-set-selections <<< 'slapd slapd/no_configuration boolean false'
+
+# debconf-set-selections <<< 'slapd slapd/password1 password adminpass'
+
+# debconf-set-selections <<< 'slapd slapd/password2 password adminpass'
+
+# debconf-set-selections <<< 'slapd slapd/domain string example.org'
+
+# debconf-set-selections <<< 'slapd shared/organization string Example'
+
+# apt-get update -qq >/dev/null 2>&1
+
+# apt-get install -y -qq slapd ldap-utils libnss-ldapd libpam-ldapd nslcd >/dev/null 2>&1
+
+===== 2. Запускаем slapd =====
+
+# service slapd start >/dev/null 2>&1; sleep 2; service slapd status | head -3 || pgrep -a slapd
+ * slapd is running
+
+===== 3. Наполняем каталог: OU People + пользователь ldapuser (uid=5000) =====
+
+# ldapadd -x -D 'cn=admin,dc=example,dc=org' -w 'adminpass' -f /tmp/base.ldif
+adding new entry "ou=People,dc=example,dc=org"
+
+adding new entry "ou=Group,dc=example,dc=org"
+
+adding new entry "uid=ldapuser,ou=People,dc=example,dc=org"
+
+
+===== 4. Настраиваем nslcd (клиент LDAP для NSS/PAM) =====
+
+# sed -i 's|^uri .*|uri ldap://127.0.0.1/|' /etc/nslcd.conf
+
+# sed -i 's|^base .*|base dc=example,dc=org|' /etc/nslcd.conf
+
+# grep -E '^(uri|base)' /etc/nslcd.conf
+uri ldap://127.0.0.1/
+base dc=example,dc=org
+
+# service nslcd restart >/dev/null 2>&1; sleep 1
+
+===== 5. Переключаем NSS: добавляем 'ldap' к passwd/group/shadow =====
+
+# sed -i -E 's/^(passwd:\s+).*/\1files ldap/' /etc/nsswitch.conf
+
+# sed -i -E 's/^(group:\s+).*/\1files ldap/' /etc/nsswitch.conf
+
+# sed -i -E 's/^(shadow:\s+).*/\1files ldap/' /etc/nsswitch.conf
+
+# grep -E '^(passwd|group|shadow):' /etc/nsswitch.conf
+passwd:         files ldap
+group:          files ldap
+shadow:         files ldap
+
+===== 6. Проверка: ldapuser ОТСУТСТВУЕТ в /etc/passwd... =====
+
+# grep '^ldapuser:' /etc/passwd || echo 'НЕТ в /etc/passwd (files)'
+НЕТ в /etc/passwd (files)
+
+===== 7. ...но getent находит его через NSS -> ldap =====
+
+# getent passwd ldapuser
+ldapuser:x:5000:5000:LDAP User:/home/ldapuser:/bin/bash
+
+# id ldapuser
+uid=5000(ldapuser) gid=5000 groups=5000
+
+Итог: NSS по /etc/nsswitch.conf сначала ищет в files, затем в ldap.
+Так один каталог LDAP централизует учётные записи многих машин.

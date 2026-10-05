@@ -1,0 +1,44 @@
+
+===== Создаём пользователя eve с паролем =====
+
+# useradd -m -s /bin/bash eve
+
+# printf 'evepass\nevepass\n' | passwd eve
+New password: Retype new password: passwd: password updated successfully
+
+===== eve пытается выполнить sudo — она НЕ в группе sudo =====
+
+# su - eve -c 'sudo -n id 2>&1' || true
+sudo: a password is required
+
+===== Добавляем eve в группу sudo =====
+
+# usermod -aG sudo eve
+
+# grep '^sudo:' /etc/group
+sudo:x:27:ubuntu,eve
+
+===== Правило в /etc/sudoers, дающее группе %sudo все права =====
+
+# grep -E '^%sudo' /etc/sudoers
+%sudo	ALL=(ALL:ALL) ALL
+
+===== Настройка sudo БЕЗ пароля через файл в /etc/sudoers.d/ =====
+
+# echo 'eve ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/eve
+
+# chmod 440 /etc/sudoers.d/eve
+
+# visudo -cf /etc/sudoers.d/eve
+/etc/sudoers.d/eve: parsed OK
+
+===== Теперь eve выполняет sudo без запроса пароля =====
+
+# su - eve -c 'sudo id'
+uid=0(root) gid=0(root) groups=0(root)
+
+===== su — переключение на другого пользователя (полная смена окружения) =====
+
+# su - eve -c 'whoami; echo HOME=$HOME'
+eve
+HOME=/home/eve

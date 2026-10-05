@@ -1,0 +1,27 @@
+
+===== Готовим непривилегированного пользователя alice =====
+
+# useradd -m -s /bin/bash alice
+
+# grep '^alice' /etc/passwd
+alice:x:1001:1001::/home/alice:/bin/bash
+
+===== Проверяем UID пользователя alice (должен быть != 0) =====
+
+# id alice
+uid=1001(alice) gid=1001(alice) groups=1001(alice)
+
+===== Меняем третье поле (UID) в /etc/passwd на 0 =====
+
+# sed -i 's/^alice:x:[0-9]*:/alice:x:0:/' /etc/passwd
+
+# grep '^alice' /etc/passwd
+alice:x:0:1001::/home/alice:/bin/bash
+
+===== Теперь система считает alice суперпользователем =====
+
+# id alice
+uid=0(root) gid=1001(alice) groups=0(root)
+
+===== Имя 'alice' сохранилось, но uid=0 => это root в глазах ядра =====
+Вывод: привилегии определяются числовым UID, а не именем пользователя.

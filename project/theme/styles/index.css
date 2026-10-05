@@ -17,3 +17,158 @@
 .slidev-layout.cover { background: linear-gradient(135deg, #eef8fa, #f8faff); }
 .slidev-layout.cover h1 { font-size: 2.5em; max-width: 80%; }
 .slidev-layout.cover p { color: var(--ossec-muted); }
+
+/* ---------------------------------------------------------------------------
+ * TerminalCapture: captured demo transcripts with the standard bash palette.
+ * The dark background is intentional and theme-independent: the slides show
+ * real terminal output, so it keeps the look of the demo VM console.
+ * ------------------------------------------------------------------------- */
+.terminal-capture {
+  --tc-lh: 1.5em;
+  --tc-pad-x: 0.9em;
+  --tc-callout: #ffa94d;
+  font-size: 0.55em;
+  margin: 0.6em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #171a21;
+  box-shadow: 0 2px 10px rgba(16, 24, 40, 0.25);
+  text-align: left;
+}
+.tc-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.45em 0.9em;
+  background: #232733;
+  color: #aeb6c4;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.95em;
+}
+.tc-dot { width: 0.7em; height: 0.7em; border-radius: 50%; flex: none; }
+.tc-dot-r { background: #fc625d; }
+.tc-dot-y { background: #fdbc40; }
+.tc-dot-g { background: #34c749; }
+.tc-title { margin-left: 0.4em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tc-body { overflow: auto; }
+.tc-inner { position: relative; width: max-content; min-width: 100%; }
+.tc-pre {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: #e6e6e6;
+  line-height: var(--tc-lh);
+  padding: 0.5em var(--tc-pad-x) 0.6em var(--tc-pad-x);
+  white-space: pre;
+}
+.tc-wrap .tc-pre { white-space: pre-wrap; }
+.tc-wrap .tc-inner { width: auto; }
+.tc-line { display: block; min-height: var(--tc-lh); }
+.tc-line.tc-hl { background: rgba(255, 214, 102, 0.14); box-shadow: inset 2px 0 0 #ffd666; }
+.tc-num {
+  display: inline-block;
+  width: 2ch;
+  margin-right: 1ch;
+  text-align: right;
+  color: #5d6b82;
+  user-select: none;
+}
+.tc-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 0.5em var(--tc-pad-x) 0.6em var(--tc-pad-x);
+  pointer-events: none;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  line-height: var(--tc-lh);
+}
+
+/* Text attributes */
+.tc-b { font-weight: 700; }
+.tc-dim { opacity: 0.6; }
+.tc-i { font-style: italic; }
+.tc-u { text-decoration: underline; }
+.tc-inv { background: #e6e6e6; color: #171a21; }
+
+/* Standard 16-colour bash palette (xterm-like) */
+.tc-f0 { color: #3b4252; }   .tc-g0 { background: #3b4252; }
+.tc-f1 { color: #e05561; }   .tc-g1 { background: #e05561; }
+.tc-f2 { color: #8cc265; }   .tc-g2 { background: #8cc265; }
+.tc-f3 { color: #d1a458; }   .tc-g3 { background: #d1a458; }
+.tc-f4 { color: #4aa5f0; }   .tc-g4 { background: #4aa5f0; }
+.tc-f5 { color: #c162de; }   .tc-g5 { background: #c162de; }
+.tc-f6 { color: #42b3c2; }   .tc-g6 { background: #42b3c2; }
+.tc-f7 { color: #d7dae0; }   .tc-g7 { background: #d7dae0; }
+.tc-f8 { color: #6c7686; }   .tc-g8 { background: #6c7686; }
+.tc-f9 { color: #ff7a85; }   .tc-g9 { background: #ff7a85; }
+.tc-f10 { color: #a5e075; }  .tc-g10 { background: #a5e075; }
+.tc-f11 { color: #f0c674; }  .tc-g11 { background: #f0c674; }
+.tc-f12 { color: #6cb6ff; }  .tc-g12 { background: #6cb6ff; }
+.tc-f13 { color: #de8ff0; }  .tc-g13 { background: #de8ff0; }
+.tc-f14 { color: #66d9e8; }  .tc-g14 { background: #66d9e8; }
+.tc-f15 { color: #ffffff; }  .tc-g15 { background: #ffffff; }
+
+/* ---------------------------------------------------------------------------
+ * TCallout: positioned annotations over a TerminalCapture.
+ * ------------------------------------------------------------------------- */
+.t-callout { position: absolute; pointer-events: none; }
+.t-callout-box {
+  border: 2px solid var(--tcc);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  /* Outset so the border sits beside the first/last character, not on it. */
+  box-sizing: content-box;
+  padding: 0 2px;
+  transform: translateX(-2px);
+}
+.t-callout-underline .t-callout-box {
+  border-width: 0 0 2px 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.t-callout-badge .t-callout-box {
+  width: 0.55em !important;
+  height: 0.55em !important;
+  margin-top: 0.45em;
+  border-radius: 50%;
+  background: var(--tcc);
+  border: none;
+}
+.t-callout-label {
+  position: absolute;
+  width: max-content;
+  max-width: 34ch;
+  padding: 0.15em 0.55em;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.92em;
+  line-height: 1.3;
+  white-space: normal;
+  color: #f4f6f9;
+  background: rgba(23, 26, 33, 0.92);
+  border: 1px solid var(--tcc);
+  border-radius: 5px;
+}
+.t-callout-label:empty { display: none; }
+.t-callout-right .t-callout-label { left: calc(100% + 0.8em); top: 50%; transform: translateY(-50%); }
+.t-callout-left  .t-callout-label { right: calc(100% + 0.8em); top: 50%; transform: translateY(-50%); }
+.t-callout-top    .t-callout-label { bottom: calc(100% + 0.5em); left: 0; }
+.t-callout-bottom .t-callout-label { top: calc(100% + 0.5em); left: 0; }
+
+/* Short connector between box and label */
+.t-callout-right .t-callout-label::before,
+.t-callout-left .t-callout-label::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0.7em;
+  border-top: 2px solid var(--tcc);
+}
+.t-callout-right .t-callout-label::before { right: 100%; }
+.t-callout-left .t-callout-label::before { left: 100%; }
+.t-callout-top .t-callout-label::after,
+.t-callout-bottom .t-callout-label::before {
+  content: '';
+  position: absolute;
+  left: 1em;
+  height: 0.45em;
+  border-left: 2px solid var(--tcc);
+}
+.t-callout-top .t-callout-label::after { top: 100%; }
+.t-callout-bottom .t-callout-label::before { bottom: 100%; }
