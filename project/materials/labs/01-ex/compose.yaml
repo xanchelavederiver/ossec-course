@@ -1,0 +1,27 @@
+name: ossec-course
+services:
+  lab1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_ID: ${HOST_UID:-1000}
+        GROUP_ID: ${HOST_GID:-1000}
+    image: lab1
+    working_dir: /lab1
+    volumes:
+      - .:/lab1
+    stdin_open: true
+    tty: true
+    # required for GDB
+    cap_add:
+      - SYS_PTRACE
+    # allows GDB/setarch to use personality() for per-process ASLR control
+    security_opt:
+      - seccomp:unconfined
+    # start bash with ASLR disabled
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        exec setarch "$$(uname -m)" -R /bin/bash

@@ -13,7 +13,7 @@
 
 Ассемблер nasm требуется для корректной работы плагина gdb-peda, устанавливается с помощью пакетного менеджера apt:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ sudo apt-get install nasm
 x@vbox:~/lab2$
@@ -21,7 +21,7 @@ x@vbox:~/lab2$
 
 Утилита ROPgadget используется для поиска т.н. гаджетов в адресном пространстве (сегменте кода) исполняемого файла:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ sudo apt install python3-pip
 x@vbox:~/lab2$ sudo pip3 install capstone
@@ -59,7 +59,7 @@ image::figure-2.svg[Рис. 2,860]
 
 Продемонстрируем результат выполнения шелл-кода на неисполняемом стеке. Здесь и далее мы будем рассматривать архитектуру x86-64 и, соответственно, 64-битные приложения. Для простоты не будем использовать надуманные функции проверки, а сразу скопируем шеллкод (код, запускающий вместо текущей программы командный интерпретатор) на стек и попробуем выполнить. Код приложения приведён ниже.
 
-[listing]
+[source,c]
 ----
 int main(int argc, char* argv[])
 {
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 
 Скомпилируем с помощью gcc с исполняемым стеком и выполним:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -zexecstack -o 1_execstack 1.c
 x@vbox:~/lab2$ ./1_execstack
@@ -84,7 +84,7 @@ $ ls
 
 В результате код, хранящийся в сегменте стека, выполнился, и мы получили новый командный интерпретатор вместо нашего приложения 1_execstack. Попробуем скомпилировать тот же код с неисполняемыми сегментами данных (опция включена по умолчанию) и выполнить:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -o 1_nonexecstack 1.c
 x@vbox:~/lab2$ ./1_nonexecstack
@@ -100,7 +100,7 @@ x@vbox:~/lab2$
 
 Для демонстрации эффекта использования ALSR скомпилируем и будем запускать следующую программу:
 
-[listing]
+[source,c]
 ----
 #include <stdio.h>
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 
 Компилируем с помощью gcc:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -o 2 2.c
 x@vbox:~/lab2$ ./2
@@ -132,7 +132,7 @@ x@vbox:~/lab2$
 
 Это же касается и места загрузки используемых библиотек (*.so). Для проверки этого факта воспользуемся утилитой ldd, которая показывает адреса загрузки библиотек.
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ ldd ./2
 linux-vdso.so.1 =>  (0x00007ffc0d990000)
@@ -185,7 +185,7 @@ image::figure-4.svg[Рис. 4,860]
 
 В стандартной библиотеке языка С, называемой libc и хранимой в файле libc.so, находится функция system, выполняющая передаваемую ей команду. Приведём пример использования этой функции:
 
-[listing]
+[source,c]
 ----
 #include <stdlib.h>
 
@@ -203,7 +203,7 @@ image::figure-5.svg[Рис. 5,860]
 
 Компилируя с помощью gcc и запуская, видим запущенный функцией system командный интерпретатор:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -o 3 3.c
 x@vbox:~/lab2$ ./3
@@ -216,7 +216,7 @@ $
 
 В процессорах архитектуры x86-64 системные прерывания вызываются путём выполнения инструкции syscall. Для вызова нужного системного прерывания необходимо в регистре eax передать код этого прерывания, регистры rdi, rsi, rdx, rcx используются для передачи аргументов. Одно из системных прерываний в контексте обсуждения эксплуатации уязвимостей интересует нас значительно сильнее остальных: 0x3b (таблицу системных прерываний для ОС Linux можно найти в [5]), прерывание exec*. Передавая в регистре rdi указатель на строку "/bin/sh", а в rsi и rdx – указатель на пустой массив ссылок, мы можем вызвать exec("/bin/sh") и получить командный интерпретатор. Приведём пример использования инструкции syscall:
 
-[listing]
+[source,c]
 ----
 int main(int argc, char* argv[])
 {
@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
 
 Компилируя с помощью gcc и запуская, видим запущенный функцией с помощью syscall командный интерпретатор:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -o 4 4.c
 x@vbox:~/lab2$ ./4
@@ -258,7 +258,7 @@ x@vbox:~/lab2$
 
 Для того, чтобы знать адрес места загрузки, отключим ASLR и оставим только NX. Код уязвимого приложения представлен ниже:
 
-[listing]
+[source,c]
 ----
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
 
 Скомпилируем этот код без Stack Smashing Protector (без канареек, см. раздел Защиты от новых методов атак):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -fno-stack-protector -fno-PIC 5.c -o 5 -no-pie
 x@vbox:~/lab2$
@@ -288,7 +288,7 @@ x@vbox:~/lab2$
 
 Отключим ASLR:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ cat /proc/sys/kernel/randomize_va_space
 2
@@ -302,7 +302,7 @@ x@vbox:~/lab2$ cat /proc/sys/kernel/randomize_va_space
 
 Теперь библиотека libc загружается в одно и то же место виртуального пространства нашего исполняемого файла. Необходимо найти адрес функции system, а также адрес строки "/bin/sh" (она тоже хранится в libc). Для этого воспользуемся gdb-peda [6] – plugin'ом к gdb:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gdb -q 5
 Reading symbols from 5...
@@ -407,7 +407,7 @@ image::figure-6.svg[Рис. 6,860]
 
 Запустим уязвимое приложение ./5, передавая в качестве аргумента shell.exp:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ python3 5.py
 x@vbox:~/lab2$ ./5 shell.exp
@@ -429,7 +429,7 @@ x@vbox:~/lab2$
 
 Рассмотрим модификацию взломанной в прошлом разделе программы. В этой версии появилась функция gadgetgarden, в которой мы специально необходимые гаджеты и инструкции, а также глобальная статическая строка "/bin/sh".
 
-[listing]
+[source,c]
 ----
 #include <stdio.h>
 #include <stdlib.h>
@@ -466,7 +466,7 @@ int main(int argc, char* argv[])
 
 Убедимся, что механизм ASLR включен:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ sudo su
 [sudo] password for x:
@@ -478,7 +478,7 @@ x@vbox:~/lab2$ cat /proc/sys/kernel/randomize_va_space
 
 Скомпилируем этот код без StackGuard (без канареек, см. раздел Защиты от новых методов атак):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -fno-stack-protector 6.c -o 6 -no-pie
 x@vbox:~/lab2$
@@ -486,7 +486,7 @@ x@vbox:~/lab2$
 
 Напомним [5], что для вызова execve необходимо в регистр eax записать значение 0x3b, в регистр rdi – указатель на строку "/bin/sh" (const char *filename), в регистр rsi – указатель на возможно пустой массив указателей на строки, являющимися аргументами (const char *const argv[]), в регистр rdx – указатель на возможно пустой массив строк -переменных окружения (const char *const envp[]). Посмотрим, какие гаджеты есть в нашем распоряжении. Чтобы не "захватить" гаджеты из libc, воспользуемся утилитой ROPgadget [10] (команда ropgadget gdb-peda требует запуска исполняемого файла, следовательно libc также будет загружена):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ ROPgadget --binary 6
 Gadgets information
@@ -503,7 +503,7 @@ x@vbox:~/lab2$
 
 Как видим, все необходимые гаджеты и инструкция syscall присутствуют (ещё бы, мы же сами их добавили!). Осталось найти адрес строки "/bin/sh". Запустим gdb-peda:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gdb 6 -q
 Reading symbols from 6...
@@ -560,7 +560,7 @@ if __name__ == '__main__':
 
 Запустим уязвимое приложение ./6, передавая в качестве аргумента shell2.exp:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ python3 6.py
 x@vbox:~/lab2$ ./6 shell2.exp
@@ -598,7 +598,7 @@ x@vbox:~/lab2$
 
 Рассмотрим описанный выше механизм на примере уязвимой функции copy. Скомпилируем код из раздела Ret2libc и больше гаджетов и попробуем выполнить:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc 5.c -o canary -no-pie
 x@vbox:~/lab2$ ./canary shell.exp
@@ -609,7 +609,7 @@ x@vbox:~/lab2$
 
 Как видим, механизм сработал. Посмотрим, что изменилось в функции copy, для чего воспользуемся gdb-peda:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gdb -q canary
 Reading symbols from canary...(no debugging symbols found)...done.
@@ -708,7 +708,7 @@ NOTE: В настоящее время компиляторы собирают �
 
 Скомпилируем код 6.c без флагов, отключающих PIC/PIE:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gcc -fno-stack-protector 6.c -o 6_pie
 x@vbox:~/lab2$
@@ -716,7 +716,7 @@ x@vbox:~/lab2$
 
 Посмотрим на адреса гаджетов при разных загрузках (обратите внимание на команду set disable-randomization off – нам необходимо включить ASLR, который по умолчанию выключается отладчиком gbd):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab2$ gdb 6_pie -q
 Reading symbols from 6_pie...

