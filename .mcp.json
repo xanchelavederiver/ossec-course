@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "slidev": {
+      "type": "http",
+      "url": "http://localhost:3030/__mcp"
+    }
+  }
+}
