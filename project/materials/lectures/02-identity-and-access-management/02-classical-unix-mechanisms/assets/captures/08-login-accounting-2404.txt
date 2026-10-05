@@ -1,0 +1,50 @@
+
+===== Подготовка: ssh-сервер и учётная запись grace для реальных входов =====
+
+===== Успешный вход по ssh (пишет utmp/wtmp) =====
+
+# sshpass -p gracepw ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grace@127.0.0.1 'echo вошли как $(whoami)'
+Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.
+вошли как grace
+
+===== НЕУДАЧНАЯ попытка входа (пишет btmp) =====
+
+# sshpass -p WRONG ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grace@127.0.0.1 true 2>&1 | tail -1 || true
+Permission denied, please try again.
+
+===== Неудачные входы: lastb (читает /var/log/btmp) =====
+
+# lastb -n 5
+grace    ssh:notty    127.0.0.1        Sun Sep  6 17:42   still running
+
+btmp begins Sun Sep  6 17:42:09 2026
+
+===== Декодируем бинарную запись struct utmp утилитой utmpdump =====
+Поля: [тип] [pid] [id] [user] [line] [host] [addr] [время]
+
+# utmpdump /var/log/btmp 2>&1 | tail -3
+Utmp dump of /var/log/btmp
+[6] [03765] [    ] [grace   ] [ssh:notty   ] [127.0.0.1           ] [127.0.0.1      ] [2026-09-06T17:42:09,000000+00:00]
+
+===== История входов: last (читает /var/log/wtmp) =====
+
+# last -n 8 | head
+
+wtmp begins Sun Sep  6 17:32:46 2026
+
+===== Последний вход каждого пользователя: lastlog =====
+
+# lastlog | grep -vE 'Never' | head
+Username         Port     From                                       Latest
+
+===== Файлы журналов входов =====
+
+# ls -l /run/utmp /var/log/wtmp /var/log/btmp /var/log/lastlog 2>&1 || true
+ls: cannot access '/run/utmp': No such file or directory
+-rw-rw---- 1 root utmp 384 Sep  6 17:42 /var/log/btmp
+-rw-rw-r-- 1 root utmp   0 Aug 10 14:48 /var/log/lastlog
+-rw-rw-r-- 1 root utmp   0 Aug 10 14:48 /var/log/wtmp
+
+Примечание: в Ubuntu 24.04+ классические wtmp/lastlog постепенно
+замещаются базами wtmpdb и lastlog2; формат struct utmp остаётся
+основой команд who/last/lastb.

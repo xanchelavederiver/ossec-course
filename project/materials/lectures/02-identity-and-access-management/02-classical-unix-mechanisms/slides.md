@@ -565,7 +565,7 @@ $ stat -c '%a %U:%G %n' /etc/gshadow
 <TerminalCapture src="captures/03-group-password.txt" section="2" title="demo 03 · до установки пароля" />
 
 <TerminalCapture src="captures/03-group-password.txt" section="4" title="demo 03 · после chgpasswd" padBottom="2.4em">
-  <TCallout v-click :line="5" :col="9" :span="3" label="SHA-512-crypt" side="top" />
+  <TCallout v-click :line="5" :col="9" :span="3" label="yescrypt ($y$)" side="top" />
   <TCallout v-click :line="5" :col="12" :span="30" label="хэш пароля группы (2-е поле)" side="bottom" />
 </TerminalCapture>
 
@@ -737,7 +737,7 @@ min/max/warn/inactive — <b>интервалы</b>; expire — день кал�
   <TCallout v-click :line="2" :col="6" :span="3" label="алгоритм: yescrypt" side="top" />
   <TCallout v-click :line="2" :col="13" :span="22" label="соль — хранится открыто" side="bottom" />
   <TCallout v-click :line="2" :col="36" :span="43" label="результат KDF фиксированной длины" side="top" />
-  <TCallout v-click :line="2" :col="80" :span="15" label="lstchg=20702 · min=1 · max=90 · warn=7 · inact=14" side="bottom" color="#6cb6ff" />
+  <TCallout v-click :line="2" :col="80" :span="15" label="lstchg=20731 · min=1 · max=90 · warn=7 · inact=14" side="bottom" color="#6cb6ff" />
 </TerminalCapture>
 
 <div class="text-xs opacity-70 mt-1">
@@ -1090,12 +1090,14 @@ userdel -r alice
 Умолчания именно для `useradd` (читаются и правятся `useradd -D`):
 
 ```text
-SHELL=/bin/sh      # оболочка по умолчанию
-GROUP=100          # запасная первичная группа
-HOME=/home         # базовый каталог для home
-INACTIVE=-1        # поле inact в shadow
-EXPIRE=            # дата истечения УЗ
-SKEL=/etc/skel     # источник файлов-образцов
+SHELL=/bin/sh         # оболочка по умолчанию
+GROUP=100             # запасная первичная группа
+GROUPS=               # вторичные группы по умолчанию
+HOME=/home            # базовый каталог для home
+INACTIVE=-1           # поле inact в shadow
+EXPIRE=               # дата истечения УЗ
+SKEL=/etc/skel        # источник файлов-образцов
+USRSKEL=/usr/etc/skel # skel поставщика (26.04)
 CREATE_MAIL_SPOOL=no
 ```
 
@@ -1128,7 +1130,7 @@ CREATE_MAIL_SPOOL=no
 <div>
 
 <TerminalCapture src="captures/07-user-lifecycle.txt" section="1" title="demo 07 · useradd -D">
-  <TCallout v-click :line="7" :col="1" :span="14" label="источник образцов для -m" side="right" />
+  <TCallout v-click :line="8" :col="1" :span="14" label="источник образцов для -m" side="right" />
 </TerminalCapture>
 
 </div>
@@ -1233,9 +1235,13 @@ account/session могут применяться отдельно. <code>su</co
 Это бинарные структуры, не текст. Запись ведёт <b>приложение</b>: не каждое окно
 терминала создаёт utmp-запись. btmp (<code>0660</code>: содержит вводимые «пароли-опечатки»)
 и auth-журналы доступны только привилегированным читателям.
-Начиная с Ubuntu 24.04 классические wtmp/lastlog замещаются базами
-<b>wtmpdb</b>/<b>lastlog2</b> (решение проблемы 2038 года); формат struct utmp остаётся
-основой команд who/last/lastb — состояние конкретной VM проверяйте <code>ls -l</code>.
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-sm">
+В <b>Ubuntu 26.04</b> переход, начатый в 24.04, завершён: классические wtmp/lastlog
+больше не ведутся, утилиты <code>last</code>/<code>lastb</code>/<code>utmpdump</code>/<code>lastlog</code> не входят
+в состав системы. Их заменяют базы SQLite <b>wtmpdb</b> и <b>lastlog2</b>
+(решение проблемы 2038 года) — см. демо 08.
 </div>
 
 ---
@@ -1264,16 +1270,17 @@ struct utmp {
 Упрощённое представление: ветви ABI (<code>__WORDSIZE_TIME64_COMPAT32</code>) и атрибуты
 опущены. <code>ut_type</code>: USER_PROCESS=7, DEAD_PROCESS=8, BOOT_TIME=2; строки могут не
 иметь завершающего NUL. Доступ: <code>getutent(3)</code>, <code>pututline(3)</code>; печать — <code>utmpdump(1)</code>.
+32-битное поле времени — источник проблемы 2038 года, из-за которой формат замещается.
 Источник: <a href="https://man7.org/linux/man-pages/man5/utmp.5.html">utmp(5)</a>.
 </div>
 
 ---
 
-# Демо 08: журналы входов
+# Демо 08: классический формат записи о входе
 
-Реальный вход по ssh и одна неудачная попытка:
+Реальный вход по ssh и одна неудачная попытка — **Ubuntu 24.04**, где btmp ещё ведётся:
 
-<TerminalCapture src="captures/08-login-accounting.txt" section="5" title="demo 08 · utmpdump /var/log/btmp" fontSize="0.5em" padBottom="2.8em">
+<TerminalCapture src="captures/08-login-accounting-2404.txt" section="5" title="Ubuntu 24.04 (исторический формат) · utmpdump /var/log/btmp" fontSize="0.5em" padBottom="2.8em">
   <TCallout v-click :line="5" :col="1" :span="3" label="ut_type = 6 (LOGIN_PROCESS)" side="top" />
   <TCallout v-click :line="5" :col="5" :span="7" label="ut_pid" side="bottom" />
   <TCallout v-click :line="5" :col="20" :span="10" label="ut_user" side="top" />
@@ -1283,33 +1290,36 @@ struct utmp {
 </TerminalCapture>
 
 <div class="text-sm mt-1">
-<code>utmpdump</code> декодирует поля <code>struct utmp</code>; <code>who</code>/<code>last</code>/<code>lastb</code>
-читают те же структуры из utmp/wtmp/btmp.
+<code>utmpdump</code> декодирует поля <code>struct utmp</code>; классические
+<code>who</code>/<code>last</code>/<code>lastb</code> читают те же структуры из utmp/wtmp/btmp.
+Формат остаётся важным для чтения исторических систем и других дистрибутивов.
 </div>
 
 <div class="text-xs opacity-70 mt-1">
 <b>08-login-accounting.sh</b> дополнительно показывает настоящую login-сессию:
-<code>script -q -c /bin/login /dev/null</code>, затем <code>who</code>, <code>w</code>, <code>last</code>.
+<code>script -q -c /bin/login /dev/null</code>, затем <code>who</code>, <code>w</code>.
+Что на месте этих журналов в Ubuntu 26.04 — следующий слайд.
 </div>
 
 ---
 
-# Последний вход, ошибки и ограничения аудита
+# Демо 08 на Ubuntu 26.04: wtmpdb и lastlog2
 
-```console
-$ lastlog -u grace
-Username         Port     From             Latest
-grace            pts/1                     Sun Sep  6 17:42:00 +0000 2026
-$ lastb -n 1 grace
-grace    ssh:notty    127.0.0.1        Sun Sep  6 17:42 - 17:42 (00:00)
-$ journalctl -b _COMM=login
-... login[...]: pam_unix(login:session): session opened for user ...
-```
+<TerminalCapture src="captures/08-login-accounting.txt" section="2" title="Ubuntu 26.04 · классические журналы" fontSize="0.5em">
+  <TCallout v-click :line="3" :col="24" :span="1" :rows="3" label="файлы существуют, но пусты" side="bottom" />
+</TerminalCapture>
 
-- Для `lastb` сначала нужна неудачная попытка; читает его только root.
-- `lastlog` может показать `Never logged in`, если путь входа его не обновляет.
-- SSH-сессия без выделенного tty может не появиться в `last`.
-- Ротация журналов, PAM и права доступа влияют на то, что видно.
+<TerminalCapture src="captures/08-login-accounting.txt" section="6" lines="1-2" title="замена wtmp/last" fontSize="0.5em" />
+
+<TerminalCapture src="captures/08-login-accounting.txt" section="7" lines="1-3" title="замена lastlog" fontSize="0.5em" />
+
+<div class="text-sm">
+
+- `pam_wtmpdb` и `pam_lastlog2` пишут входы в базы SQLite — 64-битное время решает проблему 2038 года.
+- Неудачные попытки в btmp больше не фиксируются: их источник — журнал службы (`journalctl -u ssh`).
+- Ротация журналов, конфигурация PAM и права доступа влияют на то, что видно.
+
+</div>
 
 <div class="text-xs opacity-70 mt-1">
 Сценарий 08 сохраняет следы входов — полный возврат учебной VM выполняется снимком.
@@ -1362,6 +1372,12 @@ sudo -i                 # интерактивная root-оболочка
 гранулярная политика и аудит. В Ubuntu пароль root обычно заблокирован — администратор
 использует sudo. Параметры <code>rootpw</code>/<code>targetpw</code>/<code>runaspw</code> в sudoers могут
 изменить правило проверки пароля.
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+С Ubuntu 25.10 команды <code>sudo</code> и <code>su</code> по умолчанию — реализация
+<b>sudo-rs</b> (Rust, проект Trifecta Tech); синтаксис sudoers и поведение политики
+сохраняются, отличаются отдельные сообщения (видно в демо 09).
 </div>
 
 ---
@@ -1619,7 +1635,7 @@ NSS <code>sss</code> возвращает UID/GID; <code>pam_sss</code> ауте
 
 <TerminalCapture src="captures/10-nss-ldap.txt" section="6" title="demo · пользователя нет в files" />
 
-<TerminalCapture src="captures/10-nss-ldap.txt" section="7" lines="1-5" title="demo · NSS находит его в каталоге">
+<TerminalCapture src="captures/10-nss-ldap.txt" section="7" lines="1-2" title="demo · NSS находит его в каталоге">
   <TCallout v-click :line="2" :col="12" :span="9" label="uidNumber/gidNumber пришли из LDAP" side="bottom" />
 </TerminalCapture>
 

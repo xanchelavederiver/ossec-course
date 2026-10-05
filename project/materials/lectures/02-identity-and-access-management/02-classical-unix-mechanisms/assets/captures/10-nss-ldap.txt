@@ -66,7 +66,9 @@ shadow:         files ldap
 ldapuser:x:5000:5000:LDAP User:/home/ldapuser:/bin/bash
 
 # id ldapuser
-uid=5000(ldapuser) gid=5000 groups=5000
+id: cannot find name for group ID 5000
+id: cannot find name for group ID 5000
+uid=5000(ldapuser) gid=5000(5000) groups=5000(5000)
 
 Итог: NSS по /etc/nsswitch.conf сначала ищет в files, затем в ldap.
 Так один каталог LDAP централизует учётные записи многих машин.

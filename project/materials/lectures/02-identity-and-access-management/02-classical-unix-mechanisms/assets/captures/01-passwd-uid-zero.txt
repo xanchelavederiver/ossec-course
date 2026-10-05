@@ -21,7 +21,7 @@ alice:x:0:1001::/home/alice:/bin/bash
 ===== Теперь система считает alice суперпользователем =====
 
 # id alice
-uid=0(root) gid=1001(alice) groups=0(root)
+uid=0(root) gid=1001(alice) groups=1001(alice)
 
 ===== Имя 'alice' сохранилось, но uid=0 => это root в глазах ядра =====
 Вывод: привилегии определяются числовым UID, а не именем пользователя.

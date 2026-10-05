@@ -15,7 +15,8 @@
 
 ~~~bash
 sudo apt-get update
-sudo apt-get install sudo passwd login util-linux openssl python3 shellcheck
+sudo apt-get install sudo passwd login util-linux openssl python3 shellcheck \
+  wtmpdb lastlog2 libpam-wtmpdb libpam-lastlog2
 ~~~
 
 Рабочий каталог — этот каталог assets/demos. Запуск через Bash не требует executable bit:

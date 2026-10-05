@@ -9,7 +9,7 @@ New password: Retype new password: passwd: password updated successfully
 ===== eve пытается выполнить sudo — она НЕ в группе sudo =====
 
 # su - eve -c 'sudo -n id 2>&1' || true
-sudo: a password is required
+sudo: I'm sorry eve. I'm afraid I can't do that
 
 ===== Добавляем eve в группу sudo =====
 
