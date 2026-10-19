@@ -1,8 +1,10 @@
 # Демо к лекции 2
 
 Эталон — одноразовые **Ubuntu Server 26.04 LTS VM**, Bash, локаль вывода C.
-Сценарии 01–04, 07–11 изменяют состояние VM; 05 и 06 работают без root и не меняют учётные записи.
+Сценарии 01–04, 07–13 изменяют состояние VM; 05 и 06 работают без root и не меняют учётные записи.
 Нумерация задаёт учебный каталог, а не зависимости: независимые демо можно запускать отдельно.
+Сценарии 12–13 относятся к подразделу 2.3 лекции (идентификаторы процесса) и получили
+следующие свободные номера, чтобы не перенумеровывать готовые захваты.
 
 ## Подготовка
 
@@ -16,7 +18,7 @@
 ~~~bash
 sudo apt-get update
 sudo apt-get install sudo passwd login util-linux openssl python3 shellcheck \
-  wtmpdb lastlog2 libpam-wtmpdb libpam-lastlog2
+  wtmpdb lastlog2 libpam-wtmpdb libpam-lastlog2 procps gcc
 ~~~
 
 Рабочий каталог — этот каталог assets/demos. Запуск через Bash не требует executable bit:
@@ -48,6 +50,8 @@ OSSEC_DEMO_VM=1 — явное подтверждение оператора, **
 | 09-su-sudo.sh | Сначала пароль sudo, затем -k -n id без запроса | Удаляется только /etc/sudoers.d/ossec-demo и пользователь |
 | 10-ldap-server.sh | TLS, каталог, LDAP user, порт 1389 | Сервер останавливается, временные база/ключи удаляются |
 | 11-ldap-client.sh | getent/id, LDAP bind, login с паролем LDAP | Остановка SSSD, восстановление NSS/PAM, удаление demo config/CA/cache |
+| 12-process-credentials.sh | /proc/PID/status и ps: четыре UID; у setuid-passwd ruid≠euid=0 | Фоновые sleep/passwd завершаются, пользователь удаляется |
+| 13-uid-inheritance.sh | setuid-утилита idprobe: fork наследует suid, execve сохраняет euid, bash сбрасывает euid без -p, setuid-бит скриптов игнорируется | Удаляются /usr/local/bin/ossec-idprobe, ossec-suid-script и пользователь |
 
 Сценарии выводят исполняемые команды и их реальный результат. В слайдах дан
 **ожидаемый иллюстративный вывод**, не протокол проверки на вашей VM.

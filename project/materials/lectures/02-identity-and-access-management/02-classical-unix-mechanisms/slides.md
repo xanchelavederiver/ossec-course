@@ -16,31 +16,14 @@ defaults:
 
 ## Классические механизмы управления пользователями в ОС Unix
 
-Ubuntu Server 26.04 LTS · локальные учётные записи → централизованный каталог
-
 <!--
-90 минут: введение 8; passwd 12; group 8; shadow и криптография 22;
-управление 8; логин и журналы 10; sudo 8; NSS/LDAP 10; атаки и итоги 4.
+~100 минут: введение 8; идентификация 32 (вводные слайды 6, passwd 10, group 7,
+идентификаторы процесса 9); shadow и криптография 22; управление 8; логин и журналы 10;
+sudo 8; NSS/LDAP 8; атаки и итоги 4. При нехватке времени подраздел 2.3 сокращается
+до демо 12 и слайда о правилах наследования (кернел-слайды — для самостоятельного изучения).
 LDAP-VM подготовить заранее. Полный прогон всех демо — дополнительный практикум.
 Терминальные окна на слайдах — захваченный вывод демо-сценариев (assets/captures).
 -->
-
----
-
-# Что будем уметь
-
-- Читать базы пользователей и групп и связывать поля с C API.
-- Отличать имя учётной записи от числовых полномочий процесса.
-- Объяснять проверку пароля, блокировку и срок действия.
-- Управлять пользователями и ограниченными правилами sudo.
-- Читать журналы входов и объяснять, откуда берутся их записи.
-- Проследить запрос от login через NSS к LDAP-каталогу.
-
-<div class="mt-4 p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
-Терминальные окна на слайдах — <b>захваченный вывод</b> демо-сценариев в одноразовой
-среде; UID, даты и хэши зависят от VM. Полные сценарии с защитными проверками —
-<code>assets/demos/01-*.sh … 11-*.sh</code>; инструкция — в их README.
-</div>
 
 ---
 layout: default
@@ -52,27 +35,28 @@ layout: default
 
 <div>
 
-1. Введение: IAM и терминология
-2. Файл паролей `/etc/passwd`
-3. Файлы групп `/etc/group` и `/etc/gshadow`
-4. Теневой файл `/etc/shadow`, структура хэша
-5. Соль, перец, timing-атаки, KDF
+1. Введение: IAM, монитор обращений, история
+2. Идентификация: субъекты, UID/GID, `/etc/passwd`,
+   `/etc/group`, идентификаторы процесса
+3. Теневой файл `/etc/shadow`: структура хэша, соль,
+   timing-атаки, KDF
+4. Управление пользователями: `useradd`/`usermod`/`userdel`
 
 </div>
 <div>
 
-6. Управление пользователями: `useradd`/`usermod`/`userdel`
-7. Процедура логина и журналы входов
-8. `sudo` и `su`
-9. Name Service Switch (NSS) и LDAP
-10. Атаки на аутентификацию; итоги; источники
+5. Процедура логина и журналы входов
+6. `sudo` и `su`
+7. Name Service Switch (NSS) и LDAP
+8. Атаки на аутентификацию; итоги; источники
 
 </div>
 </div>
 
 <div class="abs-b mx-14 my-6 text-xs opacity-60">
-Демонстрации — нумерованные сценарии <code>assets/demos/01-*.sh … 11-*.sh</code>;
-их захваченный вывод — <code>assets/captures/</code>
+Демонстрации — нумерованные сценарии <code>assets/demos/01-*.sh … 13-*.sh</code>;
+их захваченный вывод (одноразовая среда; UID, даты и хэши зависят от VM) —
+<code>assets/captures/</code>
 </div>
 
 ---
@@ -80,82 +64,117 @@ layout: section
 ---
 
 # 1. Введение
-## Терминология и состав механизмов IAM в Unix
+## Основные понятия IAM и монитор обращений
 
 ---
 
-# IAM: определение
-
-<v-clicks>
+# Управление идентификацией и доступом: основные понятия
 
 **IAM** (Identity and Access Management, управление идентификацией и доступом) —
-совокупность процессов и механизмов, обеспечивающих:
+совокупность процессов и механизмов, обеспечивающих идентификацию, аутентификацию
+и авторизацию субъектов доступа.
 
-- **Identification (идентификация)** — сопоставление субъекту уникального идентификатора (имя, **UID**);
-- **Authentication (аутентификация)** — проверка, что субъект тот, за кого себя выдаёт (пароль, ключ, биометрия);
-- **Authorization (авторизация)** — определение прав субъекта на операции над объектами (права доступа, группы, `sudo`).
-
-</v-clicks>
+<BlockFlow class="mt-3 text-sm" :blocks="[
+  { head: 'Идентификация', q: 'кто вы?', sub: '«Я — Иванов»', fill: 'dark' },
+  { head: 'Аутентификация', q: 'докажите!', sub: '«Вот моё удостоверение»', fill: 'dark' },
+  { head: 'Авторизация', q: 'разрешён ли доступ? (тема 3)', sub: '«Проходите в бухгалтерию»', fill: 'accent' },
+]" />
 
 <v-click>
 
-<div class="mt-4 p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
-В классическом Unix «пользователь» для ядра — это <b>число</b> (UID/GID). Имена существуют
-лишь для удобства человека и разрешаются в числа через базы данных пользователей.
+<div class="grid grid-cols-2 gap-2 mt-3 text-xs">
+<div class="p-2 border border-slate-400/40 rounded">
+<b>Субъект доступа</b> <span class="float-right text-amber-600">РД Гостехкомиссии, 1992, п. 6</span><br/>
+<i>«Лицо или процесс, действия которого регламентируются правилами разграничения доступа».</i>
+</div>
+<div class="p-2 border border-slate-400/40 rounded">
+<b>Объект доступа</b> <span class="float-right text-amber-600">РД Гостехкомиссии, 1992, п. 7</span><br/>
+<i>«Единица информационного ресурса автоматизированной системы, доступ к которой
+регламентируется правилами разграничения доступа».</i>
+</div>
+<div class="p-2 border border-slate-400/40 rounded">
+<b>Идентификация</b> <span class="float-right text-amber-600">ГОСТ Р 58833-2020, п. 3.24</span><br/>
+<i>«Действия по присвоению субъектам и объектам доступа идентификаторов и/или по сравнению
+предъявляемого идентификатора с перечнем присвоенных идентификаторов».</i>
+</div>
+<div class="p-2 border border-slate-400/40 rounded">
+<b>Аутентификация</b> <span class="float-right text-amber-600">ГОСТ Р 58833-2020, п. 3.4</span><br/>
+<i>«Действия по проверке подлинности субъекта доступа и/или объекта доступа, а также по проверке
+принадлежности субъекту/объекту доступа предъявленного идентификатора и аутентификационной информации».</i>
+</div>
 </div>
 
 </v-click>
 
 <!--
-Ключевая мысль, к которой вернёмся в демо 01: ядро оперирует числами, имя — вторично.
+Аналогия с проходной. Каждый шаг отвечает на свой вопрос: идентификация — «кто вы?»,
+аутентификация — «докажите», авторизация — «разрешён ли доступ?» (тема 3). Примеры ответов —
+«Я — Иванов», «Вот моё удостоверение», «Проходите в бухгалтерию». Определения — из
+РД Гостехкомиссии 1992 г. и ГОСТ Р 58833-2020. Сегодня — парольная односторонняя
+аутентификация; многофакторная и взаимная — в лекции 3 (PAM).
 -->
 
 ---
 
-# Терминология нормативных документов
+# Монитор обращений: куда встроены механизмы защиты
 
-<div class="text-sm">
+<BlockFlow class="mt-4 mb-4" :blocks="[
+  { head: 'Субъект', sub: 'процесс с UID и GID\nпользователя' },
+  { head: 'Монитор обращений', fill: 'dark', flex: '2.2',
+    sub: 'перехватывает каждое обращение: разрешено ли\nсубъекту это действие с этим объектом?' },
+  { head: 'Объект', sub: 'файл, устройство,\nпамять, процесс' },
+]" :arrows="['обращение', { label: 'разрешено', color: '#2e7d5b' }]" />
 
-| Термин | Определение (сокращённо) | Источник |
-|---|---|---|
-| Субъект доступа | Лицо **или процесс**, действия которого регламентируются правилами разграничения доступа | РД Гостехкомиссии России, 1992 |
-| Объект доступа | Единица информационного ресурса, доступ к которой регламентируется | РД Гостехкомиссии России, 1992 |
-| Идентификация | Присвоение идентификаторов и сравнение предъявленного идентификатора с перечнем присвоенных | ГОСТ Р 58833-2020 |
-| Аутентификация | Проверка принадлежности предъявленного идентификатора субъекту и подтверждение его подлинности | ГОСТ Р 58833-2020 |
+**Чтобы принять решение, монитору нужно знать:**
 
+<div class="grid grid-cols-3 gap-3 mt-2 text-sm">
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 rounded">
+<b>Кто обращается?</b><br/>
+идентификация и аутентификация — <b>эта лекция</b>: монитор должен достоверно знать субъекта
+</div>
+<div class="p-3 border border-slate-400/40 rounded">
+<b>Что разрешено?</b><br/>
+правила разграничения доступа — авторизация, <b>тема 3</b>
+</div>
+<div class="p-3 border border-slate-400/40 rounded">
+<b>Что произошло?</b><br/>
+запись событий в журнал — журналы входов, <b>раздел 5</b>
+</div>
 </div>
 
-<div class="mt-3 text-sm">
+<v-click>
 
-В Linux субъект — это **процесс**: пользователь действует только через процессы,
-а дочерние процессы наследуют UID/GID родителя. Текущие полномочия процесса видны в
-`/proc/PID/status` (строки `Uid:`/`Gid:`).
-
+<div class="mt-3 p-3 border-l-4 border-sky-500 bg-sky-500/10 text-sm">
+Требования к монитору (Андерсон, 1972; TCSEC): <b>вызывается всегда</b> (ни одно обращение
+не проходит мимо), <b>защищён от изменения</b>, <b>достаточно мал</b>, чтобы его можно было
+проанализировать. В профиле защиты ОС ФСТЭК России это отдельная функция безопасности —
+«монитор обращений» (FPT_MTR_EXT.1).
 </div>
 
-<div class="text-xs opacity-70 mt-2">
-Факторы аутентификации: знание (пароль), владение (ключ, токен), биометрия.
-Виды: односторонняя, взаимная, многофакторная (ГОСТ Р 58833-2020). Сегодня — парольная,
-односторонняя; остальные — в лекции 3 (PAM).
-</div>
+</v-click>
+
+<!--
+Монитор обращений (reference monitor) — концепция из отчёта Андерсона (1972): механизм,
+который перехватывает каждое обращение субъекта к объекту и проверяет его по правилам
+разграничения доступа. Субъект в Linux — всегда процесс: он работает с UID и GID
+пользователя, и именно их монитор видит при проверке. Чтобы схема работала, монитору нужно
+достоверно знать, кто перед ним, — это дают идентификация и аутентификация (эта лекция);
+затем нужны правила — авторизация (тема 3); решения записываются в журнал (раздел 5).
+-->
 
 ---
 
 # Краткая история
 
-<div class="text-sm">
-
-| Год | Событие |
-|-----|---------|
-| 1971 | Unix V1: файл `/etc/passwd` с паролями в открытом виде, затем — хэш |
-| 1970-е | Хэш пароля хранится прямо в `/etc/passwd` (читаемом всеми) |
-| 1988 | **Червь Морриса**: атака по словарю на хэши из читаемого `passwd` |
-| ~1987–90 | **Shadow-пароли**: хэш выносится в `/etc/shadow` (0640, root) |
-| 1980-е | **NIS** (Sun, «Yellow Pages») — сетевая база пользователей |
-| 1990-е | **NSS** и **PAM** — модульность источников и методов аутентификации |
-| 1993+ | **LDAP**, позже **Active Directory**, **SSSD** — централизованные каталоги |
-
-</div>
+<Timeline height="13.5em" :items="[
+  { year: '1971', head: 'Unix V1', text: '/etc/passwd: пароли в открытом виде, затем — хэш' },
+  { year: '1970-е', head: 'Хэш в passwd', text: 'хэш пароля — прямо в файле, читаемом всеми' },
+  { year: '1980-е', head: 'NIS', text: 'Sun, «Yellow Pages»: сетевая база пользователей' },
+  { year: '1988', head: 'Червь Морриса', text: 'атака по словарю на хэши из читаемого passwd', hot: true },
+  { year: '~1987–90', head: 'Shadow-пароли', text: 'хэш выносится в /etc/shadow (0640, root)' },
+  { year: '1990-е', head: 'NSS и PAM', text: 'модульность источников и методов аутентификации' },
+  { year: '1993+', head: 'LDAP, AD, SSSD', text: 'централизованные каталоги учётных записей' },
+]" />
 
 <v-click>
 
@@ -196,7 +215,212 @@ flowchart LR
 layout: section
 ---
 
-# 2. Файл паролей
+# 2. Идентификация
+## Субъекты, идентификаторы и базы учётных записей
+
+---
+
+# Субъекты и объекты в Linux
+
+<div class="grid grid-cols-[1.05fr_1fr] gap-6">
+<div>
+
+<BlockFlow class="mb-3" size="0.78em" :blocks="[
+  { head: 'Пользователь', sub: 'bob (UID 1001)' },
+  { head: 'Процесс', sub: 'работает с UID/GID\nпользователя' },
+  { head: 'Объект', sub: 'файл, каталог,\nустройство, процесс' },
+]" />
+
+<v-clicks>
+
+- **Субъект** — пользователь или группа; действует от их имени всегда **процесс**.
+- **Объекты** — файлы, каталоги, устройства (`/dev`), процессы (`/proc`) и др.: почти всё в Linux видно как файл.
+- У каждого объекта есть владелец и права доступа — о них в теме 3.
+
+</v-clicks>
+
+</div>
+<div>
+
+```console
+$ ls -l /etc/hostname /dev/null /dev/tty
+crw-rw-rw- 1 root root 1, 3 … /dev/null
+crw-rw-rw- 1 root root 5, 0 … /dev/tty
+-rw-r--r-- 1 root root   13 … /etc/hostname
+$ ls -ld /home /tmp
+drwxr-xr-x 3 root root 4096 … /home
+drwxrwxrwt 2 root root 4096 … /tmp
+$ sleep 30 & ls -ld /proc/$!
+dr-xr-xr-x 9 bob bob 0 … /proc/13
+$ grep -E '^(Name|Uid|Gid)' /proc/$!/status
+Name:   sleep
+Uid:    1001    1001    1001    1001
+Gid:    1001    1001    1001    1001
+```
+
+<div class="text-xs opacity-70 mt-1">
+Ubuntu Server 26.04 · сеанс пользователя <code>bob</code>. Первая буква вывода
+<code>ls -l</code> — тип объекта: <code>-</code> файл, <code>d</code> каталог,
+<code>c</code> устройство. Почему идентификаторов четыре — подраздел 2.3.
+</div>
+
+</div>
+</div>
+
+<!--
+Объекты в Linux почти всегда видны как файлы: обычные файлы, каталоги, устройства в /dev,
+процессы в /proc. Субъекты — пользователи и группы, но действует от их имени всегда процесс:
+он получает UID и GID пользователя. У фонового sleep пользователя bob в /proc видны
+Uid и Gid 1001. Правило наследования идентификаторов при fork — в подразделе 2.3.
+-->
+
+---
+
+# Пользователи и группы
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-6">
+<div class="text-sm">
+
+<v-clicks>
+
+- В Linux определены **пользователи** (учётные записи) и **группы** пользователей.
+- Каждый пользователь уникально идентифицируется числом — **UID** (User ID).
+- Несколько пользователей могут образовывать **группу**; каждая группа уникально идентифицируется числом — **GID** (Group ID).
+- Группы нужны для **единых правил доступа** сразу для множества пользователей: доступ к каталогу проекта даётся группе `project`, а не каждому сотруднику отдельно (тема 3).
+- Пользователь может состоять **в нескольких группах** одновременно.
+
+</v-clicks>
+
+</div>
+<div>
+
+```mermaid {scale: 0.7}
+flowchart LR
+  bob["bob<br/>UID 1001"] --> gbob["bob · личная<br/>GID 1001"]
+  bob --> gproj["project · общая<br/>GID 1010"]
+  carol["carol<br/>UID 1002"] --> gcarol["carol · личная<br/>GID 1002"]
+```
+
+<div class="text-xs opacity-70 mt-1 text-center">
+<code>bob</code> состоит в двух группах
+</div>
+
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Имя — для людей, число — для ядра:</b> внутри ОС пользователь и группа определяются
+идентификаторами. Сопоставление «имя ↔ число» хранится в базах учётных записей —
+подразделы 2.1 и 2.2.
+</div>
+
+<!--
+Базовые понятия до деталей. Каждый пользователь уникально идентифицируется числом UID,
+каждая группа — числом GID. Группы нужны, чтобы задавать единые правила доступа сразу
+для многих: каталог проекта открывают группе project, а не каждому сотруднику отдельно.
+Справа: у bob две группы — личная и project.
+-->
+
+---
+
+# UID и GID: числовые идентификаторы
+
+<div class="flex gap-1 mt-1 text-center text-xs">
+<div class="flex-[1.4]"><div class="py-2 rounded bg-red-600 text-white font-bold text-sm">0</div><b>root</b><br/>суперпользователь</div>
+<div class="flex-[1.7]"><div class="py-2 rounded bg-slate-700 text-white font-bold text-sm">1–99</div><b>системные</b><br/>одинаковы во всех Debian/Ubuntu</div>
+<div class="flex-[2]"><div class="py-2 rounded bg-slate-700 text-white font-bold text-sm">100–999</div><b>системные</b><br/>создаются пакетами</div>
+<div class="flex-[3]"><div class="py-2 rounded bg-sky-600 text-white font-bold text-sm">1000–59999</div><b>пользователи</b><br/>люди: <code>bob</code>, <code>carol</code>…</div>
+<div class="flex-[2.4]"><div class="py-2 rounded bg-slate-500 text-white font-bold text-sm">60000–65533</div><b>резерв</b><br/>60000–64999 выделяет Debian; выше — резерв</div>
+<div class="flex-[1.2]"><div class="py-2 rounded bg-slate-700 text-white font-bold text-sm">65534</div><b>nobody</b><br/>«никто»</div>
+</div>
+
+<div class="text-xs opacity-60 mt-1 text-center">
+Диапазоны UID — Debian Policy, п. 9.2.2 (показаны основные); Ubuntu наследует их,
+границы обычных пользователей — <code>UID_MIN</code>/<code>UID_MAX</code> в <code>login.defs</code>
+</div>
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-4 mt-3">
+<div>
+
+<TerminalCapture src="captures/02-group-membership.txt" section="3" title="demo 02 · команда id" />
+
+</div>
+<div class="p-3 border border-teal-500/40 rounded text-sm">
+<b>Команда <code>id</code></b> показывает числа и — в скобках — имена; сопоставление
+«имя ↔ число» хранится в <code>/etc/passwd</code> и <code>/etc/group</code>
+(подразделы 2.1 и 2.2).
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-3 p-3 border-l-4 border-red-500 bg-red-500/10 text-sm">
+<b>UID 0 = root</b>: «привилегированные процессы (эффективный UID 0) обходят все проверки
+прав ядра» — capabilities(7). Поэтому вход под root строго ограничивают.
+</div>
+
+</v-click>
+
+<!--
+Диапазоны UID задаёт Debian Policy, п. 9.2.2: 0 — root; 1–99 — системные, одинаковые во всех
+системах; 100–999 — системные, создаются пакетами; 1000–59999 — люди; 60000–64999 выделяет
+проект Debian по мере необходимости, 65000–65533 зарезервированы; 65534 — nobody.
+UID 0 — root: привилегированные процессы обходят все проверки прав ядра, поэтому вход
+под root строго ограничивают.
+-->
+
+---
+
+# Первичная и вторичные группы
+
+<div class="grid grid-cols-2 gap-4 text-sm">
+<div class="p-3 border border-teal-500/40 rounded">
+
+**Первичная группа**
+
+- одна у каждого пользователя: поле GID в `/etc/passwd`;
+- в Debian/Ubuntu по умолчанию — личная группа с тем же именем;
+- группа-владелец новых файлов пользователя.
+
+</div>
+<div class="p-3 border border-sky-500/40 rounded">
+
+**Вторичные (дополнительные) группы**
+
+- определены в файле `/etc/group`;
+- «используются для проверки прав доступа к файлам» — credentials(7);
+- задают единые правила доступа для множества пользователей.
+
+</div>
+</div>
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-4 mt-3">
+<div>
+
+<TerminalCapture src="captures/02-group-membership.txt" section="3" title="demo 02 · id bob" padBottom="2.4em">
+  <TCallout v-click :line="2" :col="15" :span="13" label="первичная группа — GID из /etc/passwd" side="bottom" />
+  <TCallout v-click :line="2" :col="46" :span="26" label="вторичные — из /etc/group" side="top" color="#6cb6ff" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем вывод:</b> <code>gid=1001(bob)</code> — первичная группа; <code>groups=…</code> —
+все группы процесса, включая вторичные <code>adm</code>, <code>sudo</code>, <code>users</code>.
+Соответствующие строки файлов — демо 02 в подразделе 2.2.
+</div>
+</div>
+
+<!--
+У каждого пользователя одна первичная группа — её GID записан в /etc/passwd; от имени этой
+группы создаются новые файлы. Вторичных групп может быть много — они определены в файле
+/etc/group. Ядро проверяет права по всем группам процесса.
+-->
+
+---
+layout: section
+---
+
+# 2.1 Файл паролей
 ## <code>/etc/passwd</code>
 
 ---
@@ -205,28 +429,18 @@ layout: section
 
 Текстовый файл; одна строка — одна учётная запись; **7 полей**, разделённых `:`
 
-```text
-name : passwd : UID : GID : GECOS : home_dir : shell
-  1  :   2    :  3  :  4  :   5   :    6     :   7
-```
-
-<div class="grid grid-cols-2 gap-4 mt-2 text-sm">
-<div>
-
-- **name** — имя для входа
-- **passwd** — исторически хэш; сейчас `x` (хэш в `/etc/shadow`); пустое поле — потенциально беспарольный вход
-- **UID** — числовой идентификатор пользователя
-- **GID** — первичная группа
-
-</div>
-<div>
-
-- **GECOS** — полное имя / комментарий (истор. «General Electric Comprehensive OS»)
-- **home_dir** — домашний каталог
-- **shell** — интерпретатор при входе
-
-</div>
-</div>
+<FieldRecord class="mt-4" size="1.05em" legendSize="0.82em" :cols="2"
+  :fields="['bob', { t: 'x', hot: true }, '1001', '1001', '', '/home/bob', '/bin/bash']"
+  :legend="[
+    '**name** — имя для входа (login name)',
+    { t: '**passwd** — исторически хэш; сейчас `x` (хэш в `/etc/shadow`); пусто — потенциально беспарольный вход', hot: true },
+    '**UID** — числовой идентификатор пользователя',
+    '**GID** — первичная группа',
+    '**GECOS** — полное имя / комментарий (истор. «General Electric Comprehensive OS»)',
+    '**home_dir** — домашний каталог',
+    '**shell** — интерпретатор при входе',
+  ]"
+/>
 
 <div class="text-xs opacity-70 mt-2">
 Поля строки напрямую соответствуют членам структуры <code>struct passwd</code> — см. далее.
@@ -301,25 +515,18 @@ UID→имя (`ls -l`, `ps`, `stat`).
 
 # Червь Морриса и вынесение хэша
 
-<div class="grid grid-cols-2 gap-6 text-sm">
-<div>
+<HistoryNote>
+<b>2 ноября 1988.</b> Червь Морриса — одна из первых крупных сетевых атак. Один из
+векторов — <b>атака по словарю</b> на хэши паролей, взятые прямо из общедоступного
+<code>/etc/passwd</code> (Spafford, 1988). Урок: хэш в читаемом всеми файле —
+приглашение к офлайн-перебору.
+</HistoryNote>
 
-**2 ноября 1988.** Червь Морриса — одна из первых крупных сетевых атак.
-Один из векторов — **атака по словарю** на хэши паролей, взятые прямо из
-общедоступного `/etc/passwd` (Spafford, 1988).
+<div class="text-sm mt-3">
 
-Урок: хэш в читаемом всеми файле — приглашение к офлайн-перебору.
+**Решение — shadow-пароли:** в `/etc/passwd` во 2-м поле остаётся `x`; хэш переносится
+в `/etc/shadow` с правами `0640 root:shadow`; туда же добавляются параметры парольной политики.
 
-</div>
-<div>
-
-**Решение — shadow-пароли:**
-
-- в `/etc/passwd` во 2-м поле остаётся `x`;
-- хэш переносится в `/etc/shadow` с правами `0640 root:shadow`;
-- туда же добавляются параметры парольной политики.
-
-</div>
 </div>
 
 ```text
@@ -445,32 +652,22 @@ root запустить службу от этого UID.
 layout: section
 ---
 
-# 3. Файлы групп
+# 2.2 Файлы групп
 ## <code>/etc/group</code> и <code>/etc/gshadow</code>
 
 ---
 
 # `/etc/group`: четыре поля
 
-```text
-group_name : passwd : GID : user1,user2,...
-     1     :   2    :  3  :      4
-```
-
-<div class="grid grid-cols-2 gap-4 mt-2 text-sm">
-<div>
-
-- **group_name** — имя группы
-- **passwd** — пароль группы: обычно `x` (→ `/etc/gshadow`) или пусто
-
-</div>
-<div>
-
-- **GID** — числовой идентификатор группы
-- **список** — **дополнительные** (вторичные) участники, через запятую
-
-</div>
-</div>
+<FieldRecord class="mt-4" size="1.1em" legendSize="0.85em" :cols="2"
+  :fields="['project', 'x', '1010', { t: 'bob,carol', hot: true }]"
+  :legend="[
+    '**group_name** — имя группы',
+    '**passwd** — пароль группы: обычно `x` (→ `/etc/gshadow`) или пусто',
+    '**GID** — числовой идентификатор группы',
+    { t: '**список** — **дополнительные** (вторичные) участники, через запятую', hot: true },
+  ]"
+/>
 
 <div class="mt-3 p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
 Первичная группа пользователя задаётся <b>не здесь</b>, а 4-м полем <code>/etc/passwd</code>
@@ -533,18 +730,15 @@ struct group *getgrgid(gid_t gid);
 **Пароль группы** позволяет пользователю, **не входящему** в группу, временно
 получить её командой `newgrp(1)`/`sg(1)`, введя пароль. Формат — **4 поля**:
 
-```text
-group_name : пароль(хэш) : администраторы : члены
-     1      :     2       :       3        :   4
-```
-
-<div class="text-sm mt-1">
-
-- **2** — хэш пароля группы; `!`/пусто — вход по паролю запрещён (доступ только участникам);
-- **3** — администраторы группы (меняют пароль и состав, `gpasswd -A`);
-- **4** — члены (должны соответствовать списку в `/etc/group`).
-
-</div>
+<FieldRecord class="mt-3" size="1.05em" legendSize="0.82em" :cols="2"
+  :fields="['project', { t: '!', hot: true }, '', 'bob,carol']"
+  :legend="[
+    '**group_name** — имя группы',
+    { t: '**пароль** — хэш; `!`/пусто — вход по паролю запрещён (доступ только участникам)', hot: true },
+    '**администраторы** — меняют пароль и состав (`gpasswd -A`)',
+    '**члены** — должны соответствовать списку в `/etc/group`',
+  ]"
+/>
 
 ```console
 $ stat -c '%a %U:%G %n' /etc/gshadow
@@ -583,37 +777,477 @@ $ stat -c '%a %U:%G %n' /etc/gshadow
 layout: section
 ---
 
-# 4. Теневой файл паролей
+# 2.3 Идентификаторы процесса
+## UID, EUID, SUID, FSUID и их GID-аналоги
+
+---
+
+# Четыре идентификатора процесса
+
+<div class="text-sm">
+
+| Идентификатор | Название | Роль |
+|---|---|---|
+| **ruid** / rgid | real (реальный) | кто запустил процесс; наследуется от родителя |
+| **euid** / egid | effective (эффективный) | по нему ядро проверяет привилегии процесса |
+| **suid** / sgid | saved (сохранённый) | копия euid на момент `execve(2)`: позволяет временно сбросить привилегии и вернуть их |
+| **fsuid** / fsgid | filesystem (файловый) | используется в проверках доступа к файлам; сейчас всегда следует за euid (`setfsuid(2)` — исторический) |
+
+</div>
+
+<v-click>
+
+<div class="mt-3 p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
+В <code>/proc/PID/status</code> строки <code>Uid:</code> и <code>Gid:</code> содержат
+четыре колонки <b>именно в этом порядке</b>: real, effective, saved, filesystem.
+Строка <code>Groups:</code> — список дополнительных (вторичных) групп процесса.
+</div>
+
+</v-click>
+
+<v-click>
+
+<div class="mt-2 text-sm">
+
+У обычного процесса все четыре значения совпадают. Расходятся они после запуска
+**setuid/setgid-программы** (например, `passwd`) или явных вызовов `setuid(2)`,
+`seteuid(2)`, `setresuid(2)`.
+
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-2">
+Источник: <a href="https://man7.org/linux/man-pages/man7/credentials.7.html">credentials(7)</a>.
+</div>
+
+<!--
+Терминология: у процесса не один UID, а четыре (и столько же GID). Решения о правах ядро
+принимает по effective (для файлов — по filesystem, который сегодня совпадает с effective).
+Real хранит, кто запустил. Saved нужен, чтобы программа могла временно понизить привилегии
+и затем вернуть их — покажем в демо 13.
+-->
+
+---
+
+# Демо 12: идентификаторы процесса в `/proc`
+
+<TerminalCapture src="captures/12-process-credentials.txt" section="1" lines="1-4" title="demo 12 · процесс root" />
+
+<div class="mt-3" />
+
+<TerminalCapture src="captures/12-process-credentials.txt" section="2" title="demo 12 · процесс пользователя bob" padBottom="2.4em">
+  <TCallout v-click :line="5" :col="9" :span="28" label="real · effective · saved · filesystem — у обычного процесса все равны" side="right" />
+  <TCallout v-click :line="10" :col="10" :span="22" label="те же значения показывает ps" side="bottom" color="#6cb6ff" />
+</TerminalCapture>
+
+<div class="text-xs opacity-70 mt-1">
+<b>12-process-credentials.sh</b>. <code>/proc/PID/status</code> — четыре колонки
+<code>Uid:</code>/<code>Gid:</code>; <code>ps -o ruid,euid,suid,fsuid,…</code> выводит их
+по отдельности.
+</div>
+
+<!--
+Сначала root-оболочка: четыре нуля. Затем фоновый sleep пользователя bob: четыре 1001.
+Пока скучно — все значения совпадают; интересно станет на setuid-программе.
+-->
+
+---
+
+# Демо 12: setuid-программа работает с чужим euid
+
+<TerminalCapture src="captures/12-process-credentials.txt" section="3" lines="1-13" title="demo 12 · passwd, запущенный bob" padBottom="2.4em">
+  <TCallout v-click :line="2" :col="4" :span="1" label="setuid-бит: s вместо x" side="bottom" />
+  <TCallout v-click :line="8" :col="17" :span="17" label="euid/suid/fsuid = 0 — владелец файла" side="right" color="#ff7a85" />
+  <TCallout v-click :line="13" :col="10" :span="4" label="ruid: кто запустил" side="bottom" />
+</TerminalCapture>
+
+<div class="mt-2 text-sm">
+
+`passwd(1)` должен записывать в недоступный пользователю `/etc/shadow`, поэтому файл
+`/usr/bin/passwd` имеет **setuid-бит**: при `execve(2)` **euid** (и вслед за ним suid и fsuid)
+становится равным **владельцу файла** — root. **ruid** остаётся прежним: по нему `passwd`
+знает, чей пароль менять.
+
+</div>
+
+<!--
+Это ответ на вопрос «зачем процессу отдельные real и effective»: setuid-программа действует
+с правами владельца файла, но помнит реального пользователя. Как именно ядро выставляет
+эти значения при execve — в подразделе про исходный код ядра.
+-->
+
+---
+
+# `fork(2)` и `execve(2)`: правила наследования
+
+<div class="p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
+«Дочерний процесс, созданный <code>fork(2)</code>, наследует копии идентификаторов
+пользователя и групп родителя» — credentials(7).
+</div>
+
+<div class="text-sm mt-3">
+
+| Событие | ruid | euid | suid |
+|---|---|---|---|
+| `fork(2)` | копия | копия | копия |
+| `execve(2)` обычного файла | не меняется | не меняется | не меняется |
+| `execve(2)` файла с setuid-битом | не меняется | **владелец файла** | **:= новый euid** |
+| `seteuid(x)` | — | `x` | — |
+
+</div>
+
+<v-click>
+
+<div class="mt-3 p-3 border-l-4 border-amber-500 bg-amber-500/10 text-sm">
+<b>Зачем saved UID:</b> setuid-программа может понизить привилегии на время опасных операций —
+<code>seteuid(ruid)</code> — и затем вернуть их: <code>seteuid(suid)</code>. Непривилегированному
+процессу ядро разрешает установить euid только в значение ruid или suid, поэтому без
+сохранённого UID возврат был бы невозможен.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-2">
+Источники: <a href="https://man7.org/linux/man-pages/man7/credentials.7.html">credentials(7)</a>,
+<a href="https://man7.org/linux/man-pages/man2/seteuid.2.html">seteuid(2)</a>,
+<a href="https://man7.org/linux/man-pages/man2/execve.2.html">execve(2)</a>.
+</div>
+
+<!--
+Два механизма передачи: fork копирует всё, execve сохраняет всё, кроме setuid/setgid-файлов.
+Правило seteuid для непривилегированных: целевое значение — из множества {ruid, suid}.
+Это и есть «качели привилегий» классических setuid-программ.
+-->
+
+---
+
+# Демо 13: `fork` наследует все идентификаторы
+
+<TerminalCapture src="captures/13-uid-inheritance.txt" section="2" title="demo 13 · setuid-утилита idprobe (печатает getresuid)" highlight="4-5" padBottom="2.4em">
+  <TCallout v-click :line="2" :col="42" :span="6" label="setuid-бит дал euid=0" side="top" />
+  <TCallout v-click :line="4" :col="32" :span="26" label="после fork — копии, включая suid=0" side="right" />
+  <TCallout v-click :line="6" :col="42" :span="6" label="saved UID: оба процесса вернули euid=0" side="bottom" color="#ff7a85" />
+</TerminalCapture>
+
+<div class="mt-2 text-sm">
+
+Родитель понизил привилегии (`seteuid(ruid)`) **до** `fork(2)` — потомок унаследовал
+пониженный euid, **но и suid=0 тоже**: обоим достаточно `seteuid(0)`, чтобы вернуть права.
+Сброс привилегий «насовсем» — только `setuid(2)`/`setresuid(2)`, затирающие все три значения.
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+<b>13-uid-inheritance.sh</b>: компилирует setuid-утилиту <code>idprobe</code> и прогоняет
+крайние случаи наследования.
+</div>
+
+<!--
+Классическая ошибка: программа «сбросила привилегии» через seteuid и форкает воркеров,
+считая их непривилегированными. Saved UID унаследован — любой воркер может вернуть root.
+-->
+
+---
+
+# Демо 13: `execve` и оболочки
+
+<div class="grid grid-cols-1 gap-3">
+
+<TerminalCapture src="captures/13-uid-inheritance.txt" section="3" title="demo 13 · execve без setuid-бита" padBottom="2.4em">
+  <TCallout v-click :line="3" :col="29" :span="12" label="обычный execve сохранил euid=0" side="bottom" />
+</TerminalCapture>
+
+<TerminalCapture src="captures/13-uid-inheritance.txt" section="4" title="demo 13 · крайний случай: bash" padBottom="2.4em">
+  <TCallout v-click :line="3" :col="44" :span="0" label="bash сам сбросил euid (нет euid=0)" side="right" />
+  <TCallout v-click :line="7" :col="29" :span="12" label="bash -p сохраняет euid" side="bottom" color="#ff7a85" />
+</TerminalCapture>
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+Ядро при <code>execve(2)</code> без setuid-бита идентификаторы не трогает, но <b>bash</b>
+при euid ≠ ruid сам выравнивает euid по ruid — защита от случайного запуска оболочки
+с повышенными правами; флаг <code>-p</code> (privileged) отключает её — bash(1).
+</div>
+
+<!--
+Первый запуск: execve(id) — ядро ничего не сбрасывает, id честно показывает euid=0(root).
+Второй: тот же трюк с bash не работает — это политика самой оболочки, не ядра. Многие
+«неожиданные» потери привилегий в setuid-обёртках объясняются именно этим.
+-->
+
+---
+
+# Демо 13: setuid-бит на скрипте игнорируется
+
+<TerminalCapture src="captures/13-uid-inheritance.txt" section="5" lines="1-9" title="demo 13 · крайний случай: скрипт с setuid-битом" padBottom="2.4em">
+  <TCallout v-click :line="6" :col="63" :span="0" label="setuid-бит установлен" side="right" />
+  <TCallout v-click :line="9" :col="1" :span="44" label="привилегий нет: ядро игнорирует setuid у скриптов" side="bottom" color="#ff7a85" />
+</TerminalCapture>
+
+<div class="mt-2 text-sm">
+
+Для интерпретируемых файлов (`#!`) ядро **игнорирует setuid/setgid-биты**: исполняется
+не сам скрипт, а интерпретатор, и между открытием файла ядром и его чтением интерпретатором
+возможна подмена (race condition). Привилегированные обёртки делают бинарными — или
+используют `sudo`.
+
+</div>
+
+<!--
+Исторически setuid-скрипты были источником уязвимостей (гонка между execve и открытием
+скрипта интерпретатором), поэтому Linux просто игнорирует бит на файлах с shebang.
+-->
+
+---
+
+# Исходный код ядра: `struct cred`
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4">
+<div>
+
+```c
+/* include/linux/cred.h, строки 111–138 (сокращено) */
+struct cred {
+	atomic_long_t	usage;
+	kuid_t		uid;	 /* real UID of the task */
+	kgid_t		gid;	 /* real GID of the task */
+	kuid_t		suid;	 /* saved UID of the task */
+	kgid_t		sgid;	 /* saved GID of the task */
+	kuid_t		euid;	 /* effective UID of the task */
+	kgid_t		egid;	 /* effective GID of the task */
+	kuid_t		fsuid;	 /* UID for VFS ops */
+	kgid_t		fsgid;	 /* GID for VFS ops */
+	/* … capabilities, keyrings, LSM, user_ns … */
+	struct group_info *group_info; /* supplementary groups */
+} __randomize_layout;
+```
+
+</div>
+<div class="text-sm">
+
+- Все идентификаторы процесса живут в одной структуре **`struct cred`** — вместе с capabilities и дополнительными группами (`group_info`).
+- `task_struct` каждого процесса держит указатель на **неизменяемый** `cred`: смена идентификаторов — это подготовка новой копии (`prepare_creds`) и её атомарная фиксация (`commit_creds`).
+- Именно эти поля показывают `/proc/PID/status` и `ps`.
+
+</div>
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+Linux v6.18 (LTS):
+<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/cred.h#L111">include/linux/cred.h#L111</a>
+(поля uid…fsgid — строки 113–121).
+</div>
+
+<!--
+Подраздел «исходный код ядра»: смотрим, как то, что мы видели в /proc, определено в ядре.
+Comments в struct cred дословно повторяют терминологию credentials(7): real/saved/effective/VFS.
+-->
+
+---
+
+# Исходный код ядра: выбор эффективного UID
+
+<div class="grid grid-cols-2 gap-4">
+<div>
+
+```c
+/* include/linux/cred.h, строки 352–366 */
+#define current_cred_xxx(xxx)	\
+({				\
+	current_cred()->xxx;	\
+})
+
+#define current_uid()	(current_cred_xxx(uid))
+#define current_euid()	(current_cred_xxx(euid))
+/* … */
+#define current_fsuid()	(current_cred_xxx(fsuid))
+```
+
+</div>
+<div>
+
+```c
+/* kernel/sys.c, строки 1027–1038 */
+SYSCALL_DEFINE0(getuid)
+{
+	/* Only we change this so SMP safe */
+	return from_kuid_munged(
+		current_user_ns(), current_uid());
+}
+
+SYSCALL_DEFINE0(geteuid)
+{
+	/* Only we change this so SMP safe */
+	return from_kuid_munged(
+		current_user_ns(), current_euid());
+}
+```
+
+</div>
+</div>
+
+<div class="mt-3 text-sm">
+
+`current_euid()` выбирает поле `euid` из `cred` **текущего** процесса; так реализованы
+системные вызовы `getuid(2)`/`geteuid(2)`. Проверки привилегий (`capable()`) используют
+euid-набор, проверки доступа к файлам — `current_fsuid()`.
+
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/cred.h#L352">cred.h#L352</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/sys.c#L1033">sys.c#L1033</a>.
+</div>
+
+<!--
+Макрос current_cred_xxx — «выбор поля из cred текущего процесса». from_kuid_munged
+переводит внутренний kuid_t в число для пользовательского пространства с учётом
+user namespace — поэтому в контейнере вы можете видеть другой UID, чем видит ядро.
+-->
+
+---
+
+# Исходный код ядра: наследование при `fork`
+
+<div class="grid grid-cols-2 gap-4">
+<div>
+
+```c
+/* kernel/fork.c, строка 2046:
+ * copy_process() — создание процесса */
+retval = copy_creds(p, clone_flags);
+```
+
+```c
+/* kernel/cred.c, строки 206–219:
+ * prepare_creds() — копия cred вызывающего */
+	old = task->cred;
+	memcpy(new, old, sizeof(struct cred));
+```
+
+</div>
+<div>
+
+```c
+/* kernel/cred.c, строки 290–344 (сокращено) */
+int copy_creds(struct task_struct *p,
+	       u64 clone_flags)
+{
+	struct cred *new;
+	/* поток (CLONE_THREAD):
+	 * разделяет cred с родителем */
+	if (clone_flags & CLONE_THREAD) {
+		p->real_cred =
+			get_cred_many(p->cred, 2);
+		return 0;
+	}
+	new = prepare_creds(); /* копия */
+	/* … user namespace, keyrings … */
+	p->cred = p->real_cred = get_cred(new);
+	return 0;
+}
+```
+
+</div>
+</div>
+
+<div class="mt-2 text-sm">
+
+Наследование из credentials(7) — это один `memcpy`: новый процесс получает **побайтовую
+копию** `struct cred` родителя (все UID/GID, capabilities, группы). Поток внутри процесса
+cred не копирует, а разделяет.
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/fork.c#L2046">fork.c#L2046</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/cred.c#L290">cred.c#L290</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/cred.c#L219">cred.c#L219</a>.
+</div>
+
+<!--
+Вся «магия» наследования — memcpy в prepare_creds. Отсюда же видно отличие потока от
+процесса: CLONE_THREAD не копирует cred вообще. Это код, который выполнился в демо 13
+между строками «after seteuid(ruid)» и «child after fork».
+-->
+
+---
+
+# Исходный код ядра: setuid-бит при `execve`
+
+```c
+/* fs/exec.c, строки 1534–1584 (сокращено): вызывается из execve(2) */
+static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
+{
+	/* Handle suid and sgid on files */
+	if (!mnt_may_suid(file->f_path.mnt))	/* nosuid-монтирование */
+		return;
+	if (task_no_new_privs(current))		/* prctl NO_NEW_PRIVS */
+		return;
+	if (mode & S_ISUID) {
+		bprm->per_clear |= PER_CLEAR_ON_SETID;
+		bprm->cred->euid = vfsuid_into_kuid(vfsuid); /* euid := владелец файла */
+	}
+	/* аналогично S_ISGID → egid */
+}
+```
+
+```c
+/* security/commoncap.c, строки 952–953: cap_bprm_creds_from_file() */
+	new->suid = new->fsuid = new->euid;
+	new->sgid = new->fsgid = new->egid;
+```
+
+<div class="mt-2 text-sm">
+
+При `execve(2)` setuid-файла ядро меняет **только euid** — на владельца файла; затем
+suid и fsuid выравниваются по новому euid. Здесь же видно, когда бит игнорируется:
+монтирование с `nosuid` и режим `no_new_privs`.
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/fs/exec.c#L1534">exec.c#L1534</a>
+(присваивание euid — строка 1577) ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/security/commoncap.c#L953">commoncap.c#L953</a>.
+</div>
+
+<!--
+Замыкаем картину демо 12: euid=0 у passwd появился в bprm_fill_uid, а suid=fsuid=euid —
+в cap_bprm_creds_from_file. Отсюда же два практических способа «выключить» setuid:
+смонтировать ФС с nosuid или установить процессу no_new_privs.
+-->
+
+---
+layout: section
+---
+
+# 3. Теневой файл паролей
 ## <code>/etc/shadow</code> и структура хэша
 
 ---
 
 # `/etc/shadow`: девять полей
 
-```text
-name : hash : lstchg : min : max : warn : inact : expire : reserved
-  1  :  2   :   3    :  4  :  5  :  6   :   7   :   8    :    9
-```
-
-<div class="grid grid-cols-2 gap-4 text-xs mt-1">
-<div>
-
-- **1 name** — имя пользователя
-- **2 hash** — `$id$salt$hash`; `!`/`*` — вход по паролю запрещён; пусто — без пароля
-- **3 lstchg** — день последней смены (от 1970-01-01 UTC)
-- **4 min** — мин. дней до следующей смены
-- **5 max** — макс. срок действия пароля
-
-</div>
-<div>
-
-- **6 warn** — за сколько дней предупреждать
-- **7 inact** — дней «неактивности» после истечения до блокировки
-- **8 expire** — абсолютный день блокировки УЗ (от 1970)
-- **9** — зарезервировано
-
-</div>
-</div>
+<FieldRecord class="mt-2" size="0.92em" legendSize="0.72em" :cols="3"
+  :fields="['bob', { t: '$y$j9T$BtuO…$pMjx…', hot: true }, '20744', '0', '99999', '7', '', '', '']"
+  :legend="[
+    '**name** — имя пользователя',
+    { t: '**hash** — `$id$salt$hash`; `!`/`*` — вход по паролю запрещён; пусто — без пароля', hot: true },
+    '**lstchg** — день последней смены (от 1970-01-01 UTC)',
+    '**min** — мин. дней до следующей смены',
+    '**max** — макс. срок действия пароля',
+    '**warn** — за сколько дней предупреждать',
+    '**inact** — дней «неактивности» после истечения до блокировки',
+    '**expire** — абсолютный день блокировки УЗ (от 1970)',
+    'зарезервировано',
+  ]"
+/>
 
 ```c
 #include <shadow.h>
@@ -757,17 +1391,24 @@ min/max/warn/inactive — <b>интервалы</b>; expire — день кал�
 
 Формат **modular crypt format** (`crypt(5)`):
 
-```text
-password + salt + cost parameters → password KDF → verifier
+<BlockFlow class="mt-3" size="0.85em" :blocks="[
+  { head: 'пароль + соль + параметры', sub: 'соль и параметры стоимости — открытые' },
+  { head: 'парольная KDF', fill: 'dark', sub: 'crypt(3): SHA-512-crypt, yescrypt…' },
+  { head: 'verifier', sub: 'строка во 2-м поле /etc/shadow' },
+]" />
 
-$6$rounds=100000$CourseSalt$<86 символов>
- │       │           │              └─ результат SHA-512-crypt
- │       │           └─ открытая соль
- │       └─ параметр стоимости (есть не у всех алгоритмов)
- └─ идентификатор алгоритма
+<FieldRecord class="mt-4" sep="" size="0.95em"
+  :fields="[
+    { t: '$6$', hot: true, label: 'идентификатор алгоритма' },
+    { t: 'rounds=100000$', label: 'параметр стоимости (есть не у всех)' },
+    { t: 'CourseSalt$', label: 'открытая соль' },
+    { t: '<86 символов>', label: 'результат SHA-512-crypt' },
+  ]"
+/>
 
-$y$j9T$<salt>$<digest>    # типичный формат yescrypt
-```
+<div class="text-xs opacity-70 mt-1">
+Типичный формат yescrypt: <code>$y$j9T$&lt;salt&gt;$&lt;digest&gt;</code>.
+</div>
 
 <div class="text-sm mt-2">
 
@@ -999,7 +1640,7 @@ def unsafe(candidate, secret):
 layout: section
 ---
 
-# 5. Создание, редактирование
+# 4. Создание, редактирование
 ## и удаление пользователей
 
 ---
@@ -1173,7 +1814,7 @@ PAM mkhomedir может копировать шаблон при первом �
 <div class="mt-4 p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
 Ответ Unix на первые две проблемы — <b>PAM</b> (лекция 3): модульная точка
 аутентификации, отделённая от приложений. Ответ на третью — <b>NSS</b> и сетевые
-каталоги (раздел 9 сегодня).
+каталоги (раздел 7 сегодня).
 </div>
 
 </v-click>
@@ -1182,7 +1823,7 @@ PAM mkhomedir может копировать шаблон при первом �
 layout: section
 ---
 
-# 6. Процедура логина
+# 5. Процедура логина
 ## и журналы входов
 
 ---
@@ -1330,7 +1971,7 @@ struct utmp {
 layout: section
 ---
 
-# 7. Повышение привилегий
+# 6. Повышение привилегий
 ## <code>sudo</code> и <code>su</code>
 
 ---
@@ -1447,7 +2088,7 @@ alice ALL = (ALL) NOPASSWD: /usr/bin/systemctl restart nginx
 layout: section
 ---
 
-# 8. Name Service Switch
+# 7. Name Service Switch
 ## NSS и централизованные каталоги
 
 ---
@@ -1687,7 +2328,7 @@ $ pwd
 layout: section
 ---
 
-# 9. Атаки на аутентификацию
+# 8. Атаки на аутентификацию
 
 ---
 
@@ -1724,8 +2365,8 @@ layout: section
 
 <div class="mt-3 p-3 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
 Каждому вектору соответствует механизм из лекции: уникальные пароли и их хэширование
-дорогой KDF с солью (разделы 4–5), ограничение попыток и политика (PAM, лекция 3),
-закрытое хранение verifier (shadow), аудит попыток (журналы, раздел 6).
+дорогой KDF с солью (раздел 3), ограничение попыток и политика (PAM, лекция 3),
+закрытое хранение verifier (shadow), аудит попыток (журналы, раздел 5).
 Уязвима бывает и сама программа входа — regreSSHion, CVE-2024-6387 в OpenSSH.
 </div>
 

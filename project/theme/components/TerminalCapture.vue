@@ -38,6 +38,12 @@ const props = defineProps({
   fontSize: { type: String, default: '' },
   /** Extra bottom padding, e.g. "2.2em" — room for labels below the last line. */
   padBottom: { type: String, default: '' },
+  /**
+   * Colour plain transcripts like a standard bash session: green "$ " /
+   * red "# " prompt, bold command, muted trailing "# …" or "<-- …" comment.
+   * Lines that carry their own ANSI SGR codes are rendered as recorded.
+   */
+  colorize: { type: Boolean, default: true },
 })
 
 // Every capture of every lecture; tiny text files, so eager import is fine.
@@ -204,12 +210,39 @@ const parsedLines = computed(() => {
     return { cls, style }
   }
 
+  // A transcript without colour codes, shown as a standard bash session:
+  // prompt + bold command (with an optional muted trailing comment), plain output.
+  function colorizeLine(line) {
+    const m = line.match(/^([\w.@~-]*[$#]) (.*)$/)
+    if (!m)
+      return [{ text: line || ' ', cls: [], style: {} }]
+    const segs = [{ text: `${m[1]} `, cls: [m[1].endsWith('#') ? 'tc-prompt-r' : 'tc-prompt-u'], style: {} }]
+    const rest = m[2]
+    const cm = rest.match(/\s{2,}(?:#\s|<--).*$/)
+    if (cm && cm.index > 0) {
+      segs.push({ text: rest.slice(0, cm.index), cls: ['tc-cmd'], style: {} })
+      segs.push({ text: rest.slice(cm.index), cls: ['tc-note'], style: {} })
+    }
+    else {
+      segs.push({ text: rest || ' ', cls: ['tc-cmd'], style: {} })
+    }
+    return segs
+  }
+
   return shownLines.value.map((line) => {
     // Carriage-return overwrite semantics: keep what the terminal would show.
     const visible = line.split('\r').pop() ?? ''
     const cleaned = visible
       .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '') // OSC (window titles etc.)
       .replace(/\x1B\[[0-9;?]*[A-LN-Za-ln-z]/g, '')      // CSI other than SGR (m)
+    if (props.colorize && !cleaned.includes('\x1B')) {
+      let col = 0
+      return colorizeLine(cleaned).map((seg) => {
+        const text = expandTabsAt(seg.text, col)
+        col += text.length
+        return { ...seg, text }
+      })
+    }
     const segments = []
     let last = 0
     const re = /\x1B\[([0-9;]*)m/g
