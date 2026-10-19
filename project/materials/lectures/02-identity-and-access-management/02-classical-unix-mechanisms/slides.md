@@ -52,7 +52,7 @@ layout: section
 совокупность процессов и механизмов, обеспечивающих идентификацию, аутентификацию
 и авторизацию субъектов доступа.
 
-<BlockFlow class="mt-3 text-sm" :blocks="[
+<BlockFlow class="mt-3" :blocks="[
   { head: 'Идентификация', q: 'кто вы?', sub: '«Я — Иванов»', fill: 'dark' },
   { head: 'Аутентификация', q: 'докажите!', sub: '«Вот моё удостоверение»', fill: 'dark' },
   { head: 'Авторизация', q: 'разрешён ли доступ? (лекция 3)', sub: '«Проходите в бухгалтерию»', fill: 'accent' },
@@ -101,13 +101,13 @@ layout: section
 <BlockFlow class="mt-4 mb-4" :blocks="[
   { head: 'Субъект', sub: 'процесс с UID и GID\nпользователя' },
   { head: 'Монитор обращений', fill: 'dark', flex: '2.2',
-    sub: 'перехватывает каждое обращение: разрешено ли\nсубъекту это действие с этим объектом?' },
+    sub: 'перехватывает каждое обращение:\nразрешено ли субъекту это действие с этим объектом?' },
   { head: 'Объект', sub: 'файл, устройство,\nпамять, процесс' },
 ]" :arrows="['обращение', { label: 'разрешено', color: '#2e7d5b' }]" />
 
 **Чтобы принять решение, монитору нужно знать:**
 
-<div class="grid grid-cols-3 gap-3 mt-2 text-sm">
+<div class="grid grid-cols-3 gap-3 mt-2">
 <div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 rounded">
 <b>Кто обращается?</b><br/>
 идентификация и аутентификация — <b>эта лекция</b>: монитор должен достоверно знать субъекта
@@ -124,7 +124,7 @@ layout: section
 
 <v-click>
 
-<div class="mt-3 p-3 border-l-4 border-sky-500 bg-sky-500/10 text-sm">
+<div class="mt-3 p-3 border-l-4 border-sky-500 bg-sky-500/10">
 Требования к монитору (Андерсон, 1972; TCSEC): <b>вызывается всегда</b> (ни одно обращение
 не проходит мимо), <b>защищён от изменения</b>, <b>достаточно мал</b>, чтобы его можно было
 проанализировать. В профиле защиты ОС ФСТЭК России это отдельная функция безопасности —
@@ -161,7 +161,7 @@ layout: section
 
 <v-click>
 
-<HistoryNote class="mt-2 text-sm">
+<HistoryNote class="mt-2">
 Пароли скомпрометировали почти сразу: в 1966 г. из-за ошибки администратора CTSS
 файл паролей попал в сообщение дня, а охотники за машинным временем научились его
 распечатывать. Урок повторился в 1988-м — уже со словарным перебором хэшей.
@@ -171,7 +171,7 @@ layout: section
 
 <v-click>
 
-<div class="mt-2 text-sm opacity-80">
+<div class="mt-2">
 Классические механизмы — <b>файловые</b>: <code>/etc/passwd</code>, <code>/etc/group</code>,
 <code>/etc/shadow</code>, <code>/etc/gshadow</code>. Они остаются базовым уровнем даже при
 использовании сетевых каталогов.
@@ -211,7 +211,7 @@ layout: section
 # Субъекты и объекты в Linux
 
 <div class="grid grid-cols-[1.15fr_1fr] gap-5">
-<div class="text-sm so-left">
+<div class="so-left">
 
 <BlockFlow class="mb-2" size="0.88em" :blocks="[
   { head: 'Пользователь', sub: 'bob (UID 1001)' },
@@ -233,7 +233,7 @@ layout: section
 </div>
 <div>
 
-<TerminalCapture src="captures/14-object-types.txt" section="1" title="Ubuntu Server 26.04 · сеанс пользователя bob" fontSize="0.52em" />
+<TerminalCapture src="captures/14-object-types.txt" section="1" title="Ubuntu Server 26.04 · сеанс пользователя bob" fontSize="0.52rem" />
 
 <div class="text-xs opacity-70 mt-1">
 Почему идентификаторов <code>Uid</code> и <code>Gid</code> по четыре — подраздел 2.4.
@@ -264,7 +264,7 @@ layout: section
 # Пользователи и группы
 
 <div class="grid grid-cols-[1.15fr_1fr] gap-6">
-<div class="text-sm">
+<div>
 
 - В Linux определены **пользователи** (учётные записи) и **группы** пользователей.
 - Каждый пользователь уникально идентифицируется числом — **UID** (User ID).
@@ -318,7 +318,7 @@ layout: section
 
 <style>
 /* Диаграмма «пользователь → группы» в стиле BlockFlow (слайд «Субъекты и объекты»). */
-.ug-map { display: flex; flex-direction: column; gap: 0.9em; margin-top: 0.5em; font-size: 0.78em; text-align: center; }
+.ug-map { display: flex; flex-direction: column; gap: 0.9em; margin-top: 0.5em; font-size: 0.78rem; text-align: center; }
 .ug-row { display: flex; align-items: center; }
 .ug-u { flex: 0 0 7.5em; align-self: stretch; }
 .ug-links { display: flex; flex-direction: column; gap: 0.55em; flex: 1; min-width: 0; }
@@ -360,7 +360,7 @@ layout: section
 
 </div>
 
-<InfoCard icon="id-card" head="Команда id" class="text-sm">
+<InfoCard icon="id-card" head="Команда id">
 
 показывает числа и — в скобках — имена (<Man p="id(1)" />); сопоставление
 «имя ↔ число» хранится в <code>/etc/passwd</code> и <code>/etc/group</code>.
@@ -370,7 +370,7 @@ layout: section
 
 <v-click>
 
-<div class="mt-3 p-3 border-l-4 border-red-500 bg-red-500/10 text-sm">
+<div class="mt-3 p-3 border-l-4 border-red-500 bg-red-500/10">
 <b>UID 0 = root</b>: «привилегированные процессы (эффективный UID 0) обходят все проверки
 прав ядра» — <Man p="capabilities(7)" />. Поэтому вход под root строго ограничивают.
 </div>
@@ -391,7 +391,7 @@ UID 0 — root: привилегированные процессы обходя
 
 # Специальные пользователи: назначение
 
-<div class="text-sm">
+<div>
 
 Не каждая учётная запись принадлежит человеку: большинство строк базы пользователей
 Ubuntu Server 26.04 — **служебные** записи. Механика таких «псевдопользователей» —
@@ -440,7 +440,7 @@ OpenSSH (сетевой код до аутентификации работае�
 
 # Первичная и вторичные группы
 
-<div class="grid grid-cols-2 gap-4 text-sm">
+<div class="grid grid-cols-2 gap-4">
 <InfoCard icon="user" head="Первичная группа">
 
 - одна у каждого пользователя: поле GID в `/etc/passwd`;
@@ -505,7 +505,7 @@ layout: section
 
 # `/etc/passwd`: назначение и формат
 
-<div class="text-sm">
+<div>
 
 **`/etc/passwd`** — основная локальная **база учётных записей**: по ней система
 сопоставляет имя входа с UID и узнаёт параметры учётной записи — первичную группу,
@@ -517,7 +517,7 @@ layout: section
 
 </div>
 
-<FieldRecord class="mt-3" size="1em" legendSize="0.78em" :cols="2"
+<FieldRecord class="mt-3" size="1rem" legendSize="0.78rem" :cols="2"
   :fields="['bob', { t: 'x', hot: true }, '1001', '1001', '', '/home/bob', '/bin/bash']"
   :legend="[
     'имя пользователя (login name)',
@@ -563,7 +563,7 @@ layout: section
 <div class="grid grid-cols-[1.45fr_1fr] gap-4 items-start">
 <div>
 
-<TerminalCapture src="captures/16-etc-passwd.txt" section="1" title="Ubuntu Server 26.04 · cat /etc/passwd" fontSize="0.42em" highlight="20,26-28">
+<TerminalCapture src="captures/16-etc-passwd.txt" section="1" title="Ubuntu Server 26.04 · cat /etc/passwd" fontSize="0.42rem" highlight="20,26-28">
   <TCallout :line="2" :col="78" :n="1" />
   <TCallout :line="3" :col="78" :n="2" />
   <TCallout :line="14" :col="78" :n="3" />
@@ -599,7 +599,7 @@ sshd) с UID из диапазона 100–999; и люди — ubuntu, bob, car
 
 # Псевдопользователи и «запрещающие» оболочки
 
-<div class="text-sm">
+<div>
 
 **Псевдопользователь** — служебная учётная запись: она владеет файлами, от её имени
 работают процессы, но интерактивный вход человека не предполагается.
@@ -641,7 +641,7 @@ root запускать службы от имени такой записи.
 <TerminalCapture src="captures/16-etc-passwd.txt" section="3" title="Ubuntu Server 26.04 · права на базы учётных записей" />
 
 </div>
-<div class="text-sm">
+<div>
 
 **`0644` — читают все:** множество программ отображают UID в имена (`ls -l`, `ps`, `stat`).
 **Пишет только root**; свои поля пользователь меняет через SUID-утилиты <Man p="passwd(1)" />,
@@ -679,7 +679,7 @@ root запускать службы от имени такой записи.
 
 <v-click>
 
-<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-sm">
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
 <b>Вывод:</b> секрету не место в общедоступном файле. Во 2-м поле остаётся <code>x</code>,
 а хэш вынесен в <code>/etc/shadow</code> с правами <code>0640 root:shadow</code> — раздел 3.
 </div>
@@ -703,26 +703,57 @@ root запускать службы от имени такой записи.
 
 # Демо 01: привилегии определяются UID, а не именем
 
-<TerminalCapture src="captures/01-passwd-uid-zero.txt" section="3" title="demo 01 · подмена третьего поля" padBottom="2.4em">
-  <TCallout v-click :line="4" :col="9" :span="1" label="3-е поле (UID) подменено на 0" side="bottom" />
+<div class="grid grid-cols-2 gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/01-passwd-uid-zero.txt" section="1" title="demo 01 · до: исходная запись alice">
+  <TCallout :line="2" :col="9" :span="4" :n="1" />
+  <TCallout :line="5" :col="1" :span="15" :n="2" />
 </TerminalCapture>
 
-<TerminalCapture src="captures/01-passwd-uid-zero.txt" section="4" title="demo 01 · результат" padBottom="2.4em">
-  <TCallout v-click :line="2" :col="1" :span="11" label="имя осталось alice, но ядро видит root" side="bottom" color="#ff7a85" />
+</div>
+<div>
+
+<TerminalCapture src="captures/01-passwd-uid-zero.txt" section="2" title="demo 01 · после: третье поле подменено">
+  <TCallout :line="1" :col="30" :span="10" :n="3" />
+  <TCallout :line="4" :col="9" :span="1" :n="4" />
+  <TCallout :line="7" :col="1" :span="11" :n="5" />
 </TerminalCapture>
+
+</div>
+</div>
+
+<div class="mt-2 p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-1">
+<div><span class="co-ball">1</span> 3-е поле строки <code>alice</code> — UID <code>1001</code>: обычный пользователь</div>
+<div><span class="co-ball">2</span> <code>id</code> подтверждает: <code>uid=1001(alice)</code></div>
+<div><span class="co-ball">3</span> root заменяет 3-е поле на <code>0</code>; имя записи не меняется</div>
+<div><span class="co-ball">4</span> в строке теперь UID <code>0</code> — как у <code>root</code></div>
+<div><span class="co-ball">5</span> <code>uid=0(root)</code>: для ядра <code>alice</code> — суперпользователь</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> запись в <code>/etc/passwd</code> равносильна получению прав root — поэтому
+обычным пользователям файл доступен <b>только на чтение</b> (<code>0644</code>: пишет лишь root).
+</div>
+
+</v-click>
 
 <div class="text-xs opacity-70 mt-1">
-Сценарий курса <b>01-passwd-uid-zero.sh</b> выполняет то же через <code>vipw</code> и
-<code>runuser</code>, затем возвращает UID. Уже запущенный процесс UID не меняет.
-Это последствия права записи в базу, а не обход защиты — отсюда строгие права на
-<code>/etc/passwd</code>: запись в него эквивалентна root-доступу.
+См. <code>demos/01-passwd-uid-zero.sh</code>. Уже запущенные процессы подмена UID в файле не затрагивает.
 </div>
 
 <!--
-Демо: третье поле строки alice в /etc/passwd заменяется на 0 — и система считает alice
-суперпользователем, хотя имя не менялось. Привилегии определяются числовым UID, а не
-именем. Транскрипт снят в отдельном контейнере: alice там создана первой (UID 1001).
-Запись в /etc/passwd эквивалентна root-доступу — поэтому права на файл строгие.
+Демо: сначала исходное состояние — строка alice в /etc/passwd (UID 1001) и вывод id;
+затем root заменяет третье поле на 0 — и id показывает uid=0(root), хотя имя не менялось.
+Привилегии определяются числовым UID, а не именем. Транскрипт снят в отдельном контейнере:
+alice там создана первой (UID 1001). Вывод: запись в /etc/passwd эквивалентна root-доступу —
+поэтому обычным пользователям файл доступен только на чтение. Полный сценарий —
+demos/01-passwd-uid-zero.sh.
 -->
 
 ---

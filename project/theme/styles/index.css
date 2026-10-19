@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
-  --ossec-ink: #172033;
+  --ossec-ink: #000;
   --ossec-accent: #0b7285;
   --ossec-muted: #5d6b82;
   --ossec-surface: #f5f8fc;
@@ -15,13 +15,18 @@
 
 .slidev-layout {
   font-family: Inter, system-ui, sans-serif;
+  /* The one main-text size for the whole deck (the former per-slide text-sm,
+   * line-height included): slides don't size their body text; deviate only
+   * where a slide requires it. */
+  font-size: 0.875rem;
+  line-height: 1.43;
   color: var(--ossec-ink);
 }
 
 .slidev-layout h1, .slidev-layout h2 { color: var(--ossec-accent); }
 .slidev-layout code { font-family: 'JetBrains Mono', monospace; }
 .slidev-layout.cover { background: linear-gradient(135deg, #eef8fa, #f8faff); }
-.slidev-layout.cover h1 { font-size: 2.5em; max-width: 80%; }
+.slidev-layout.cover h1 { font-size: 2.5rem; max-width: 80%; }
 .slidev-layout.cover p { color: var(--ossec-muted); }
 
 /* ---------------------------------------------------------------------------
@@ -32,8 +37,10 @@
 .terminal-capture {
   --tc-lh: 1.5em;
   --tc-pad-x: 0.9em;
+  --tc-pad-y: 0.5em;
   --tc-callout: #ffa94d;
-  font-size: 0.55em;
+  /* rem: the transcript size must not drift with the slide's base text size. */
+  font-size: 0.55rem;
   margin: 0.6em 0;
   border-radius: 8px;
   overflow: hidden;
@@ -64,7 +71,7 @@
   font-variant-ligatures: none;
   color: #e6e6e6;
   line-height: var(--tc-lh);
-  padding: 0.5em var(--tc-pad-x) 0.6em var(--tc-pad-x);
+  padding: var(--tc-pad-y) var(--tc-pad-x) 0.6em var(--tc-pad-x);
   white-space: pre;
 }
 .tc-wrap .tc-pre { white-space: pre-wrap; }
@@ -82,7 +89,7 @@
 .tc-overlay {
   position: absolute;
   inset: 0;
-  padding: 0.5em var(--tc-pad-x) 0.6em var(--tc-pad-x);
+  padding: var(--tc-pad-y) var(--tc-pad-x) 0.6em var(--tc-pad-x);
   pointer-events: none;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   line-height: var(--tc-lh);
@@ -460,7 +467,7 @@
   align-items: baseline;
   gap: 0.8em;
   margin: 0.55em 0;
-  font-size: 0.62em;
+  font-size: 0.8rem;
   line-height: 1.3;
 }
 .section-toc .st-num {
@@ -510,7 +517,7 @@
  * SourcesList: the numbered reference list on the «Источники» slide.
  * A click on [n] in a Refs footer highlights the cited entry here.
  * ------------------------------------------------------------------------- */
-.sources-list { column-gap: 1.6em; font-size: 0.58em; line-height: 1.35; }
+.sources-list { column-gap: 1.6em; font-size: 0.58rem; line-height: 1.35; }
 .sources-list .src-item {
   display: flex;
   gap: 0.55em;

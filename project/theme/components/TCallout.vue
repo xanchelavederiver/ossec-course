@@ -41,7 +41,9 @@ const props = defineProps({
 const gutterCh = inject('tc-gutter-ch', computed(() => 0))
 
 const rootStyle = computed(() => ({
-  'top': `calc(${props.line - 1} * var(--tc-lh))`,
+  // --tc-pad-y: the transcript's top padding; absolute offsets inside the
+  // overlay don't include it, so without the term every marker sits high.
+  'top': `calc(var(--tc-pad-y) + ${props.line - 1} * var(--tc-lh))`,
   'left': `calc(var(--tc-pad-x) + ${gutterCh.value + props.col - 1}ch)`,
   '--tcc': props.color,
 }))
