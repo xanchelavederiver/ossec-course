@@ -1,0 +1,20 @@
+[
+  { "id": "gost-58833", "text": "ГОСТ Р 58833-2020. Защита информации. Идентификация и аутентификация. Общие положения.", "url": "https://protect.gost.ru/gost/details/554a46bc-50ea-4232-ad71-e5bbe251c0f2" },
+  { "id": "rd-terms", "text": "Руководящий документ Гостехкомиссии России «Защита от несанкционированного доступа к информации. Термины и определения», 30.03.1992.", "url": "https://base.garant.ru/197884/" },
+  { "id": "fstec-pz-a4", "text": "Профиль защиты операционных систем типа «А» четвёртого класса защиты ИТ.ОС.А4.ПЗ: методический документ ФСТЭК России от 08.02.2017 (FPT_MTR_EXT.1 «Монитор обращений»).", "url": "https://base.garant.ru/71620242/" },
+  { "id": "anderson", "text": "Anderson J. P. Computer Security Technology Planning Study. ESD-TR-73-51. — 1972.", "url": "https://csrc.nist.gov/csrc/media/publications/conference-paper/1998/10/08/proceedings-of-the-21st-nissc-1998/documents/early-cs-papers/ande72.pdf" },
+  { "id": "tcsec", "text": "Department of Defense Trusted Computer System Evaluation Criteria (TCSEC). DoD 5200.28-STD, 26.12.1985.", "url": "https://irp.fas.org/nsa/rainbow/std001.htm" },
+  { "id": "morris-thompson", "text": "Morris R., Thompson K. Password Security: A Case History // Communications of the ACM. — 1979. — Vol. 22, No. 11. — P. 594–597.", "url": "https://doi.org/10.1145/359168.359172" },
+  { "id": "corbato", "text": "Corbató F. J. On Building Systems That Will Fail // Communications of the ACM. — 1991. — Vol. 34, No. 9. — P. 72–81.", "url": "https://dl.acm.org/doi/10.1145/114669.114686" },
+  { "id": "morris-worm", "text": "Spafford E. H. The Internet Worm Program: An Analysis. Purdue Technical Report CSD-TR-823, 1988.", "url": "https://spaf.cerias.purdue.edu/tech-reps/823.pdf" },
+  { "id": "shadow-howto", "text": "Jackson M. H. Linux Shadow Password HOWTO. v1.3, 1996.", "url": "https://tldp.org/HOWTO/Shadow-Password-HOWTO.html" },
+  { "id": "osf-rfc86", "text": "Samar V., Schemers R. Unified Login with Pluggable Authentication Modules (PAM). OSF RFC 86.0, October 1995.", "url": "http://www.opengroup.org/rfc/mirror-rfc/rfc86.0.txt" },
+  { "id": "debian-policy", "text": "Debian Policy Manual, 9.2.2 UID and GID classes.", "url": "https://www.debian.org/doc/debian-policy/ch-opersys.html" },
+  { "id": "man-passwd", "text": "passwd(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/passwd.5.html" },
+  { "id": "man-nologin", "text": "nologin(8) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man8/nologin.8.html" },
+  { "id": "man-credentials", "text": "credentials(7) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man7/credentials.7.html" },
+  { "id": "man-group", "text": "group(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/group.5.html" },
+  { "id": "man-capabilities", "text": "capabilities(7) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man7/capabilities.7.html" },
+  { "id": "man-proc", "text": "proc(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/proc.5.html" },
+  { "id": "man-id", "text": "id(1) — GNU coreutils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man1/id.1.html" }
+]

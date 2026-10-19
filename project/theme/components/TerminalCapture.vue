@@ -52,6 +52,14 @@ const captureModules = import.meta.glob(
   { query: '?raw', import: 'default', eager: true },
 )
 
+// Captures of the running deck (Slidev's Vite root is the deck directory).
+// Preferred over the cross-deck glob: the same file name may exist in several
+// decks (e.g. a capture migrated from a deck's _old version).
+const deckCaptures = import.meta.glob(
+  '/assets/captures/*',
+  { query: '?raw', import: 'default', eager: true },
+)
+
 const SECTION_RE = /^\s*={3,}\s*(.*?)\s*={3,}\s*$/
 
 const rawText = computed(() => {
@@ -60,6 +68,9 @@ const rawText = computed(() => {
   if (!props.src)
     return '[TerminalCapture: укажите src или content]'
   const wanted = props.src.replace(/^\.?\//, '')
+  const own = Object.keys(deckCaptures).filter(k => k.endsWith(wanted))
+  if (own.length === 1)
+    return deckCaptures[own[0]]
   const keys = Object.keys(captureModules).filter(k => k.endsWith(wanted))
   if (keys.length === 1)
     return captureModules[keys[0]]

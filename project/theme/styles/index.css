@@ -60,6 +60,8 @@
 .tc-inner { position: relative; width: max-content; min-width: 100%; }
 .tc-pre {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
+  /* Ligatures would merge "->" into one glyph and break monospace cell maths. */
+  font-variant-ligatures: none;
   color: #e6e6e6;
   line-height: var(--tc-lh);
   padding: 0.5em var(--tc-pad-x) 0.6em var(--tc-pad-x);
@@ -122,9 +124,9 @@
  * ------------------------------------------------------------------------- */
 .t-callout { position: absolute; pointer-events: none; }
 .t-callout-box {
+  /* A single border: no outer box-shadow, or the marker reads as two frames. */
   border: 2px solid var(--tcc);
   border-radius: 4px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   /* Outset so the border sits beside the first/last character, not on it. */
   box-sizing: content-box;
   padding: 0 2px;
@@ -369,3 +371,181 @@
   margin-bottom: 0.25em;
 }
 .hn-body { font-size: 0.85em; line-height: 1.45; }
+
+/* ---------------------------------------------------------------------------
+ * Numbered callout balls (asciidoctor style): inside TerminalCapture via
+ * <TCallout :n="1" …> and inline in legend text via <span class="co-ball">1</span>.
+ * ------------------------------------------------------------------------- */
+.co-ball {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 50%;
+  background: var(--ossec-amber);
+  color: #1e2433;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.82em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: -0.25em;
+  user-select: none;
+}
+.t-callout-num .co-ball { font-size: 0.95em; margin-top: 0.06em; }
+
+/* Numbered step callout (screenshot-annotation convention): with `span`,
+ * a rounded rectangle localizes the region and the number badge sits on its
+ * top-right corner. Box and ball share the amber accent. */
+.t-callout-num .t-callout-box { border-color: var(--ossec-amber); }
+.t-callout-num .co-ball-tag {
+  position: absolute;
+  top: -0.62em;
+  left: calc(100% - 0.72em);
+  margin-top: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Slide furniture: page number (theme global-bottom) and the per-slide
+ * references footer «Источники: [n], …» (Refs component).
+ * ------------------------------------------------------------------------- */
+.slide-pageno {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.55rem;
+  font-size: 11px;
+  color: var(--ossec-muted);
+  font-family: Inter, system-ui, sans-serif;
+}
+.slide-refs {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.55rem;
+  width: max-content;
+  max-width: 70%;
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--ossec-muted);
+}
+/* Slidev's invisible hover nav controls own the bottom-left corner and would
+ * swallow clicks on the [n] links; lift them just above the footer line
+ * (they still appear on hover, a touch higher). */
+#app .absolute.bottom-0.left-0[class~='hover:opacity-100'] { bottom: 1.9rem; }
+.slide-refs .sr-label { margin-right: 0.2em; }
+.slide-refs .sr-link {
+  margin-left: 0.3em;
+  color: var(--ossec-muted);
+  border-bottom: none !important;
+  cursor: pointer;
+}
+.slide-refs .sr-link:hover { color: var(--ossec-accent); }
+
+/* ---------------------------------------------------------------------------
+ * Man: a man-page mention that links to the page, keeping the inline-code look.
+ * ------------------------------------------------------------------------- */
+.man-link { border-bottom: none !important; }
+.man-link code { border-bottom: 1px dotted var(--ossec-muted); }
+.man-link:hover code { color: var(--ossec-accent); border-bottom-color: var(--ossec-accent); }
+
+/* ---------------------------------------------------------------------------
+ * SectionTOC: subsection list on a section title slide; the upcoming
+ * subsection is highlighted, the rest are greyed out.
+ * ------------------------------------------------------------------------- */
+.section-toc { margin: 1.6em auto 0; width: max-content; max-width: 100%; }
+/* Lift the title block on section slides that carry a TOC: without this the
+ * title + list sit dead-centre and the heading rides too low. */
+.slidev-layout.section > div:has(.section-toc) { margin-top: 4.5rem; margin-bottom: auto; }
+.section-toc .st-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8em;
+  margin: 0.55em 0;
+  font-size: 0.62em;
+  line-height: 1.3;
+}
+.section-toc .st-num {
+  font-weight: 700;
+  min-width: 2em;
+  text-align: right;
+  /* Proportional digits make «2.1» narrower than «2.2» — it reads as smaller. */
+  font-variant-numeric: tabular-nums;
+}
+.section-toc .st-current { color: var(--ossec-ink); }
+.section-toc .st-current .st-num { color: var(--ossec-amber-ink); }
+.section-toc .st-current .st-text { font-weight: 600; }
+.section-toc .st-dim { opacity: 0.35; }
+
+/* ---------------------------------------------------------------------------
+ * InfoCard: tinted card with a round dark icon badge and inline heading
+ * (ported from the dpo deck's K.card).
+ * ------------------------------------------------------------------------- */
+.info-card {
+  border-radius: 8px;
+  padding: 0.65em 0.85em;
+  background: var(--ossec-tint);
+  border: 1px solid var(--ossec-line);
+}
+.info-card.ic-amber { background: var(--ossec-amber-tint); border-color: var(--ossec-amber); }
+.info-card.ic-blue { background: #e8f1fb; border-color: rgba(74, 125, 189, 0.45); }
+.ic-head-row { display: flex; align-items: center; gap: 0.55em; }
+.ic-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--ossec-dark);
+  color: #fbc84a;
+  flex: none;
+}
+.ic-icon svg { width: 0.95em; height: 0.95em; }
+.ic-head { font-weight: 700; color: var(--ossec-ink); }
+.ic-body { margin-top: 0.35em; line-height: 1.4; }
+.ic-body p { margin: 0.2em 0; }
+.ic-body ul { margin: 0.1em 0 0 1.1em; }
+.ic-body li { margin: 0.18em 0; }
+
+/* ---------------------------------------------------------------------------
+ * SourcesList: the numbered reference list on the «Источники» slide.
+ * A click on [n] in a Refs footer highlights the cited entry here.
+ * ------------------------------------------------------------------------- */
+.sources-list { column-gap: 1.6em; font-size: 0.58em; line-height: 1.35; }
+.sources-list .src-item {
+  display: flex;
+  gap: 0.55em;
+  padding: 0.3em 0.45em;
+  margin-bottom: 0.2em;
+  border-radius: 6px;
+  break-inside: avoid;
+  transition: background-color 0.4s, box-shadow 0.4s;
+}
+.sources-list .src-num { font-weight: 700; color: var(--ossec-accent); flex: none; min-width: 2.3em; }
+.sources-list .src-text a {
+  color: inherit;
+  border-bottom: 1px dotted var(--ossec-muted) !important;
+}
+.sources-list .src-text a:hover { color: var(--ossec-accent); }
+.sources-list .src-active {
+  background: var(--ossec-amber-tint);
+  box-shadow: inset 3px 0 0 var(--ossec-amber);
+}
+
+/* ---------------------------------------------------------------------------
+ * t-table: data tables on slides (the default theme leaves markdown tables
+ * unstyled). Wrap the table in <div class="t-table">: full borders, a dark
+ * distinctive header row, zebra striping. Size with text-xs/text-sm on the
+ * wrapper.
+ * ------------------------------------------------------------------------- */
+.t-table table { width: 100%; border-collapse: collapse; line-height: 1.35; }
+.t-table th {
+  background: var(--ossec-dark);
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.4em 0.7em;
+  border: 1px solid var(--ossec-dark);
+}
+.t-table td { padding: 0.35em 0.7em; border: 1px solid var(--ossec-line); }
+.t-table tbody tr:nth-child(even) { background: var(--ossec-tint); }
+.t-table code { white-space: nowrap; }

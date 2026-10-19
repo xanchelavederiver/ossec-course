@@ -1,0 +1,37 @@
+
+===== Команда id =====
+
+# id bob
+uid=1001(bob) gid=1001(bob) groups=1001(bob),1010(project)
+# su bob -c 'id -u; id -gn'
+1001
+bob
+
+===== Группы пользователей bob, alice и carol =====
+
+# id bob
+uid=1001(bob) gid=1001(bob) groups=1001(bob),1010(project)
+# id alice
+uid=1003(alice) gid=1003(alice) groups=1003(alice),4(adm),1010(project)
+# id carol
+uid=1002(carol) gid=1002(carol) groups=1002(carol)
+# grep -E '^(bob|alice|carol|project|adm):' /etc/group
+adm:x:4:ubuntu,alice
+bob:x:1001:
+carol:x:1002:
+alice:x:1003:
+project:x:1010:bob,alice
+
+===== Команда groups =====
+
+# groups bob; groups alice; groups carol
+bob : bob project
+alice : alice adm project
+carol : carol
+
+===== Первичная группа: GID в /etc/passwd =====
+
+# grep -E '^(bob|alice|carol):' /etc/passwd
+bob:x:1001:1001::/home/bob:/bin/bash
+carol:x:1002:1002::/home/carol:/bin/bash
+alice:x:1003:1003::/home/alice:/bin/bash
