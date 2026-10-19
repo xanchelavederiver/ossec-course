@@ -4,16 +4,28 @@ DOCKER ?= docker
 NPM ?= npm
 LABS_IMAGE ?= ossec-labs:local
 LAB ?=
+LECTURE ?=
+HOST ?=
+PORT ?=
+PASSWORD ?=
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 export LAB
 
-.PHONY: labs labs-html labs-pdf labs-image labs-list labs-ruby lectures lectures-slides help
+.PHONY: labs labs-html labs-pdf labs-image labs-list labs-ruby lectures lectures-slides lecture-dev help
 
 lectures: lectures-slides
 
 lectures-slides:
 	$(NPM) --prefix "$(ROOT)/project" run build:all
 	$(NPM) --prefix "$(ROOT)/project" run copy:slides
+
+# Example: make lecture-dev LECTURE=02-identity-and-access-management/03-pam HOST=0.0.0.0 PORT=3031
+lecture-dev:
+	@test -n "$(LECTURE)" || { echo 'Usage: make lecture-dev LECTURE=<topic>/<lecture>' >&2; \
+		$(NPM) --prefix "$(ROOT)/project" run --silent list >&2; exit 2; }
+	$(NPM) --prefix "$(ROOT)/project" run dev -- "$(LECTURE)" \
+		$(if $(HOST),--host "$(HOST)") $(if $(PORT),--port "$(PORT)") \
+		$(if $(PASSWORD),--password "$(PASSWORD)")
 
 labs-image:
 	$(DOCKER) build -t "$(LABS_IMAGE)" "$(ROOT)/project/build/labs"
@@ -46,6 +58,8 @@ labs-ruby: labs-image
 help:
 	@echo 'make lectures-slides      Build all lecture slides and copy to public/lectures/slides/'
 	@echo 'make lectures             Alias for lectures-slides'
+	@echo 'make lecture-dev LECTURE=<topic>/<lecture>  Run Slidev dev server for one lecture'
+	@echo '                 [HOST=0.0.0.0] [PORT=3030] [PASSWORD=...]  Listen address, port, remote-control password'
 	@echo 'make labs                 Export every lab to HTML and PDF (default)'
 	@echo 'make labs-html            Export HTML only'
 	@echo 'make labs-pdf             Export PDF only'

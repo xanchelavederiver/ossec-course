@@ -20,8 +20,53 @@ make lectures-slides     # также доступен псевдоним make l
 
 Сборка выполняется в `project/dist/`, затем результат копируется в
 `public/lectures/slides/<topic>/<lecture>/`. Каждый каталог содержит
-`index.html` и ресурсы презентации. Для локального запуска и экспорта в PDF
-см. [инструкцию по презентациям](project/README.md).
+`index.html` и ресурсы презентации. Подробнее об экспорте в PDF и добавлении
+лекций см. [инструкцию по презентациям](project/README.md).
+
+### Dev-сервер для отдельной лекции
+
+Лекция задаётся как `<topic>/<lecture>` — идентификаторы темы и лекции из
+`project/lectures.json`. Список доступных лекций:
+
+```sh
+npm --prefix project run list
+```
+
+Запуск dev-сервера Slidev с горячей перезагрузкой:
+
+```sh
+make lecture-dev LECTURE=02-identity-and-access-management/03-pam
+```
+
+Без `LECTURE` команда выводит список доступных лекций. Адрес и порт можно
+переопределить:
+
+```sh
+make lecture-dev LECTURE=02-identity-and-access-management/03-pam PORT=3031
+make lecture-dev LECTURE=02-identity-and-access-management/03-pam HOST=0.0.0.0 PASSWORD=secret
+```
+
+- `PORT` — порт сервера (по умолчанию 3030; если занят, Slidev выберет следующий
+  свободный).
+- `HOST` — адрес, на котором слушает сервер (по умолчанию `localhost`). Любое
+  другое значение включает remote-режим Slidev: презентация становится доступна
+  по сети, а режим докладчика — для удалённого управления.
+- `PASSWORD` — пароль для режима докладчика в remote-режиме. Без него
+  управлять презентацией может любой в сети, поэтому при `HOST` его стоит
+  задавать.
+
+Эквивалент без Make
+(`--` обязателен, иначе npm не передаст аргумент скрипту):
+
+```sh
+npm --prefix project run dev -- 02-identity-and-access-management/03-pam
+npm --prefix project run dev -- 02-identity-and-access-management/03-pam --host 0.0.0.0 --port 3031 --password secret
+```
+
+Сервер открывает браузер автоматически и по умолчанию доступен на
+<http://localhost:3030/> (режим докладчика — `/presenter/`). Редактируемый
+файл — `project/materials/lectures/<topic>/<lecture>/slides.md`. Остановка —
+`Ctrl+C`.
 
 ## Сборка лабораторных работ
 
