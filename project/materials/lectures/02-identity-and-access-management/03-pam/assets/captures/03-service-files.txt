@@ -1,0 +1,58 @@
+===== login =====
+
+# grep -Ev '^#|^$' /etc/pam.d/login
+auth       optional   pam_faildelay.so  delay=3000000
+auth       requisite  pam_nologin.so
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session    required     pam_loginuid.so
+session    optional   pam_motd.so motd=/run/motd.dynamic
+session    optional   pam_motd.so noupdate
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session       required   pam_env.so readenv=1
+session       required   pam_env.so readenv=1 envfile=/etc/default/locale
+@include common-auth
+auth       optional   pam_group.so
+session    required   pam_limits.so
+session    optional   pam_mail.so standard
+session    optional   pam_keyinit.so force revoke
+@include common-account
+@include common-session
+@include common-password
+
+===== sshd =====
+
+# grep -Ev '^#|^$' /etc/pam.d/sshd
+@include common-auth
+account    required     pam_nologin.so
+@include common-account
+session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so close
+session    required     pam_loginuid.so
+session    optional     pam_keyinit.so force revoke
+@include common-session
+session    optional     pam_motd.so  motd=/run/motd.dynamic
+session    optional     pam_motd.so noupdate
+session    optional     pam_mail.so standard noenv # [1]
+session    required     pam_limits.so
+session    required     pam_env.so # [1]
+session    required     pam_env.so envfile=/etc/default/locale
+session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so open
+@include common-password
+
+===== gdm-password =====
+
+# grep -Ev '^#|^$' /etc/pam.d/gdm-password
+auth    requisite       pam_nologin.so
+auth    required        pam_succeed_if.so user != root quiet_success
+@include common-auth
+auth    optional        pam_gnome_keyring.so
+@include common-account
+session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so close
+session required        pam_loginuid.so
+session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so open
+session optional        pam_keyinit.so force revoke
+session required        pam_limits.so
+session required        pam_env.so readenv=1
+session required        pam_env.so readenv=1 user_readenv=1 envfile=/etc/default/locale
+@include common-session
+session optional        pam_gnome_keyring.so auto_start
+@include common-password

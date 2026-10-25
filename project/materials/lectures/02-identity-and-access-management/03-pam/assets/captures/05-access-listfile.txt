@@ -1,0 +1,33 @@
+===== pam_access: правило в /etc/security/access.conf =====
+
+# echo '-:bob:ALL' >> /etc/security/access.conf
+# tail -1 /etc/security/access.conf
+-:bob:ALL
+# grep -v '^#' /etc/pam.d/sshd | head -3
+@include common-auth
+account    required     pam_nologin.so
+account  required     pam_access.so
+
+===== pam_access: проверка =====
+
+$ ssh bob@127.0.0.1 id
+(bob@127.0.0.1) Password:
+Connection closed by 127.0.0.1 port 22
+
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+uid=1003(alice) gid=1003(alice) groups=1003(alice)
+
+===== pam_listfile: запрет по списку =====
+
+# echo bob > /etc/denyusers
+# head -1 /etc/pam.d/sshd
+auth     requisite    pam_listfile.so onerr=fail item=user sense=deny file=/etc/denyusers
+
+$ ssh bob@127.0.0.1 id
+bob@127.0.0.1's password:
+Permission denied, please try again.
+bob@127.0.0.1's password:
+Permission denied, please try again.
+bob@127.0.0.1's password:
+bob@127.0.0.1: Permission denied (publickey,password,keyboard-interactive).

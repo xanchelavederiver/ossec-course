@@ -1,0 +1,35 @@
+===== Сборка и установка модуля =====
+
+$ gcc -Wall -fPIC -shared pam_math.c -o pam_math.so -lpam
+$ ls -l pam_math.so
+-rwxrwxr-x 1 bob bob 16104 Oct 25 19:13 pam_math.so
+
+# install -m 644 pam_math.so /usr/lib/x86_64-linux-gnu/security/
+# ls -l /usr/lib/x86_64-linux-gnu/security/pam_math.so
+-rw-r--r-- 1 root root 16104 Oct 25 19:13 /usr/lib/x86_64-linux-gnu/security/pam_math.so
+
+===== Служба mathtest: проверка модуля =====
+
+# cat /etc/pam.d/mathtest
+auth     required   pam_math.so max=50
+account  required   pam_permit.so
+
+$ ./authprint mathtest
+math for bob: 23 + 14 = 37
+Authenticated printf :-)
+
+$ ./authprint mathtest
+math for bob: 43 + 6 = 7
+Wrong answer.
+authprint failed: Authentication failure
+
+===== Модуль как второй фактор в sshd =====
+
+# grep -v '^#' /etc/pam.d/sshd | head -2
+@include common-auth
+auth    required        pam_math.so max=50
+
+$ ssh bob@127.0.0.1 id
+(bob@127.0.0.1) Password:
+(bob@127.0.0.1) math for bob: 29 + 5 = 34
+uid=1001(bob) gid=1001(bob) groups=1001(bob)

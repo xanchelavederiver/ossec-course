@@ -1,0 +1,53 @@
+===== PAM-aware программы: libpam в списке библиотек =====
+
+# ldd /usr/bin/login | grep -E 'pam|libc\.so'
+        libpam.so.0 => /usr/lib/x86_64-linux-gnu/libpam.so.0 (0x000079e5eae6c000)
+        libpam_misc.so.0 => /usr/lib/x86_64-linux-gnu/libpam_misc.so.0 (0x000079e5eae65000)
+        libc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x000079e5eac0c000)
+# ldd /usr/bin/passwd | grep pam
+        libpam.so.0 => /usr/lib/x86_64-linux-gnu/libpam.so.0 (0x000073cb5b78f000)
+        libpam_misc.so.0 => /usr/lib/x86_64-linux-gnu/libpam_misc.so.0 (0x000073cb5b788000)
+# dpkg -S /usr/lib/x86_64-linux-gnu/libpam.so.0
+libpam0g:amd64: /usr/lib/x86_64-linux-gnu/libpam.so.0
+# dpkg -l libpam0g | tail -1
+ii  libpam0g:amd64 1.7.0-5ubuntu3.2 amd64        Pluggable Authentication Modules library
+
+===== Каталог модулей =====
+
+# ls /usr/lib/x86_64-linux-gnu/security/
+pam_access.so             pam_group.so              pam_permit.so             pam_timestamp.so
+pam_canonicalize_user.so  pam_issue.so              pam_pwhistory.so          pam_tty_audit.so
+pam_debug.so              pam_keyinit.so            pam_rhosts.so             pam_umask.so
+pam_deny.so               pam_limits.so             pam_rootok.so             pam_unix.so
+pam_echo.so               pam_listfile.so           pam_securetty.so          pam_userdb.so
+pam_env.so                pam_localuser.so          pam_selinux.so            pam_usertype.so
+pam_exec.so               pam_loginuid.so           pam_sepermit.so           pam_warn.so
+pam_extrausers.so         pam_mail.so               pam_setquota.so           pam_wheel.so
+pam_faildelay.so          pam_mkhomedir.so          pam_shells.so             pam_xauth.so
+pam_faillock.so           pam_motd.so               pam_stress.so
+pam_filter.so             pam_namespace.so          pam_succeed_if.so
+pam_ftp.so                pam_nologin.so            pam_time.so
+# ls /usr/lib/x86_64-linux-gnu/security/ | wc -l
+45
+
+===== Каталоги конфигурации =====
+
+# ls /etc/pam.d/
+chfn                            gdm-fingerprint                 other
+chpasswd                        gdm-launch-environment          passwd
+chsh                            gdm-password                    remote
+common-account                  gdm-smartcard                   runuser
+common-auth                     gdm-smartcard-pkcs11-exclusive  runuser-l
+common-password                 gdm-smartcard-sssd-exclusive    sshd
+common-session                  gdm-smartcard-sssd-or-password  su
+common-session-noninteractive   login                           su-l
+gdm-autologin                   newusers
+# ls -l /etc/pam.conf
+-rw-r--r-- 1 root root 552 Jul  3  2025 /etc/pam.conf
+# ls /usr/lib/pam.d/
+ls: cannot access '/usr/lib/pam.d/': No such file or directory
+# ls /etc/security/
+access.conf     limits.d        opasswd         time.conf
+faillock.conf   namespace.conf  pam_env.conf
+group.conf      namespace.d     pwhistory.conf
+limits.conf     namespace.init  sepermit.conf

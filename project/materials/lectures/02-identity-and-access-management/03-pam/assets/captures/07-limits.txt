@@ -1,0 +1,22 @@
+===== pam_limits: лимит в /etc/security/limits.conf =====
+
+# echo 'bob    hard    fsize    1024' >> /etc/security/limits.conf
+# tail -1 /etc/security/limits.conf
+bob    hard    fsize    1024
+# grep pam_limits /etc/pam.d/sshd
+session    required     pam_limits.so
+
+===== Сеанс bob: лимит действует =====
+
+$ ssh bob@127.0.0.1
+(bob@127.0.0.1) Password:
+Welcome to Ubuntu 26.04.1 LTS (GNU/Linux 6.8.0-147-generic x86_64)
+bob@srv:~$ ulimit -f
+1024
+bob@srv:~$ cd /tmp && dd if=/dev/zero of=small bs=1k count=512 status=none && echo OK
+OK
+bob@srv:/tmp$ dd if=/dev/zero of=big bs=1M count=2
+File size limit exceeded   (core dumped) dd if=/dev/zero of=big bs=1M count=2
+bob@srv:/tmp$ ls -l small big
+-rw-rw-r-- 1 bob bob 1048576 Oct 25 19:12 big
+-rw-rw-r-- 1 bob bob  524288 Oct 25 19:12 small

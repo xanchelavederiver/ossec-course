@@ -1,0 +1,38 @@
+===== Конфигурация pam_faillock =====
+
+# grep -E '^(deny|unlock_time)' /etc/security/faillock.conf
+deny = 5
+unlock_time = 900
+# grep -Ev '^#|^$' /etc/pam.d/common-auth
+auth    required                        pam_faillock.so preauth
+auth    [success=2 default=ignore]      pam_unix.so nullok
+auth    [default=die]                   pam_faillock.so authfail
+auth    requisite                       pam_deny.so
+auth    required                        pam_permit.so
+auth    optional                        pam_faillock.so authsucc
+
+===== Блокировка после пяти неудач =====
+
+$ su - bob -c id      # 5 попыток с неверным паролем — ответ одинаковый
+Password:
+su: Permission denied
+$ su - bob -c id      # теперь с ВЕРНЫМ паролем
+The account is locked due to 5 failed logins.
+(15 minutes left to unlock)
+Password:
+su: Authentication failure
+
+===== Администратор: счётчик и сброс =====
+
+# faillock --user bob
+bob:
+When                Type  Source                                           Valid
+2026-10-25 19:15:42 TTY   /dev/pts/0                                           V
+2026-10-25 19:15:45 TTY   /dev/pts/0                                           V
+2026-10-25 19:15:49 TTY   /dev/pts/0                                           V
+2026-10-25 19:15:52 TTY   /dev/pts/0                                           V
+2026-10-25 19:15:56 TTY   /dev/pts/0                                           V
+# faillock --user bob --reset
+$ su - bob -c id
+Password:
+uid=1001(bob) gid=1001(bob) groups=1001(bob)

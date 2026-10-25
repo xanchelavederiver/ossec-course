@@ -1,0 +1,17 @@
+===== pam_time: правило в /etc/security/time.conf =====
+
+# echo 'sshd;*;bob;!Al0000-2400' >> /etc/security/time.conf
+# tail -1 /etc/security/time.conf
+sshd;*;bob;!Al0000-2400
+# grep pam_time /etc/pam.d/sshd
+account  requisite    pam_time.so
+
+===== pam_time: проверка =====
+
+$ ssh bob@127.0.0.1 id
+(bob@127.0.0.1) Password:
+Connection closed by 127.0.0.1 port 22
+
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+uid=1003(alice) gid=1003(alice) groups=1003(alice)

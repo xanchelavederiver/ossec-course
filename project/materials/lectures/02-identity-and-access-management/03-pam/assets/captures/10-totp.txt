@@ -1,0 +1,37 @@
+===== Настройка TOTP для пользователя =====
+
+$ google-authenticator -t -d -f -r 3 -R 30 -W
+
+  [ QR-код для приложения-аутентификатора опущен ]
+
+Your new secret key is: AMGWSLOST5ZJQOND53LREC6275HYN3P2
+Enter code from app (-1 to skip): 385405
+Code confirmed
+Your emergency scratch codes are:
+  32185197
+  28603022
+  30119204
+  20374026
+  77121254
+$ ls -l ~/.google_authenticator
+-r-------- 1 alice alice 141 Oct 25 19:14 /home/alice/.google_authenticator
+
+===== Подключение модуля к sshd =====
+
+# grep -v '^#' /etc/pam.d/sshd | head -2
+@include common-auth
+auth    required        pam_google_authenticator.so
+# grep '^KbdInteractiveAuthentication' /etc/ssh/sshd_config
+KbdInteractiveAuthentication yes
+
+===== Вход по ssh: пароль + одноразовый код =====
+
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+(alice@127.0.0.1) Verification code:
+uid=1003(alice) gid=1003(alice) groups=1003(alice)
+
+$ ssh alice@127.0.0.1 id      # неверный код
+(alice@127.0.0.1) Password:
+(alice@127.0.0.1) Verification code:
+(alice@127.0.0.1) Password:

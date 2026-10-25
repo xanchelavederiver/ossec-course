@@ -1,0 +1,20 @@
+===== Настройка: файл /etc/nologin =====
+
+# grep nologin /etc/pam.d/login /etc/pam.d/sshd | grep -v '#'
+/etc/pam.d/login:auth       requisite  pam_nologin.so
+/etc/pam.d/sshd:account    required     pam_nologin.so
+# echo 'You shall not pass!' > /etc/nologin
+
+===== Попытка входа: обычный пользователь и root =====
+
+$ ssh bob@127.0.0.1 id
+(bob@127.0.0.1) Password:
+You shall not pass!
+
+Connection closed by 127.0.0.1 port 22
+
+$ ssh root@127.0.0.1 id
+(root@127.0.0.1) Password:
+You shall not pass!
+
+uid=0(root) gid=0(root) groups=0(root)
