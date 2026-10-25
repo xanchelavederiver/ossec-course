@@ -204,6 +204,7 @@ layout: section
   'Файл паролей <code>/etc/passwd</code>',
   'Файл групп <code>/etc/group</code>',
   'Идентификаторы процесса',
+  'Реализация в ядре Linux',
 ]" />
 
 ---
@@ -499,6 +500,7 @@ layout: section
   'Файл паролей <code>/etc/passwd</code>',
   'Файл групп <code>/etc/group</code>',
   'Идентификаторы процесса',
+  'Реализация в ядре Linux',
 ]" />
 
 ---
@@ -754,6 +756,932 @@ root запускать службы от имени такой записи.
 alice там создана первой (UID 1001). Вывод: запись в /etc/passwd эквивалентна root-доступу —
 поэтому обычным пользователям файл доступен только на чтение. Полный сценарий —
 demos/01-passwd-uid-zero.sh.
+-->
+
+---
+layout: section
+---
+
+# 2. Идентификация
+
+<SectionTOC prefix="2" :current="3" :items="[
+  'Субъекты и объекты',
+  'Файл паролей <code>/etc/passwd</code>',
+  'Файл групп <code>/etc/group</code>',
+  'Идентификаторы процесса',
+  'Реализация в ядре Linux',
+]" />
+
+---
+
+# `/etc/group`: назначение и формат
+
+<div>
+
+**`/etc/group`** — локальная **база групп**: определяет группы системы — по ней система
+сопоставляет имя группы с GID и узнаёт **состав** группы, то есть вторичное членство
+пользователей (<Man p="group(5)" />). Вместе с `/etc/passwd` файл полностью задаёт
+принадлежность пользователя к группам (подраздел 2.1).
+
+Формат: текстовый файл; **одна строка — одна группа**; строка — **4 поля**,
+разделённых двоеточием `:`. Поле не может содержать `:`; пустое поле — значение не задано.
+
+</div>
+
+<FieldRecord class="mt-3" size="1rem" legendSize="0.78rem" :cols="2"
+  :fields="['project', { t: 'x', hot: true }, '1010', 'bob,alice']"
+  :legend="[
+    'имя группы (group name)',
+    { t: 'признак наличия пароля группы', hot: true },
+    'GID — идентификатор группы',
+    'члены группы — те, для кого она вторичная, — через запятую',
+  ]"
+/>
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-4 mt-3 items-start">
+<div>
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Поле 2 — признак наличия пароля группы</b>
+<div class="mt-1 space-y-1">
+<div><code>x</code> — хэш пароля группы хранится в <code>/etc/gshadow</code> (раздел 3)</div>
+<div><i>пусто</i> — пароль группы не задан (<Man p="group(5)" />)</div>
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+Первичная группа пользователя задаётся <b>не здесь</b>, а 4-м полем <code>/etc/passwd</code>;
+имя пользователя не обязано присутствовать в списке членов своей первичной группы —
+в примере список личной группы <code>bob</code> пуст.
+</div>
+
+</div>
+<div>
+
+<TerminalCapture src="captures/15-identification-basics.txt" section="2" lines="7-12" title="Ubuntu Server 26.04 · строки /etc/group" />
+
+</div>
+</div>
+
+<Refs ids="man-group" />
+
+<!--
+Определение: /etc/group — локальная база групп: определяет группы системы, сопоставляет
+имя группы с GID и перечисляет членов, то есть вторичное членство пользователей; вместе
+с /etc/passwd файл полностью задаёт принадлежность пользователя к группам. Формат —
+как у passwd: одна строка — одна группа, четыре поля через двоеточие. Поле 2 — признак
+наличия пароля группы: x — хэш в /etc/gshadow (раздел 3), пусто — пароль не задан;
+на практике пароли групп применяются редко. Поле 4 — члены группы через запятую: для
+них группа вторичная. Первичная группа задаётся не здесь, а GID-полем /etc/passwd,
+поэтому список личной группы bob пуст.
+-->
+
+---
+
+# Демо 02: первичная и вторичные группы
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/02-group-membership.txt" section="1" title="demo 02 · членство bob в двух базах" fontSize="0.6rem">
+  <TCallout :line="2" :col="29" :span="43" :n="1" />
+  <TCallout :line="5" :col="9" :span="10" :n="2" />
+  <TCallout :line="8" :col="1" :span="11" :n="3" />
+  <TCallout :line="11" :col="12" :span="4" :n="4" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> <code>groups=…</code> — все группы <code>bob</code>: первичная <code>bob</code> и вторичные <code>adm</code>, <code>sudo</code>, <code>users</code></div>
+<div><span class="co-ball">2</span> вторичное членство записано в 4-м поле строк <code>/etc/group</code></div>
+<div><span class="co-ball">3</span> личная группа <code>bob</code>: список членов пуст — первичное членство здесь не хранится</div>
+<div><span class="co-ball">4</span> первичная группа — GID из 4-го поля <code>/etc/passwd</code></div>
+</div>
+</div>
+
+<v-click>
+
+<InfoCard icon="warning" fill="amber" head="Группа sudo" class="mt-2 text-xs">
+
+членство в группе `sudo` (GID 27) даёт право выполнять команды от имени root —
+состав этой группы нужно контролировать.
+
+</InfoCard>
+
+</v-click>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> членство в группах описано двумя файлами: первичная группа — GID
+в <code>/etc/passwd</code>, вторичные — списки в <code>/etc/group</code>. <code>id bob</code>
+читает базу; уже открытый сеанс изменения состава групп не увидит — нужен новый вход.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/02-group-membership.sh</code>.
+</div>
+
+<!--
+Демо: членство bob записано в двух базах. id bob: gid — первичная группа, groups —
+полный список. В /etc/group bob перечислен в 4-м поле строк adm, sudo, users — это его
+вторичные группы; список личной группы bob пуст, потому что первичное членство в
+/etc/group не записывается — его задаёт GID в /etc/passwd. Транскрипт снят отдельным
+сценарием (bob 1001, группы adm/sudo/users). Попутно: членство в sudo (GID 27) даёт
+право выполнять команды от имени root — состав группы нужно контролировать. Изменения
+состава групп действуют после нового входа. Полный сценарий —
+demos/02-group-membership.sh.
+-->
+
+---
+layout: section
+---
+
+# 2. Идентификация
+
+<SectionTOC prefix="2" :current="4" :items="[
+  'Субъекты и объекты',
+  'Файл паролей <code>/etc/passwd</code>',
+  'Файл групп <code>/etc/group</code>',
+  'Идентификаторы процесса',
+  'Реализация в ядре Linux',
+]" />
+
+---
+
+# Четыре идентификатора процесса
+
+<div>
+
+Субъект для монитора обращений — **процесс** (подраздел 2.1). Ядро хранит в учётных
+данных (credentials, <Man p="credentials(7)" />) каждого процесса не один UID,
+а **четыре** — и столько же GID:
+
+</div>
+
+<div class="t-table text-xs mt-2">
+
+| Идентификатор | Название | Назначение |
+|---|---|---|
+| **ruid** / rgid | real — реальный | кто запустил процесс: наследуется от родителя и хранит «настоящего» пользователя |
+| **euid** / egid | effective — эффективный | по нему ядро проверяет привилегии процесса; euid 0 — права root |
+| **suid** / sgid | saved — сохранённый | копия euid на момент запуска программы: позволяет временно сбросить привилегии и затем вернуть их |
+| **fsuid** / fsgid | filesystem — файловый | использовался в проверках доступа к файлам; сейчас всегда следует за euid, <Man p="setfsuid(2)" /> — исторический |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+В <code>/proc/PID/status</code> строки <code>Uid:</code> и <code>Gid:</code> содержат четыре
+колонки <b>именно в этом порядке</b>: real, effective, saved, filesystem (<Man p="proc(5)" />).
+Строка <code>Groups:</code> — вторичные группы процесса (подраздел 2.3).
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+У обычного процесса все четыре значения совпадают. Расходятся они после запуска
+<b>setuid/setgid-программы</b> (например, <code>passwd</code>) или системных вызовов
+изменения идентификаторов — далее в подразделе.
+</div>
+
+<Refs ids="man-credentials man-proc kerrisk-tlpi" />
+
+<!--
+Терминология: у процесса не один UID, а четыре (и столько же GID) — часть его учётных
+данных. Решения о правах ядро принимает по effective (для файлов — по filesystem, который
+сегодня совпадает с effective). Real хранит, кто запустил. Saved — копия euid на момент
+запуска программы: нужен, чтобы программа могла временно понизить привилегии и вернуть их
+(демо 04). Порядок колонок Uid:/Gid: в /proc/PID/status — real, effective, saved,
+filesystem; это ответ на вопрос со слайда «Субъекты и объекты» (подраздел 2.1).
+-->
+
+---
+
+# Демо 03: идентификаторы процесса в `/proc`
+
+<div class="grid grid-cols-[1fr_1.3fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/03-process-credentials.txt" section="1" title="demo 03 · оболочка root">
+  <TCallout :line="3" :col="9" :span="25" :n="1" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<TerminalCapture src="captures/03-process-credentials.txt" section="2" title="demo 03 · процесс пользователя bob">
+  <TCallout :line="5" :col="9" :span="28" :n="2" />
+  <TCallout :line="10" :col="10" :span="22" :n="3" />
+</TerminalCapture>
+
+</div>
+</div>
+
+<div class="mt-2 p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> у оболочки root все четыре идентификатора — 0; порядок колонок: real, effective, saved, filesystem</div>
+<div><span class="co-ball">2</span> фоновый <code>sleep</code> пользователя <code>bob</code>: четыре значения 1001 — у обычного процесса они совпадают</div>
+<div><span class="co-ball">3</span> те же идентификаторы по отдельности показывает <code>ps</code> (столбцы <code>RUID</code>…<code>FSUID</code>, <code>RGID</code>…<code>FSGID</code>)</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> пока процесс не запускал setuid-программ и не менял идентификаторы сам,
+все четыре значения равны UID вошедшего пользователя и просто наследуются.
+Когда они расходятся — следующий слайд.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/03-process-credentials.sh</code>.
+</div>
+
+<!--
+Сначала root-оболочка: grep по /proc/$$/status — четыре нуля в Uid и Gid. Затем фоновый
+sleep пользователя bob: четыре 1001. Пока все значения совпадают; те же числа по
+отдельности выводит ps (ruid,euid,suid,fsuid). Интересно станет на setuid-программе —
+следующий слайд.
+-->
+
+---
+
+# Демо 03: setuid-программа работает с чужим euid
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/03-process-credentials.txt" section="3" title="demo 03 · passwd, запущенный bob">
+  <TCallout :line="2" :col="4" :span="1" :n="1" />
+  <TCallout :line="2" :col="14" :span="4" :n="2" />
+  <TCallout :line="8" :col="9" :span="4" :n="3" />
+  <TCallout :line="8" :col="17" :span="17" :n="4" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> у <code>/usr/bin/passwd</code> вместо <code>x</code> — бит <code>s</code> (setuid): «при запуске дать процессу euid владельца файла»</div>
+<div><span class="co-ball">2</span> владелец файла — <code>root</code></div>
+<div><span class="co-ball">3</span> ruid не изменился: 1001 — по нему <code>passwd</code> знает, чей пароль менять</div>
+<div><span class="co-ball">4</span> euid, suid и fsuid стали 0 — процесс действует с правами root; внизу то же показывает <code>ps</code></div>
+</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> setuid-программа работает с правами <b>владельца файла</b>, но по ruid «помнит»
+реального пользователя — так <Man p="passwd(1)" /> пишет в недоступный остальным
+<code>/etc/shadow</code> (раздел 3). Какие значения и когда выставляет ядро — далее.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/03-process-credentials.sh</code>.
+</div>
+
+<!--
+Ответ на вопрос «зачем процессу отдельные real и effective»: passwd должен записывать
+в недоступный пользователю /etc/shadow, поэтому файл /usr/bin/passwd имеет setuid-бит:
+при execve euid (и вслед за ним suid и fsuid) становится равным владельцу файла — root.
+ruid остаётся прежним: по нему passwd знает, чей пароль менять. Механика — на следующих
+слайдах.
+-->
+
+---
+
+# Системные вызовы изменения идентификаторов
+
+<div>
+
+Процесс не может произвольно «стать» другим пользователем: идентификаторы хранит ядро,
+а менять их позволяют лишь системные вызовы со строгими правилами (<Man p="credentials(7)" />).
+
+</div>
+
+<div class="t-table text-xs mt-2">
+
+| Вызов | Привилегированный процесс (euid 0) | Непривилегированный процесс |
+|---|---|---|
+| <Man p="setuid(2)" />&nbsp;`(u)` | устанавливает **все три** (ruid, euid, suid) в `u` — переход необратим | устанавливает **только euid**; `u` обязан совпадать с ruid или suid |
+| <Man p="seteuid(2)" />&nbsp;`(u)` | устанавливает euid в любое значение | устанавливает euid; `u` — только своё ruid или suid: «переключение» между уже имеющимися значениями |
+| <Man p="setresuid(2)" />&nbsp;`(r,e,s)` | задаёт все три независимо; `-1` — «не менять» | каждое новое значение — одно из текущих ruid/euid/suid; `-1` — «не менять» |
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+У каждого вызова есть GID-аналог: <Man p="setgid(2)" />, <Man p="setegid(2)" />,
+<Man p="setresgid(2)" />. «Привилегированный» — строго: имеющий capability
+<code>CAP_SETUID</code> (<Man p="capabilities(7)" />); классически это euid 0.
+</div>
+
+<div class="mt-3 p-3 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Ключевое правило:</b> непривилегированный процесс не может получить <b>чужой</b>
+идентификатор — только переставлять <b>свои</b> ruid/euid/suid. Новые UID появляются
+у процесса лишь двумя путями: вход в систему (процедура логина — раздел 5) и запуск
+setuid-программ.
+</div>
+
+<Refs ids="man-setuid man-seteuid man-setresuid man-credentials" />
+
+<!--
+Менять идентификаторы можно только через системные вызовы, и для непривилегированного
+процесса выбор строго ограничен: любой из вызовов разрешает лишь значения из его
+собственного набора ruid/euid/suid. setuid у привилегированного процесса — необратимый
+переход (затирает все три), у непривилегированного — меняет только euid. seteuid меняет
+только euid. setresuid задаёт все три явно и поэтому рекомендуется для надёжного сброса.
+Следствие: получить чужой UID процесс может только через логин или setuid-программу.
+-->
+
+---
+
+# `fork(2)` и `execve(2)`: правила наследования
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Назначение saved UID:</b> setuid-программа понижает привилегии на время опасных операций —
+<code>seteuid(ruid)</code> — и затем возвращает их: <code>seteuid(suid)</code>.
+Непривилегированному процессу ядро разрешает установить euid только в ruid или suid
+(предыдущий слайд) — без сохранённой копии вернуть привилегии было бы невозможно.
+</div>
+
+<div class="grid grid-cols-[1fr_1.35fr] gap-4 mt-3 items-start">
+<div>
+
+**Алгоритм ядра** (Керриск, гл. 9; <Man p="execve(2)" />):
+
+```text
+при fork():
+    потомок получает точные копии
+    всех идентификаторов родителя
+
+при execve(P):
+    если setuid-бит(P):
+        euid ← UID владельца P
+    если setgid-бит(P):
+        egid ← GID группы P
+    suid ← euid    # всегда
+    sgid ← egid    # всегда
+    ruid, rgid не меняются
+```
+
+</div>
+<div>
+
+<div class="t-table text-xs">
+
+| Действие | ruid | euid | suid |
+|---|---|---|---|
+| `fork(2)`: создание потомка | наследуется копия | наследуется копия | наследуется копия |
+| `execve(2)`: обычная программа | сохраняется | сохраняется | перезаписывается копией euid |
+| `execve(2)`: setuid-программа | сохраняется | становится равным UID владельца файла | перезаписывается копией нового euid |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-red-500 bg-red-500/10 text-xs">
+<b>Ловушка:</b> suid перезаписывается при <b>каждом</b> <code>execve</code>. Программа
+с временно пониженным euid, запустив другую программу, теряет сохранённые привилегии
+насовсем — а с непониженным передаст euid 0 дальше (демо 04).
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-execve man-credentials kerrisk-tlpi" />
+
+<!--
+Два механизма передачи идентификаторов. fork копирует всё. execve: у обычных файлов
+euid сохраняется, у setuid-файлов становится равным владельцу; saved UID при каждом
+execve перезаписывается копией (нового) euid — в этом и ловушка: временно пониженные
+привилегии execve фиксирует навсегда, а непониженные — передаёт запускаемой программе.
+Алгоритм — по Керриску (TLPI, гл. 9) и execve(2). Качели seteuid(ruid)/seteuid(suid)
+работают благодаря сохранённому UID: непривилегированному euid разрешён только из
+множества {ruid, suid}.
+-->
+
+---
+
+# Безопасное программирование: управление привилегиями
+
+<div>
+
+setuid-программы — классический источник уязвимостей: любая ошибка в них исполняется
+с правами root. Правила обращения с привилегиями (Керриск, гл. 38):
+
+</div>
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+**Держать привилегии минимум времени** — «качели привилегий»:
+
+```c
+uid_t euid = geteuid();  /* владелец файла: 0  */
+
+seteuid(getuid());       /* сброс: работаем с
+                            правами пользователя */
+/* …разбор ввода, вычисления, файлы… */
+
+seteuid(euid);           /* возврат — только вокруг
+                            привилегированной операции */
+```
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Привилегии больше не нужны — <b>сбрасывать насовсем</b>: <code>setuid(getuid())</code>
+при euid 0 затирает все три идентификатора; надёжнее явный
+<code>setresuid(u,&nbsp;u,&nbsp;u)</code>.
+</div>
+
+</div>
+<div class="text-xs">
+
+**Типичные ошибки:**
+
+- **не проверен код возврата** вызова `set*uid` — незамеченный отказ сброса привилегий
+  оборачивался уязвимостями (sendmail); проверять результат и `getresuid(2)`;
+- **временный сброс считают окончательным**: suid наследуется при `fork(2)`
+  и перезаписывается только `execve`/`setuid` — потомок вернёт euid 0 (демо 04);
+- **оболочка из привилегированного процесса**: `system()`, `popen()` с euid 0 —
+  запуск интерпретатора с правами root.
+
+**Лучше вообще без setuid root:** отдельный псевдопользователь службы
+(подраздел 2.2), файловые capabilities (<Man p="capabilities(7)" />), `sudo` (раздел 7).
+
+</div>
+</div>
+
+<Refs ids="kerrisk-tlpi man-setuid man-capabilities" />
+
+<!--
+Концепция безопасного программирования с привилегиями — по Керриску (TLPI, гл. 38
+Writing Secure Privileged Programs) и Saltzer–Schroeder (принцип наименьших привилегий).
+Качели: сбросить euid сразу после старта, возвращать только вокруг привилегированной
+операции. Насовсем — setuid(getuid()) или явный setresuid(u,u,u); обязательно проверять
+код возврата: у sendmail неудавшийся (из-за лимита) setuid однажды остался незамеченным.
+Помнить о наследовании: suid переживает fork — «пониженные» воркеры могут вернуть root.
+Современная альтернатива setuid-root — служебные учётные записи, file capabilities, sudo.
+-->
+
+---
+
+# Демо 04: `fork` наследует все идентификаторы
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/04-uid-inheritance.txt" section="1" title="demo 04 · подготовка: setuid-утилита idprobe" fontSize="0.5rem" />
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/04-uid-inheritance.txt" section="2" title="demo 04 · idprobe fork (печатает getresuid)">
+  <TCallout :line="2" :col="42" :span="13" :n="1" />
+  <TCallout :line="3" :col="42" :span="16" :n="2" />
+  <TCallout :line="4" :col="32" :span="26" :n="3" />
+  <TCallout :line="5" :col="42" :span="6" :n="4" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> setuid-бит на <code>idprobe</code> дал euid = suid = 0; ruid остался 1001</div>
+<div><span class="co-ball">2</span> родитель временно сбросил привилегии: <code>seteuid(ruid)</code> изменил только euid — suid всё ещё 0</div>
+<div><span class="co-ball">3</span> потомок после <code>fork</code> — точные копии всех трёх идентификаторов, включая suid = 0</div>
+<div><span class="co-ball">4</span> потомку достаточно <code>seteuid(0)</code>, чтобы вернуть права root (родителю — тоже)</div>
+</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> «сброшенные» через <code>seteuid</code> привилегии не исчезают при
+<code>fork</code>: потомок наследует suid = 0 и может вернуть root. Программа, понизившая
+euid и запускающая воркеры, не делает их непривилегированными.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/04-uid-inheritance.sh</code> — компилирует <code>idprobe</code> и прогоняет
+крайние случаи наследования.
+</div>
+
+<!--
+Сверху подготовка: сборка idprobe (печатает getresuid), setuid-бит, владелец root.
+Запуск bob: setuid-бит дал euid=suid=0. Родитель понизил привилегии (seteuid(ruid))
+до fork — потомок унаследовал пониженный euid, но и suid=0 тоже: обоим достаточно
+seteuid(0), чтобы вернуть права. Классическая ошибка: программа «сбросила привилегии»
+через seteuid и форкает воркеров, считая их непривилегированными.
+-->
+
+---
+
+# Демо 04: сброс привилегий — `seteuid` против `setuid`
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/04-uid-inheritance.txt" section="3" title="demo 04 · idprobe drop: пробует открыть /etc/shadow">
+  <TCallout :line="4" :col="41" :span="16" :n="1" />
+  <TCallout :line="5" :col="22" :span="17" :n="2" />
+  <TCallout :line="6" :col="41" :span="6" :n="3" />
+  <TCallout :line="8" :col="41" :span="19" :n="4" />
+  <TCallout :line="9" :col="12" :span="23" :n="5" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> временный сброс: <code>seteuid(ruid)</code> изменил только euid; suid хранит 0</div>
+<div><span class="co-ball">2</span> проверка делом: открыть <code>/etc/shadow</code> уже нельзя</div>
+<div><span class="co-ball">3</span> возврат: <code>seteuid(suid)</code> — euid снова 0, файл открывается</div>
+<div><span class="co-ball">4</span> окончательный сброс: <code>setuid(ruid)</code> при euid 0 затёр <b>все три</b> — suid тоже стал 1001</div>
+<div><span class="co-ball">5</span> вернуть root нельзя: <code>setuid(0)</code> → <code>Operation not permitted</code></div>
+</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> <code>seteuid</code> меняет только euid — сброс обратим, пока suid хранит 0;
+<code>setuid</code> у привилегированного процесса заменяет все три идентификатора — так
+привилегии сбрасывают «насовсем» (предыдущий слайд).
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/04-uid-inheritance.sh</code>.
+</div>
+
+<!--
+Качели привилегий в действии, с функциональной проверкой — попыткой открыть /etc/shadow
+(0640 root:shadow). seteuid(ruid): euid=1001, файл недоступен, но suid хранит 0 —
+seteuid(suid) возвращает euid=0, файл снова открывается. setuid(ruid) при euid=0 —
+привилегированный вариант вызова: затирает все три идентификатора; setuid(0) после
+этого — EPERM, привилегии потеряны окончательно. Эксперимент повторяет exp_3/exp_4
+из учебного примера 03_resids_output_ids.c (.sources/misc).
+-->
+
+---
+
+# Демо 04: `execve` и оболочки
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/04-uid-inheritance.txt" section="4" title="demo 04 · execve без setuid-бита: запуск id">
+  <TCallout :line="3" :col="29" :span="12" :n="1" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/04-uid-inheritance.txt" section="5" title="demo 04 · крайний случай: bash" padBottom="0.4em">
+  <TCallout :line="3" :col="29" :span="16" :n="2" />
+  <TCallout :line="7" :col="29" :span="12" :n="3" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> обычный <code>execve</code> (запуск <code>id</code>) идентификаторы не изменил: <code>euid=0(root)</code> на месте</div>
+<div><span class="co-ball">2</span> а после запуска <code>bash</code> euid 0 исчез — оболочка <b>сама</b> выровняла euid по ruid</div>
+<div><span class="co-ball">3</span> <code>bash -p</code> (privileged) эффективный UID сохраняет</div>
+</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> ядро при <code>execve</code> без setuid-бита идентификаторы не трогает;
+euid сбрасывает сам <code>bash</code> — защита от случайного запуска привилегированной
+оболочки (<Man p="bash(1)" />). Многие «неожиданные» потери привилегий в setuid-обёртках
+объясняются именно этим.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/04-uid-inheritance.sh</code>.
+</div>
+
+<!--
+Первый запуск: execve(id) — ядро ничего не сбрасывает, id честно показывает euid=0(root).
+Второй: тот же трюк с bash не работает — при euid ≠ ruid bash сам выравнивает euid по
+ruid; это политика оболочки, не ядра; флаг -p (privileged) её отключает — bash(1).
+-->
+
+---
+
+# Демо 04: setuid-бит на скрипте игнорируется
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/04-uid-inheritance.txt" section="6" title="demo 04 · крайний случай: скрипт с setuid-битом">
+  <TCallout :line="2" :col="1" :span="11" :n="1" />
+  <TCallout :line="6" :col="4" :span="1" :n="2" />
+  <TCallout :line="9" :col="1" :span="44" :n="3" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> файл — скрипт: первая строка <code>#!</code> (интерпретируемый файл)</div>
+<div><span class="co-ball">2</span> setuid-бит установлен, владелец — root: всё как у <code>idprobe</code></div>
+<div><span class="co-ball">3</span> но привилегий нет: в выводе <code>id</code> нет <code>euid=0</code> — бит не сработал</div>
+</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> для <code>#!</code>-файлов ядро <b>игнорирует setuid/setgid-биты</b>:
+исполняется не скрипт, а интерпретатор, и между открытием файла ядром и его чтением
+интерпретатором возможна подмена — состояние гонки. Привилегированные обёртки делают
+бинарными — или используют <code>sudo</code> (раздел 7).
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/04-uid-inheritance.sh</code>.
+</div>
+
+<!--
+Исторически setuid-скрипты были источником уязвимостей (гонка между execve и открытием
+скрипта интерпретатором), поэтому Linux просто игнорирует setuid/setgid-биты на файлах
+с shebang: id внутри скрипта показывает обычные права, хотя бит установлен и владелец —
+root.
+-->
+
+---
+layout: section
+---
+
+# 2. Идентификация
+
+<SectionTOC prefix="2" :current="5" :items="[
+  'Субъекты и объекты',
+  'Файл паролей <code>/etc/passwd</code>',
+  'Файл групп <code>/etc/group</code>',
+  'Идентификаторы процесса',
+  'Реализация в ядре Linux',
+]" />
+
+---
+
+# Исходный код ядра: `struct cred`
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4">
+<div>
+
+```c
+/* include/linux/cred.h, строки 111–138 (сокращено) */
+struct cred {
+	atomic_long_t	usage;
+	kuid_t		uid;	 /* real UID of the task */
+	kgid_t		gid;	 /* real GID of the task */
+	kuid_t		suid;	 /* saved UID of the task */
+	kgid_t		sgid;	 /* saved GID of the task */
+	kuid_t		euid;	 /* effective UID of the task */
+	kgid_t		egid;	 /* effective GID of the task */
+	kuid_t		fsuid;	 /* UID for VFS ops */
+	kgid_t		fsgid;	 /* GID for VFS ops */
+	/* … capabilities, keyrings, LSM, user_ns … */
+	struct group_info *group_info; /* supplementary groups */
+} __randomize_layout;
+```
+
+</div>
+<div>
+
+- Все идентификаторы процесса живут в одной структуре **`struct cred`** — вместе с capabilities и дополнительными группами (`group_info`).
+- `task_struct` каждого процесса держит указатель на **неизменяемый** `cred`: смена идентификаторов — это подготовка новой копии (`prepare_creds`) и её атомарная фиксация (`commit_creds`).
+- Именно эти поля показывают `/proc/PID/status` и `ps` (демо 03).
+
+</div>
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+Linux v6.18 (LTS):
+<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/cred.h#L111">include/linux/cred.h#L111</a>
+(поля uid…fsgid — строки 113–121).
+</div>
+
+<Refs ids="linux-kernel man-credentials" />
+
+<!--
+Подраздел «реализация в ядре»: смотрим, как то, что мы видели в /proc, определено в ядре.
+Comments в struct cred дословно повторяют терминологию credentials(7): real/saved/effective/VFS.
+-->
+
+---
+
+# Исходный код ядра: выбор эффективного UID
+
+<div class="grid grid-cols-2 gap-4">
+<div>
+
+```c
+/* include/linux/cred.h, строки 352–366 */
+#define current_cred_xxx(xxx)	\
+({				\
+	current_cred()->xxx;	\
+})
+
+#define current_uid()	(current_cred_xxx(uid))
+#define current_euid()	(current_cred_xxx(euid))
+/* … */
+#define current_fsuid()	(current_cred_xxx(fsuid))
+```
+
+</div>
+<div>
+
+```c
+/* kernel/sys.c, строки 1027–1038 */
+SYSCALL_DEFINE0(getuid)
+{
+	/* Only we change this so SMP safe */
+	return from_kuid_munged(
+		current_user_ns(), current_uid());
+}
+
+SYSCALL_DEFINE0(geteuid)
+{
+	/* Only we change this so SMP safe */
+	return from_kuid_munged(
+		current_user_ns(), current_euid());
+}
+```
+
+</div>
+</div>
+
+<div class="mt-3">
+
+`current_euid()` выбирает поле `euid` из `cred` **текущего** процесса; так реализованы
+системные вызовы <Man p="getuid(2)" />/<Man p="geteuid(2)" />. Проверки привилегий
+(`capable()`) используют euid-набор, проверки доступа к файлам — `current_fsuid()`.
+
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/cred.h#L352">cred.h#L352</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/sys.c#L1033">sys.c#L1033</a>.
+</div>
+
+<Refs ids="linux-kernel" />
+
+<!--
+Макрос current_cred_xxx — «выбор поля из cred текущего процесса». from_kuid_munged
+переводит внутренний kuid_t в число для пользовательского пространства с учётом
+user namespace — поэтому в контейнере вы можете видеть другой UID, чем видит ядро.
+-->
+
+---
+
+# Исходный код ядра: наследование при `fork`
+
+<div class="grid grid-cols-2 gap-4">
+<div>
+
+```c
+/* kernel/fork.c, строка 2046:
+ * copy_process() — создание процесса */
+retval = copy_creds(p, clone_flags);
+```
+
+```c
+/* kernel/cred.c, строки 206–219:
+ * prepare_creds() — копия cred вызывающего */
+	old = task->cred;
+	memcpy(new, old, sizeof(struct cred));
+```
+
+</div>
+<div>
+
+```c
+/* kernel/cred.c, строки 290–344 (сокращено) */
+int copy_creds(struct task_struct *p,
+	       u64 clone_flags)
+{
+	struct cred *new;
+	/* поток (CLONE_THREAD):
+	 * разделяет cred с родителем */
+	if (clone_flags & CLONE_THREAD) {
+		p->real_cred =
+			get_cred_many(p->cred, 2);
+		return 0;
+	}
+	new = prepare_creds(); /* копия */
+	/* … user namespace, keyrings … */
+	p->cred = p->real_cred = get_cred(new);
+	return 0;
+}
+```
+
+</div>
+</div>
+
+<div class="mt-2">
+
+Наследование из <Man p="credentials(7)" /> — это один `memcpy`: новый процесс получает
+**побайтовую копию** `struct cred` родителя (все UID/GID, capabilities, группы). Поток
+внутри процесса cred не копирует, а разделяет.
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/fork.c#L2046">fork.c#L2046</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/cred.c#L290">cred.c#L290</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/kernel/cred.c#L219">cred.c#L219</a>.
+</div>
+
+<Refs ids="linux-kernel man-credentials" />
+
+<!--
+Вся «магия» наследования — memcpy в prepare_creds. Отсюда же видно отличие потока от
+процесса: CLONE_THREAD не копирует cred вообще. Это код, который выполнился в демо 04
+между строками «after seteuid(ruid)» и «child after fork».
+-->
+
+---
+
+# Исходный код ядра: setuid-бит при `execve`
+
+```c
+/* fs/exec.c, строки 1534–1584 (сокращено): вызывается из execve(2) */
+static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
+{
+	/* Handle suid and sgid on files */
+	if (!mnt_may_suid(file->f_path.mnt))	/* nosuid-монтирование */
+		return;
+	if (task_no_new_privs(current))		/* prctl NO_NEW_PRIVS */
+		return;
+	if (mode & S_ISUID) {
+		bprm->per_clear |= PER_CLEAR_ON_SETID;
+		bprm->cred->euid = vfsuid_into_kuid(vfsuid); /* euid := владелец файла */
+	}
+	/* аналогично S_ISGID → egid */
+}
+```
+
+```c
+/* security/commoncap.c, строки 952–953: cap_bprm_creds_from_file() */
+	new->suid = new->fsuid = new->euid;
+	new->sgid = new->fsgid = new->egid;
+```
+
+<div class="mt-2">
+
+При <Man p="execve(2)" /> setuid-файла ядро меняет **только euid** — на владельца файла;
+затем suid и fsuid выравниваются по новому euid (алгоритм из подраздела 2.4). Здесь же
+видно, когда бит игнорируется: монтирование с `nosuid` и режим `no_new_privs`.
+
+</div>
+
+<div class="text-xs opacity-70 mt-1">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/fs/exec.c#L1534">exec.c#L1534</a>
+(присваивание euid — строка 1577) ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/security/commoncap.c#L953">commoncap.c#L953</a>.
+</div>
+
+<Refs ids="linux-kernel man-execve" />
+
+<style>
+/* Два листинга + абзац не помещаются при базовом размере кода — ужимаем код. */
+.slidev-code { font-size: 0.64rem !important; line-height: 1.38 !important; }
+</style>
+
+<!--
+Замыкаем картину демо 03: euid=0 у passwd появился в bprm_fill_uid, а suid=fsuid=euid —
+в cap_bprm_creds_from_file. Отсюда же два практических способа «выключить» setuid:
+смонтировать ФС с nosuid или установить процессу no_new_privs.
 -->
 
 ---

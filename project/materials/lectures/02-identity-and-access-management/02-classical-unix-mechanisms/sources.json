@@ -16,5 +16,11 @@
   { "id": "man-group", "text": "group(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/group.5.html" },
   { "id": "man-capabilities", "text": "capabilities(7) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man7/capabilities.7.html" },
   { "id": "man-proc", "text": "proc(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/proc.5.html" },
-  { "id": "man-id", "text": "id(1) — GNU coreutils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man1/id.1.html" }
+  { "id": "man-id", "text": "id(1) — GNU coreutils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man1/id.1.html" },
+  { "id": "man-setuid", "text": "setuid(2) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man2/setuid.2.html" },
+  { "id": "man-seteuid", "text": "seteuid(2) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man2/seteuid.2.html" },
+  { "id": "man-setresuid", "text": "setresuid(2) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man2/setresuid.2.html" },
+  { "id": "man-execve", "text": "execve(2) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man2/execve.2.html" },
+  { "id": "linux-kernel", "text": "The Linux kernel source tree, v6.18 LTS (include/linux/cred.h, kernel/cred.c, kernel/sys.c, fs/exec.c, security/commoncap.c).", "url": "https://github.com/torvalds/linux/tree/v6.18" },
+  { "id": "kerrisk-tlpi", "text": "Kerrisk M. The Linux Programming Interface: A Linux and UNIX System Programming Handbook. — San Francisco: No Starch Press, 2010. — Ch. 9 «Process Credentials», ch. 38 «Writing Secure Privileged Programs».", "url": "https://man7.org/tlpi/" }
 ]

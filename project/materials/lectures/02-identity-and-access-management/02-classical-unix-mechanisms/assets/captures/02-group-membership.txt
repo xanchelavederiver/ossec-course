@@ -1,0 +1,13 @@
+===== Членство bob в двух базах: id, /etc/group и /etc/passwd =====
+
+# id bob
+uid=1001(bob) gid=1001(bob) groups=1001(bob),4(adm),27(sudo),100(users)
+
+# grep -E '^(bob|sudo|users|adm):' /etc/group
+adm:x:4:ubuntu,bob
+sudo:x:27:ubuntu,bob
+users:x:100:bob
+bob:x:1001:
+
+# grep '^bob:' /etc/passwd
+bob:x:1001:1001::/home/bob:/bin/bash

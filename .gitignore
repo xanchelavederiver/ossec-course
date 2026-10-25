@@ -1,3 +1,5 @@
 .idea/
 .DS_Store
 .sources/
+.tmp/
+.claude/prompts/tmp.md
