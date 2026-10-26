@@ -1,0 +1,19 @@
+:_author: Веричев Александр Владимирович
+:_email: alexanderverichev@gmail.com
+// Источник: https://raw.githubusercontent.com/asciidoctor/asciidoctor/v1.5.5/data/locale/attributes.adoc
+:appendix-caption: Приложение
+:caution-caption: Внимание
+:example-caption: Пример
+:figure-caption: Рисунок
+:important-caption: Важно
+:last-update-label: Последний раз обновлено
+// :listing-caption: Листинг
+:manname-title: НАЗВАНИЕ
+:note-caption: Примечание
+:preface-title: Предисловие
+:table-caption: Таблица
+:tip-caption: Подсказка
+:toc-title: Содержание
+:untitled-label: Без названия
+:version-label: Версия
+:warning-caption: Предупреждение

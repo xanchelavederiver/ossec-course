@@ -1,0 +1,2186 @@
+= Тема 5 - Изоляция процессов ОС Linux
+include::../00 - title/lecture-notes-defaults.adoc[]
+:doctype: article
+:icons: font
+:source-highlighter: rouge
+:stem: latexmath
+:icons: font
+:toc2:
+:toclevels: 3
+:sectnums:
+
+
+// names
+:example-pid_namespace_ex1: 01_isolation__pid_namespace.c
+:example-pid_namespace_ex2: 02_isolation__nested_pid_namespace.c
+:example-net_namespace_ex1: 03_isolation__net_namespace.c
+:example-container: 04_container.c
+
+// links
+// 1. seccomp
+
+// 2. chroot
+:wiki-chroot: https://en.wikipedia.org/wiki/Chroot
+:wiki-archlinux-chroot: https://wiki.archlinux.org/title/Chroot
+:github-live-custom-ubuntu: https://github.com/mvallim/live-custom-ubuntu-from-scratch
+
+// 3. namespaces
+:namespaces-toptal-intro: https://www.toptal.com/linux/separation-anxiety-isolating-your-system-with-linux-namespaces
+:namespaces-habr-intro: https://habr.com/ru/companies/selectel/articles/279281/
+:namespaces-habr-deep-dive-p1: https://habr.com/ru/articles/458462/
+:namespaces-habr-deep-dive-p2: https://habr.com/ru/articles/459574/
+:namespaces-habr-deep-dive-p3: https://habr.com/ru/articles/541304/
+:namespaces-habr-deep-dive-p4: https://habr.com/ru/articles/549414/
+
+:namespaces-lwn-overview: https://lwn.net/Articles/531114/
+:namespaces-lwn-part2: https://lwn.net/Articles/531381/
+:namespaces-lwn-part3: https://lwn.net/Articles/531419/
+:namespaces-lwn-part4: https://lwn.net/Articles/532748/
+:namespaces-lwn-part5: https://lwn.net/Articles/532593/
+:namespaces-lwn-part6: https://lwn.net/Articles/540087/
+:namespaces-lwn-part7: https://lwn.net/Articles/580893/
+:namespaces-lwn-mount-ns: https://lwn.net/Articles/689856/
+:namespaces-lwn-mount-ns-2: https://lwn.net/Articles/690679/
+:namespaces-lwn-groups-dropping: https://lwn.net/Articles/621612/
+:namespaces-lwn-setgroups-loophole: https://lwn.net/Articles/626665/
+
+:namespaces-rh-7-linux-namespaces: https://www.redhat.com/en/blog/7-linux-namespaces
+:namespaces-rh-building-container-namespaces: https://www.redhat.com/en/blog/building-container-namespaces
+:namespaces-rh-mount-namespaces: https://www.redhat.com/en/blog/mount-namespaces
+:namespaces-rh-pid-namespace: https://www.redhat.com/en/blog/pid-namespace
+:namespaces-rh-uts-namespace: https://www.redhat.com/en/blog/uts-namespace
+:namespaces-rh-net-namespaces: https://www.redhat.com/en/blog/net-namespaces
+
+// man-pages
+:man-chroot_1: https://man7.org/linux/man-pages/man1/chroot.1.html
+:man-chroot_2: https://man7.org/linux/man-pages/man2/chroot.2.html
+:man-clone_2: https://man7.org/linux/man-pages/man2/clone.2.html
+:man-fork_2: https://man7.org/linux/man-pages/man2/fork.2.html
+:man-unshare_2: https://man7.org/linux/man-pages/man2/unshare.2.html
+:man-setns_2: https://man7.org/linux/man-pages/man2/setns.2.html
+:man-setgroups_2: https://man7.org/linux/man-pages/man2/setgroups.2.html
+:man-dup_2: https://man7.org/linux/man-pages/man2/dup2.2.html
+:man-mount_2: https://man7.org/linux/man-pages/man2/mount.2.html
+:man-umount_2: https://man7.org/linux/man-pages/man2/umount.2.html
+:man-selinux_8: https://man7.org/linux/man-pages/man8/selinux.8.html
+:man-landlock_7: https://man7.org/linux/man-pages/man7/landlock.7.html
+
+// misc
+:info-apparmor: https://apparmor.net/
+:info-ebpf: https://ebpf.io/
+
+
+<<<
+
+[introduction]
+== О курсе
+
+*Безопасность операционных систем* +
+Осень 2025 г.
+
+{_author} +
+{_telegram} {_email}
+
+Версия настоящего документа: `0.3.1`.
+
+
+// TODO: расписать нормально!
+// == SecComp
+//
+// === Что-нибудь добавлю потом
+
+
+[#section-chroot]
+== Механизм chroot в Unix/Linux
+
+Механизм `chroot` (_change root_) — один из самых ранних способов изоляции процессов в Unix-подобных операционных системах. Он позволяет изменить корневой каталог (`/`) для процесса и всех его потомков, создавая _иллюзию_ работы процессов в отдельной файловой системы{nbsp}<<Wiki-chroot>><<Wiki-archlinux-chroot>>.
+
+В настоящем разделе кратко рассмотрена история, назначение и внутренние механизмы работы `chroot`, практические примеры использования, а также приведено сравнение с современными контейнерными технологиями.
+
+=== Краткий исторический обзор
+
+`chroot` был представлен в *Unix Version 7* в 1979 году, предположительно Биллом Джой (Bill Joy), одним из разработчиков BSD.
+
+Изначально `chroot` создавался:
+
+* как инструмент тестирования,
+* для отладки программ в альтернативной файловой иерархии.
+
+[NOTE]
+====
+Изначально `chroot` *не задумывался* как механизм безопасности.
+====
+
+Со временем `chroot` был перенят BSD, System V и Linux и стал использоваться для запуска сетевых сервисов.
+
+`chroot` оказал влияние на появление более сложных механизмов изоляции:
+
+* FreeBSD Jails;
+* Solaris Zones;
+* Linux Containers (LXC);
+* Docker.
+
+=== Назначение chroot
+
+`chroot` изменяет корневой каталог процесса, тем самым ограничивая доступ процесса к файловой системе.
+
+Основная идея: процесс "видит" только ту часть файловой системы, которая находится внутри нового корня.
+
+.Назначение chroot
+[cols="1,2"]
+|===
+^|Проблема ^|Как chroot помогает
+
+|Случайное повреждение системы
+|Процесс не имеет доступа к реальному `/`
+
+|Тестирование ПО
+|Использование альтернативных `/lib`, `/etc`
+
+|Ограничение ущерба
+|Компрометация сервиса ограничена файловой системой
+
+|Восстановление системы
+|Работа с установленной ОС из Live-среды
+|===
+
+[IMPORTANT]
+====
+`chroot` *не является* полноценной границей безопасности (_chroot is not a security boundary_) так как:
+
+* не создает новые пространства имён (_namespace_, см. <<section-namespaces>>) процессов;
+* не ограничивает системные вызовы;
+* не фильтрует сетевой трафик;
+* не способен пользователю `root` выйти из `chroot jail` при неправильной настройке.
+====
+
+Механизм `chroot` **не изолирует**:
+
+* сеть;
+* процессы;
+* пользователей;
+* ядро;
+* IPC;
+* системные вызовы.
+
+[#section-chroot_inner-workins]
+=== Механизм работы chroot
+
+==== Системный вызов chroot()
+
+`chroot jail` создаётся посредством команды link:{man-chroot_1}[chroot(1)] или системного вызова link:{man-chroot_2}[chroot(2)]:
+[source,c]
+----
+#include <unistd.h>
+
+int chroot(const char *path);
+----
+
+Системный вызов link:{man-chroot_2}[chroot(2)]:
+
+* доступен только привилегированным процессам (`root`);
+* изменяет указатель корневого каталога процесса;
+* влияет только на текущий процесс и его потомков.
+
+==== Разрешение путей
+
+Внутри `chroot jail` выполняется трансляция (разрешение) путей:
+
+. В абсолютных путях переписываются префиксы
+* до `chroot`
++
+----
+/etc/passwd → /etc/passwd
+----
++
+* после `chroot("/newroot")`
++
+----
+/etc/passwd → /newroot/etc/passwd
+----
+. Относительные пути продолжают разрешаться относительно текущего каталога.
+
+==== Пример создания chroot jail
+
+В качестве примера использования `chroot` создадим небольшую песочницу с корнем в директории `/tmp/chroot-test`.
+
+.1. Пробуем запустить `/bin/bash` с корнем на `/tmp/chroot-test`
+[source,console]
+----
+$ mkdir /tmp/chroot-test
+$ sudo chroot /tmp/chroot-test /bin/bash
+chroot: failed to run command ‘/bin/bash’: No such file or directory
+----
+
+Ошибка: не найден исполняемый файл командной оболочки.
+
+Так как `chroot` создаёт новую, изолированную файловую систему, которая не имеет доступа к основной, все файлы оригинальной системы оказываются недоступны - в том числе и `/bin/bash`.
+
+.2. Копируем `/bin/bash` в корень `/tmp/chroot-test` до запуска `chroot`
+
+[source,console]
+----
+$ mkdir /tmp/chroot-test/bin
+$ cp /bin/bash /tmp/chroot-test/bin
+$ sudo chroot /tmp/chroot-test /bin/bash
+chroot: failed to run command ‘/bin/bash’: No such file or directory
+----
+
+Опять ошибка! Однако, несмотря на идентичное сообщение, совсем не такая, как в прошлый раз.
+
+В первой попытке не был найден сам исполняемый файл `/bin/bash`, теперь же не найдены динамически подключаемые библиотеки (`*.so`), с которыми скомпилирован интерпретатор.
+
+.3. Копируем все зависимости в корень `/tmp/chroot-test` до запуска `chroot`
+
+Посмотреть, какие именно динамические библиотеки требуется скопировать, можно с помощью `ldd`:
+
+[source,console]
+----
+$ ldd /bin/bash
+        linux-vdso.so.1 (0x000079298c924000)
+        libtinfo.so.6 => /lib/x86_64-linux-gnu/libtinfo.so.6 (0x000079298c76e000)
+        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000079298c400000)
+        /lib64/ld-linux-x86-64.so.2 (0x000079298c926000)
+----
+
+Копируем зависимости и попробуем:
+[source,console]
+----
+$ mkdir /tmp/chroot-test/lib /tmp/chroot-test/lib64
+$ cp /lib/x86_64-linux-gnu/libtinfo.so.6 /tmp/chroot-test/lib/
+$ cp /lib/x86_64-linux-gnu/libc.so.6 /tmp/chroot-test/lib
+$ cp /lib64/ld-linux-x86-64.so.2 /tmp/chroot-test/lib64/
+$ sudo chroot /tmp/chroot-test /bin/bash
+bash-5.2#
+----
+
+[NOTE]
+====
+Удобно настроить приглашение командной оболочки (_prompt_), дабы отличать среду `chroot jail` от основной, для этого в `chroot jail` выполнить:
+[source,console]
+----
+export PS1="(chroot) $PS1"
+----
+
+Продолжая текущий пример:
+[source,console]
+----
+$ sudo chroot /tmp/chroot-test /bin/bash
+bash-5.2# export PS1="(chroot) $PS1"
+(chroot) bash-5.2#
+----
+====
+
+[#section-chroot_inner-workins-chroot_jail_correct]
+==== Пример корректного создания chroot jail
+
+Для полноценного функционирования ОС в `chroot jail` необходимо выполнить несколько подготовительных операций{nbsp}<<Wiki-archlinux-chroot>>.
+
+[WARNING]
+====
+Конкретные шаги могут отличаться для различных дистрибутивов. В настоящем разделе показан пример подготовки окружения в Ubuntu 24.04.
+====
+
+.1. Подготавливаем окружение
+
+[source,console]
+----
+$ mkdir /tmp/chroot-test2
+$ mkdir /tmp/chroot-test2/{proc,sys,dev,run}
+----
+[source,console]
+----
+$ sudo mount -t proc proc /tmp/chroot-test2/proc/
+$ sudo mount -t sysfs /sys /tmp/chroot-test2/sys/
+$ sudo mount --rbind /dev /tmp/chroot-test2/dev/
+$ sudo mount --rbind /run /tmp/chroot-test2/run/
+----
+
+.2. Копируем необходимые исполняемые файлы и зависимости и работаем
+
+Далее требуется либо скопировать исполняемые файлы и их зависимости, как показано в предыдущем примере.
+
+Альтернативный вариант: смонтировать директории `/bin`, `/lib`, `/lib32`, `/lib64` и т.п. в одноимённые поддиректории корня:
+
+[source,console]
+----
+$ mkdir /tmp/chroot-test2/{bin,lib,lib64}
+$ sudo mount --rbind /bin /tmp/chroot-test2/bin
+$ sudo mount --rbind /lib /tmp/chroot-test2/lib
+$ sudo mount --rbind /lib64 /tmp/chroot-test2/lib64
+----
+
+Далее работаем в окружении:
+
+[source,console]
+----
+$ sudo chroot /tmp/chroot-test2 /bin/bash
+bash-5.2# export PS1="(chroot) $PS1"
+(chroot) bash-5.2#
+----
+
+.3. Зачищаем окружение
+
+[source,console]
+----
+$ sudo umount /tmp/chroot-test2/lib64
+$ sudo umount /tmp/chroot-test2/lib
+$ sudo umount /tmp/chroot-test2/bin
+----
+
+[source,console]
+----
+$ sudo umount /tmp/chroot-test2/proc
+$ sudo umount /tmp/chroot-test2/sys
+$ sudo umount -l /tmp/chroot-test2/run
+$ sudo umount -l /tmp/chroot-test2/dev
+----
+
+[IMPORTANT]
+====
+Чаще всего отмонтировать `dev/` и `run/` без флага `-l` (_lazy_) не получится, поэтому рекомендуется сразу по завершении работы с `chroot jail` выполнить перезагрузку системы.
+====
+
+=== Практические примеры использования механизма chroot
+
+==== Пример 1: изоляция приложения
+
+Одно из основных назначений `chroot` - запуск приложения в изолированном окружении.
+
+[NOTE]
+====
+Последовательность действий аналогична примерам, показанным в примерах раздела <<section-chroot_inner-workins>>.
+====
+
+Для этого сначала требуется создать минимальное окружение:
+
+[source,console]
+----
+$ mkdir -p /chroot/{bin,lib,lib64,...}
+$ cp /bin/bash /chroot/bin/
+...
+----
+
+Далее выполнить копирование исполняемых файлов и их зависимостей (библиотек `.so`):
+
+[source,console]
+----
+$ ldd my-program
+$ cp /lib/x86_64-linux-gnu/libc.so.6 /chroot/lib/
+$ cp /lib64/ld-linux-x86-64.so.2 /chroot/lib64/
+...
+----
+
+Выполнить вход в окружение:
+
+[source,console]
+----
+$ chroot /chroot my-program
+----
+
+В результате процесс `my-program` не будет иметь доступ к большей части файловой системы ОС.
+
+Примеры использования такого подхода в реальных системах:
+
+* изоляция сетевых служб (FTP, DNS, SMTP и др.);
+* recovery-среды, debug-билды, системные утилиты в ОС Linux (в частности, в Android OS).
+
+==== Пример 2: восстановление системы
+
+`chroot` часто используется для восстановления системы, а также для создания загрузочных образов (см.{nbsp}<<Build-custom-livecd>>).
+
+Типичный сценарий восстановления повреждённой системы:
+
+. Грузимся с помощью LiveCD.
+. Монтируем файловую систему повреждённой ОС, а также ряд служебных псевдофайловых систем:
++
+[source,bash]
+----
+$ sudo mount /dev/sda2 /mnt
+$ sudo mount --bind /dev /mnt/dev
+$ sudo mount --bind /proc /mnt/proc
+$ sudo mount --bind /sys /mnt/sys
+----
+. Запускаем `chroot`:
++
+[source,bash]
+----
+$ sudo chroot /mnt /bin/bash
+...
+----
+. Выполняем необходимые команды: например, установка пакетов, редактирование конфигурационных файлов, пересборка initramfs и т.п.
+
+[NOTE]
+====
+Подобный подход применялся нами для сброса пароля `grub`.
+====
+
+==== Пример 3: тестирование библиотек
+
+Аналогично тестированию приложения:
+
+. создается альтернативное `/lib`;
+. приложение запускается в `chroot`;
+. выполняется тестирование с альтернативным набором библиотек.
+
+=== Заключение
+
+* `chroot` - исторически важный механизм.
+* Механизм `chroot` прост, но его возможности ограничены.
+* Подходит для:
+** восстановления системы;
+** тестирования;
+** legacy-сценариев.
+* Не должен рассматриваться как полноценная защита.
+* Современные контейнеры являются логическим развитием идей `chroot`.
+
+[#section-namespaces]
+== Механизм пространства имён Linux namespaces
+
+// TODO: переписать всё самостоятельно, добавить необходимые фрагменты
+
+=== Краткий исторический обзор
+
+Пространства имён Linux (*Linux namespaces*) - механизм ядра, обеспечивающий изоляцию глобальных системных ресурсов между группами процессов{nbsp}<<Namespaces-lwn-overview>><<Namespaces-toptal-intro>><<Namespaces-habr-intro>>.
+
+* *2002–2003*: первым было реализовано *пространство файловой системы* (*mount namespace*, Linux{nbsp}2.4.19), позволившее процессам иметь разные представления таблицы монтирования.
+* *2006–2008*: были добавлены UTS, IPC, PID и Network namespaces.
+* *2013 (Linux 3.8)*: завершена реализация поддержки пространств имён пользователей (*user namespaces*), что позволило непривилегированным пользователям создавать пространства имён и создавать пользователей `root` внутри контейнера.
+
+Пространства имён - фундамент контейнерных технологий (LXC, Docker, Podman), обеспечивающий лёгкую виртуализацию без запуска отдельного ядра.
+
+=== Назначение механизма пространств имён
+
+Основная идея — *изоляция глобальных ресурсов ядра*. Вместо одного общего пространства процессов, сети или единой файловой системы каждая группа процессов получает собственное представление этих ресурсов.
+
+Namespaces применяются для:
+
+* разрешения конфликты ресурсов (PID, порты, имена хостов);
+* повышения безопасности за счёт изоляции процессов;
+* запуска приложений, ожидающих «полноценную» систему - зачастую настроенную иначе, чем основная ("хостовая");
+* лёгковесная виртуализация (вместо тяжёлых виртуальных машин, загружающих полноценную ОС).
+
+=== Основные типы пространств имён
+
+[cols="1,3",options="header"]
+|===
+| Пространство имён | Что изолируется
+| PID | Идентификаторы процессов (PID)
+| Network | Сетевой стек (интерфейсы, порты и проч.)
+| User | Идентификаторы пользователей (UID) и групп (GID)
+| Mount | Точки монтирования (части файловой системы)
+| IPC | SystemV IPC, очереди сообщений POSIX
+| UTS | Имя хоста (`hostname`) и доменное имя NIS (`domainname`)
+|===
+
+[#section-namespaces_mount]
+=== Пространство имён Mount (CLONE_NEWNS)
+
+==== О пространстве имен монтирования
+
+Пространства имен монтирования, *Mount namespace* - мощный и гибкий инструмент создания собственных представлений дерева файловой системы ОС, видимых пользователям и процессам{nbsp}<<Namespaces-lwn-mount-ns>><<Namespaces-lwn-mount-ns-2>>.
+
+Пространства имен монтирования появились в версии 2.4.19 в 2002 году и стали первым типом пространств имен, реализованным в Linux.
+
+Mount namespace изолируют список точек монтирования, видимых процессам в пространстве имен. Для каждого пространства имен монтирования определён *свой собственный* список точек монтирования, видимый только процессам в этом пространстве. В результате процессы в разных пространствах имён видят и манипулируют разными *представлениями одной и той же иерархии* каталогов.
+
+При загрузке системы создаётся одно пространство имен монтирования, называемое _исходное_ пространство имен (_initial namespace_), также основное или главное. Новые пространства имен монтирования создаются с помощью вызова:
+
+* link:{man-clone_2}[clone(2)] с флагом `CLONE_NEWNS` - создаётся новое пространство имён и новый процесс, помещаемый в это пространство;
+* link:{man-unshare_2}[unshare(2)] - текущий процесс перемещается в новое пространство имён.
+
+После вызова link:{man-clone_2}[clone(2)] или link:{man-unshare_2}[unshare(2)] точки монтирования *могут* быть добавлены и удалены в каждом пространстве имён независимо друг от друга (с помощью link:{man-mount_2}[mount(2)] и link:{man-umount_2}[umount(2)]). Изменения в списке точек монтирования видны только процессам в пространстве имён монтирования, в котором находится процесс и не видны в других пространствах имён монтирования.
+
+[IMPORTANT]
+====
+Изменения в списке точек монтирования одного пространства имён могут быть видны в других пространствах в случае использования т.н. общих поддеревьев, см. раздел <<section-namespaces_mount-shared_subtrees>>.
+====
+
+Пространства имен монтирования служат для различных целей, в частности:
+
+. создание пользовательских представлений файловой системы - изоляция файлов пользователей;
+. изоляции рабочих директорий процессов в стиле т.н. chroot-jail (см. <<section-chroot_inner-workins-chroot_jail_correct>>);
+. монтирование файловой системы `/proc` для нового пространства имен PID (см. <<section-namespaces_pid>>);
+. создание собственной корневой файловой системы (_root filesystem_) для контейнеров.
+
+===== Отличие от chroot
+
+link:{man-chroot_2}[chroot(2)] меняет только корневой каталог процесса, в отличие от пространства имён Mount, которое также изолирует таблицу монтирования, события файловой системы и проч.
+
+Mount namespace - обобщение и расширение механизма `chroot`.
+
+==== Группы точек монтирования (peer groups)
+
+*Точкой монтирования* (*mount point*) называют файл или директорию файловой системы, ассоциируемую с некоторым устройством (HDD, SSD, флешка, CD-ROM), другим файлом или директорией. В случае связывания нового файла/директории с существующим файлом/директорией файловой системы тип монтирования называют _бинд-монтирование_ (_bind mount_).
+
+В некотором смысле бинд-монтирование похоже на создание жёсткой ссылки (hard link), но имеет важные отличия{nbsp}<<Namespaces-lwn-mount-ns-2>>:
+
+* нельзя создать жёсткую ссылку на директорию, однако можно выполнить бинд-монтирование директории;
+* жёсткие ссылки возможны только в пределах одной файловой системы, тогда как бинд-монтирование может пересекать границы файловых систем (и даже выходить за пределы `chroot()`-окружения);
+* жёсткие ссылки требуют изменения файловой системы, бинд-монтирование же является записью в списке монтирования пространства имён монтирования - изменения отражаются в оперативной памяти работающей системы.
+
+Бинд-монтирование можно создать программно с помощью системного вызова link:{man-mount_2}[mount(2)] с флагом `MS_BIND` или из командной строки с помощью `mount --bind`.
+
+*Группа точек монтирования* (*peer group*) - набор точек монтирования, объединяемых для передачи друг другу событий монтирования и размонтирования.
+
+====
+Проиллюстрируем концепцию на примере. Предположим, в файловой системе определена точка монтирования `/` и три точки монтирования `A`, `B`, `C`, объединённые в группу `M`:
+
+----
+/       <- /dev/sda1
+├── A   <- /dev/sdb1   ─┐
+├── B   <- /dev/sdb2   ─┼ M
+└── C   <- /dev/sdb3   ─┘
+----
+
+Предположим, *непосредственно под точкой монтирования* `A` выполняется монтирование нового устройства - создаётся точка `X`.
+
+[NOTE]
+=====
+"Непосредственно под" означает, что между `A` и `X` отсутствуют другие точки монтирования в поддереве файловой системы с корнем в `X`.
+=====
+
+Так как точка `A` состоит в группе точек монтирования `M`, событие "монтирование `X`{zwsp}" транслируется (is propagated) точкам `B` и `C`, что приводит к следующий картине:
+
+----
+/           <- /dev/sda1
+├── A       <- /dev/sdb1   ─┐
+    └── X   <- /dev/sdc    ─┤
+├── B       <- /dev/sdb2   ─┼ M
+    └── X   <- /dev/sdc    ─┤
+└── C       <- /dev/sdb3   ─┤
+    └── X   <- /dev/sdc    ─┘
+----
+====
+
+Точка монтирования `X` типа `MS_SHARED` (см.{nbsp}<<section-namespaces_mount-shared_subtrees, следующий раздел>>) добавляется в группу точек в следующих случаях:
+
+. точка монтирования `X` реплицируется при создании нового пространства имён монтирования;
+. точка `X` бинд-монтируется.
+
+В обоих случаях новая точка становится членом той же группы точек монтирования, что и существующая точка `X`.
+
+Точка монтирования перестает быть членом группы, когда она размонтируется, либо явно с помощью системного вызова link:{man-umount_2}[umount(2)], либо неявно, когда пространство имен монтирования уничтожается из-за завершения последнего процесса-члена или его перехода в другое пространство имен.
+
+[#section-namespaces_mount-shared_subtrees]
+==== Общие поддеревья (shared subtrees)
+
+Как показала практика применения только что реализованного механизма пространств имён монтирования, изоляция пространств может быть чрезмерной{nbsp}<<Namespaces-lwn-mount-ns>>.
+
+Типичный пример ситуации, доставляющей значительные неудобства при работе с полностью изолированными окружениями: монтирование диска в приводе CD-ROM. В первоначальной реализации единственным способом сделать этот диск видимым во всех пространствах имён монтирования было выполнение отдельного монтирования диска в каждом пространстве имён. Во многих случаях предпочтительнее было бы выполнить одну операцию монтирования, которая сделает диск видимым во всех (или, возможно, в некотором подмножестве) пространств имён системы.
+
+Для решения описанной проблемы в Linux 2.6.15 (в начале 2006 года) был добавлен механизм *общих поддеревьев* (*shared subtrees*). Механизм общих поддеревьев обеспечивает автоматическое и контролируемое распространение событий монтирования и размонтирования между членами группы точек монтирования (peer group).
+
+Продолжая пример с монтированием оптического диска, наличие общих поддеревьев позволяет выполнить однократное монтирование диска, что повлечёт за собой монтирование в остальных членах соответствующей группы.
+
+Характер распространения событий монтирования определяется *типом распространения* (*propagation type*) точки. Определены четыре типа:
+
+* `MS_SHARED` - точка монтирования делится событиями монтирования и размонтирования с другими точками своей peer group, в результате монтирование или размонтирование также произойдёт под каждой из точек монтирования группы. Аналогично в обратном направлении: точка получает события от других точек группы.
+* `MS_PRIVATE` - в противоположность типу `MS_SHARED`, точка монтирования не делится событиями с другими точками и не получает события от них.
+* `MS_SLAVE` - нечто среднее между типами `MS_SHARED` и `MS_PRIVATE`, точка монтирования получает события от своей _главной_ группы точек, но не передаёт свои события членам группы.
+* `MS_UNBINDABLE` - аналогично `MS_PRIVATE`, точка не передаёт и не получает события от других точек группы. Кроме этого, точку монтирования невозможно привязать к другой точке с помощью бинд-монтирования.
+
+Важно отметить следующие особенности:
+
+. Тип `MS_UNBINDABLE` решает проблему, именуемую "mount point explosion" (см.{nbsp}<<Namespaces-lwn-mount-ns-2>>); в контексте пространств имён монтирования этот тип фактически является аналогом `MS_PRIVATE`.
+// TODO: проверить - возможно, у MS_UNBINDABLE имеются side-эффекты!
+. Термин "событие монтирования" носит концептуальный характер: операция монтирования не порождает никаких событий (в понимании очередей сообщений и т.п.), однако провоцирует проверки наличия соседей по peer group родительской точки монтирования и монтирование в этих точках группы.
+. Тип распространения - характеристика точки монтирования, а не пространства имён монтирования. В одном пространстве могут одновременно находится множество точек монтирования разных типов.
+. При выполнении операции монтирования или размонтирования решение о распространении события определяется типом *непосредственно родительской* точки монтирования.
++
+Например, при монтировании точки `Y` *непосредственно* под точкой `X` типа `MS_SHARED` это событие будет передано всем членам группы точек, в которой состоит `X`. В случае монтирования точек под `Y` распространение событий будет определяться типом точки `Y`, а не `X`.
+. Точка монтирования может быть одновременно `MS_SLAVE` и `MS_SHARED` (т.н. slave-and-shared mount). В этом случае точка будет получать события от своей главной группы и передавать эти события членам её разделяемой группы.
+
+==== Файл /proc/<PID>/mountinfo
+
+Информация о точках монтирования пространства имён монтирования отображается в файле `/proc/<PID>/mountinfo`, где <PID> - идентификатор любого процесса, находящегося в пространстве имён. В каждую запись этого файла включён (возможно, пустой) набор опциональных полей (optional fields), которые отображают информацию о типе распространения и группе точек монтирования для каждой точки монтирования пространства имён{nbsp}<<Namespaces-lwn-mount-ns>>.
+
+. Для точки типа `MS_PRIVATE` опциональные поля пусты.
+. Точки типа `MS_UNBINDABLE` отмечены полем `unbindable`.
+. Для точки типа `MS_SHARED` опциональные поля содержат метку вида `shared:<N>`, где тег `shared` указывает на тип точки, а целое число `N` задаёт уникальный идентификатор группы точек монтирования. Идентификаторы группы нумеруются, начиная с 1, и могут повторно использоваться, когда группа перестаёт существовать (из-за того, что все её члены покинули группу). Для всех точек монтирования, являющихся членами одной группы, в файле `mountinfo` отображается тег `shared:<N>` с одним и тем же идентификатором `N`.
+. Точка типа `MS_SLAVE` отображается меткой вида `master:<N>`, где `N` - номер главной группы peer group.
+
+==== Пример: типы распространения и файл mountinfo
+
+===== MS_PRIVATE и MS_SHARED
+
+Создадим приватную и разделяемую точки монтирования:
+// TODO: придумать правильный аналог термина `MS_SHARED`
+
+[source,console,options="nowrap"]
+----
+$ mkdir -p /tmp/mounts/{private,shared}  <1>
+$ sudo mount -t tmpfs tmpfs /tmp/mounts/private
+$ sudo mount -t tmpfs tmpfs /tmp/mounts/shared
+
+$ cat /proc/self/mountinfo | grep mounts  <2>
+63 30 0:44 / /tmp/mounts/private rw,relatime shared:64 - tmpfs tmpfs rw,inode64
+414 30 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64
+
+$ sudo mount --make-private /tmp/mounts/private  <3>
+$ sudo mount --make-shared /tmp/mounts/shared    <4>
+$ cat /proc/self/mountinfo | grep mounts
+63 30 0:44 / /tmp/mounts/private rw,relatime - tmpfs tmpfs rw,inode64  <5>
+414 30 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64  <6>
+----
+<1> Создаём две точки монтирования tmpfs (RAM-based временная FS)
+<2> В выводе файла `/proc/self/mountinfo` видим тип созданных точек - `MS_SHARED`, т.к. опциональные поля содержат теги `shared:64` и `shared:261`, соответственно +
+*N.B.* Процесс оболочки `bash` находится в исходном пространстве имён монтирования, там же, где созданы обе точки монтирования, поэтому информацию можно получить с помощью `/proc`, используя PID `bash` (через подстановку `self`)
+<3> Изменяем тип точки `/tmp/mounts/private` на `MS_PRIVATE`
+<4> Изменяем тип точки `/tmp/mounts/shared` на `MS_SHARED`
+<5> Новый тип точки `/tmp/mounts/private` - `MS_PRIVATE` (опциональные поля отсутствуют)
+<6> Тип точки `/tmp/mounts/shared` не изменился - `MS_SHARED`
+
+[NOTE]
+====
+Обратите внимание на ID точек монтирования: 63 у `private` и 414 у `shared`. Также точка `shared` состоит в группе точек монтирования с ID=261.
+====
+
+В другой консоли создадим новое пространство имён и проверим список точек монтирования:
+
+[source,console,options="nowrap"]
+----
+$ sudo unshare -m --propagation unchanged /bin/bash  <1>
+# export PS1="(mount ns) $PS1"
+
+(mount ns) # cat /proc/self/mountinfo | grep mounts
+652 434 0:44 / /tmp/mounts/private rw,relatime - tmpfs tmpfs rw,inode64  <2>
+653 434 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64  <3>
+----
+<1> Создаём пространство имён монтирования +
+*N.B.* По умолчанию утилита `unshare` изменяет тип клонируемых точек монтирования на `MS_PRIVATE`; чтобы оставить тип неизменным, необходимо использовать `--propagation unchanged`
+<2> В новом Mount namespace тип точки `/tmp/mounts/private` остался неизменным, а ID новый - 652 (т.е. это новая точка монтирования, а не ссылка на точку с ID=63)
+<3> В новом Mount namespace тип точки `/tmp/mounts/shared` остался неизменным, а ID новый - 653 (т.е. это также новая точка монтирования, копия точки ID=414)
+
+[NOTE]
+====
+Копия точки `shared` состоит в той же группе точек ID=216 (опциональное поле `shared:261`), что и исходная точка в родительском пространстве имён.
+====
+
+В первой консоли создадим по одной точке монтирования *непосредственно под* двумя точками:
+
+[source,console,options="nowrap"]
+----
+$ mkdir -p /tmp/mounts/private/a  <1>
+$ mkdir -p /tmp/mounts/shared/b   <2>
+$ sudo mount -t tmpfs tmpfs /tmp/mounts/private/a  <1>
+$ sudo mount -t tmpfs tmpfs /tmp/mounts/shared/b   <2>
+
+$ cat /proc/self/mountinfo | grep mounts
+63 30 0:44 / /tmp/mounts/private rw,relatime - tmpfs tmpfs rw,inode64
+414 30 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64
+654 63 0:57 / /tmp/mounts/private/a rw,relatime - tmpfs tmpfs rw,inode64  <3>
+656 414 0:65 / /tmp/mounts/shared/b rw,relatime shared:64 - tmpfs tmpfs rw,inode64  <4>
+----
+<1> Создаём точку монтирования `a` непосредственно под `private`
+<2> Создаём точку монтирования `b` непосредственно под `shared`
+<3> Точка `a` унаследовала тип родительской точки - `MS_PRIVATE`, её ID=654
+<4> Точка `b` унаследовала тип родительской точки - `MS_SHARED`, её ID=656
+
+[NOTE]
+====
+Обратите внимание, новая точка монтирования `b` не состоит в одной группе точек монтирования с родительской точкой: её ID=64, у родительской ID=261.
+====
+
+Во второй консоли проверим список точек монтирования:
+
+[source,console,options="nowrap"]
+----
+(mount ns) # cat /proc/self/mountinfo | grep mounts
+652 434 0:44 / /tmp/mounts/private rw,relatime - tmpfs tmpfs rw,inode64
+653 434 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64
+657 653 0:65 / /tmp/mounts/shared/b rw,relatime shared:64 - tmpfs tmpfs rw,inode64  <1>
+----
+
+Как видно в выводе выше, событие монтирования точки `a` непосредственно под приватной точкой `private` не было передано соответствующей точке в новом пространстве имён.
+
+Напротив, точка `b` создана и в новом пространстве, так как монтировалась непосредственно под точкой `shared` типа `MS_SHARED`. При этом точка `b` в новом пространстве имён (ID=657) помещена в ту же группу точек ID=64, что и точка `b` и исходном пространстве (ID=656).
+
+Наконец, во второй консоли создадим точку непосредственно под точкой `shared`:
+
+[source,console,options="nowrap"]
+----
+(mount ns) # mkdir -p /tmp/mounts/shared/c  <1>
+(mount ns) # mount -t tmpfs tmpfs /tmp/mounts/shared/c
+
+(mount ns) # cat /proc/self/mountinfo | grep mounts
+652 434 0:44 / /tmp/mounts/private rw,relatime - tmpfs tmpfs rw,inode64
+653 434 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64
+657 653 0:65 / /tmp/mounts/shared/b rw,relatime shared:64 - tmpfs tmpfs rw,inode64
+677 653 0:66 / /tmp/mounts/shared/c rw,relatime shared:444 - tmpfs tmpfs rw,inode64  <2>
+----
+<1> Создаём точку `c` в новом пространстве имён непосредственно под точкой `shared` типа `MS_SHARED`
+<2> Создана точка `c`: ID=677, тип `MS_SHARED`, состоит в группе точек с ID=444 (опциональное поле `shared:444`)
+
+И в первой консоли проверим список точек монтирования:
+
+[source,console,options="nowrap"]
+----
+$ cat /proc/self/mountinfo | grep mounts
+63 30 0:44 / /tmp/mounts/private rw,relatime - tmpfs tmpfs rw,inode64
+414 30 0:56 / /tmp/mounts/shared rw,relatime shared:261 - tmpfs tmpfs rw,inode64
+654 63 0:57 / /tmp/mounts/private/a rw,relatime - tmpfs tmpfs rw,inode64
+656 414 0:65 / /tmp/mounts/shared/b rw,relatime shared:64 - tmpfs tmpfs rw,inode64
+678 414 0:66 / /tmp/mounts/shared/c rw,relatime shared:444 - tmpfs tmpfs rw,inode64  <1>
+----
+<1> Событие монтирования точки `c` было распространено в группе ID=64, что повлекло создание точки `c` в исходном пространстве имён монтирования: ID=678, тип `MS_SHARED`, состоит в группе точек с ID=444
+
+[NOTE]
+====
+Обратите внимание, создание точки в новом пространстве имён также повлекло создание точки в исходном пространстве. Причём созданная точка `c` помещена в ту же группу точек (ID=444).
+====
+
+===== MS_SLAVE
+
+Создадим точку типа `MS_SHARED`. В первой консоли:
+
+[source,console,options="nowrap"]
+----
+$ mkdir -p /tmp/mounts2/slave  <1>
+$ sudo mount -t tmpfs tmpfs /tmp/mounts2/slave
+$ sudo mount --make-shared /tmp/mounts2/slave  <2>
+
+$ cat /proc/self/mountinfo | grep mounts2
+433 30 0:67 / /tmp/mounts2/slave rw,relatime shared:714 - tmpfs tmpfs rw,inode64  <3>
+----
+<1> Создаём точку `slave` в исходном пространстве имён монтирования
+<2> Изменяем тип точки `slave` на `MS_SHARED`
+<3> Создана точка монтирования `/tmp/mount2/slave`: ID=433, тип `MS_SHARED`, состоит в группе точек монтирования ID=714 (опциональное поле `shared:714`)
+
+Создаём новое пространство имён и изменяем тип клонированной точки на `MS_SLAVE`. В другой консоли:
+
+[source,console,options="nowrap"]
+----
+$ sudo unshare -m --propagation unchanged /bin/bash  <1>
+# export PS1="(mount ns) $PS1"
+
+(mount ns) # cat /proc/self/mountinfo | grep mounts2
+2390 2345 0:67 / /tmp/mounts2/slave rw,relatime shared:714 - tmpfs tmpfs rw,inode64  <2>
+
+(mount ns) # mount --make-slave /tmp/mounts2/slave  <3>
+(mount ns) # cat /proc/self/mountinfo | grep mounts2
+2390 2345 0:67 / /tmp/mounts2/slave rw,relatime master:714 - tmpfs tmpfs rw,inode64  <4>
+----
+<1> Создаём новое пространство имён монтирования
+<2> Точка `slave` клонирована как и ранее: ID=2390, тип `MS_SHARED`, состоит в группе ID=714
+<3> Изменяем тип точки на `MS_SLAVE`
+<4> Тип точки изменился на `MS_SLAVE` (опциональное поле `master:714`)
+
+[IMPORTANT]
+====
+Несмотря на то, что тип новой точки `/tmp/mount2/slave` - `MS_SLAVE`, в выводе файла `mountinfo` в опциональном поле указывается тег `master:714`.
+
+Таким образом отражается тот факт, что группа точек монтирования ID=714 является *главной* для точки `slave`: события монтирования передаются только от группы к точке.
+====
+
+Создадим новую точку монтирования непосредственно под точкой `slave` в обоих пространствах имён монтирования. В первой консоли:
+
+[source,console,options="nowrap"]
+----
+$ mkdir -p /tmp/mounts2/slave/init-ns  <1>
+$ sudo mount -t tmpfs tmpfs /tmp/mounts2/slave/init-ns
+
+$ cat /proc/self/mountinfo | grep mounts2
+433 30 0:67 / /tmp/mounts2/slave rw,relatime shared:714 - tmpfs tmpfs rw,inode64
+2391 433 0:76 / /tmp/mounts2/slave/init-ns rw,relatime shared:731 - tmpfs tmpfs rw,inode64  <2>
+----
+<1> Создаём точку `init-ns` в исходном пространстве имён монтирования
+<2> Создана точка: ID=2391, тип `MS_SHARED`, состоит в группе ID=731
+
+[NOTE]
+====
+Обратите внимание, тип точки `slave` в исходном пространстве имён не изменялся - `MS_SHARED`.
+====
+
+Во второй консоли:
+
+[source,console,options="nowrap"]
+----
+(mount ns) # cat /proc/self/mountinfo | grep mounts2
+2390 2345 0:67 / /tmp/mounts2/slave rw,relatime master:714 - tmpfs tmpfs rw,inode64
+2392 2390 0:76 / /tmp/mounts2/slave/init-ns rw,relatime master:731 - tmpfs tmpfs rw,inode64  <1>
+
+(mount ns) # mkdir /tmp/mounts2/slave/new-ns  <2>
+(mount ns) # mount -t tmpfs tmpfs /tmp/mounts2/slave/new-ns
+(mount ns) # cat /proc/self/mountinfo | grep mounts2
+2390 2345 0:67 / /tmp/mounts2/slave rw,relatime master:714 - tmpfs tmpfs rw,inode64
+2392 2390 0:76 / /tmp/mounts2/slave/init-ns rw,relatime master:731 - tmpfs tmpfs rw,inode64
+2414 2390 0:77 / /tmp/mounts2/slave/new-ns rw,relatime - tmpfs tmpfs rw,inode64  <3>
+----
+<1> Событие монтирование `init-ns` было распространено в группе ID=714, что привело к монтированию `init-ns` в новом пространстве имён, причём тип этой точки - `MS_SLAVE` (тег `master:731`)
+<2> Монтируем точку `new-ns` непосредственно под `slave`
+<3> Создана точка `new-ns`: ID=2414, тип `MS_PRIVATE` (опциональные поля отсутствуют)
+
+[NOTE]
+====
+Созданная непосредственно под точкой монтирования типа `MS_SLAVE` точка `new-ns` получила тип `MS_PRIVATE`.
+====
+
+И, наконец, в первой консоли просматриваем список точек монтирования:
+
+[source,console,options="nowrap"]
+----
+$ cat /proc/self/mountinfo | grep mounts2
+433 30 0:67 / /tmp/mounts2/slave rw,relatime shared:714 - tmpfs tmpfs rw,inode64
+2391 433 0:76 / /tmp/mounts2/slave/init-ns rw,relatime shared:731 - tmpfs tmpfs rw,inode64
+----
+
+Как видно в выводе выше, событие монтирования непосредственно под точкой типа `MS_SLAVE` не было распространено в главной группе ID=714, поэтому в исходном пространстве имён монтирования точка `new-ns` не создана.
+
+==== Пример: создание аналога chroot-jail
+
+[source,console]
+----
+$ sudo unshare --mount /bin/bash  <1>
+# export PS1="(mount ns) $PS1"
+(mount ns) # mount --make-rprivate /  <2>
+
+(mount ns) # mount -t tmpfs tmpfs /mnt  <3>
+
+(mount ns) # mkdir /mnt/bin  <4>
+(mount ns) # cp /bin/busybox /mnt/bin/
+(mount ns) # ln -s busybox /mnt/bin/sh
+(mount ns) # ln -s busybox /mnt/bin/umount
+(mount ns) # ln -s busybox /mnt/bin/touch
+(mount ns) # ln -s busybox /mnt/bin/mkdir
+(mount ns) # ln -s busybox /mnt/bin/rmdir
+(mount ns) # ln -s busybox /mnt/bin/ls
+
+(mount ns) # cd /mnt
+(mount ns) # mkdir oldroot
+(mount ns) # pivot_root . oldroot  <5>
+
+(mount ns) # umount -l /oldroot  <6>
+(mount ns) # rmdir /oldroot
+(mount ns) # ls /
+bin
+
+(mount ns) # touch /from-newns.txt  <7>
+(mount ns) # /bin/mkdir -p /tmp/from-newns
+(mount ns) # ls /
+bin             from-newns.txt  tmp
+(mount ns) # ls /tmp
+from-newns
+(mount ns) # exit
+$ ls / | grep from-newns  <8>
+$ ls /tmp | grep from-newns
+----
+<1> Создаём новое пространство имён монтирования
+<2> Изменяем тип всех точек монтирования корня на `MS_PRIVATE` (обязательно для изоляции корневой FS!) +
+*N.B.* Для изменения типа всех точек монтирования нового пространства имён использовалась опция `--make-rprivate`, выполняющая рекурсивное изменение типа для всех точек, находящихся под `/` (т.е. вообще всех точек нового пространства)
+<3> Подготавливаем новую корневую файловую систему (в данном случае `tmpfs` - временная FS, располагающаяся в RAM)
+<4> Создаём ссылки на универсальную утилиту `busybox` под именами необходимых далее утилит во вновь созданной FS
+<5> Переключаем корень `/` на подготовленную FS с помощью утилиты `pivot_root`
+<6> Удаляем старый корень FS
+<7> Создаём файл в корне FS и директория в `/tmp`
+<8> Проверяем корневую FS - файл и директория отсутствуют, изменения на предыдущем шаге выполнялись в изолированном окружении
+
+[#section-namespaces_pid]
+=== Пространство имён PID (CLONE_NEWPID)
+
+PID namespace изолирует пространство идентификаторов процессов{nbsp}<<Namespaces-lwn-part3>><<Namespaces-lwn-part4>><<Namespaces-toptal-intro>><<Namespaces-habr-intro>>. Каждый namespace имеет собственный PID 1.
+
+Исторически в ядре Linux поддерживалось только одно дерево процессов. Дерево процессов представляет собой иерархическую структуру, подобную дереву каталогов файловой системы
+
+С появлением механизма PID namespaces стала возможна поддержка нескольких деревьев процессов, полностью изолированных друг от друга.
+
+В процессе загрузки ОС Linux:
+
+* сначала создаётся процесс `init`, запускающий другие процессы и службы;
+* в дереве процессов он является корневым, его идентификационный номер (PID) равен 1.
+
+[NOTE]
+====
+Мы наблюдали (и даже модифицировали) эту процедуру запуска на примере сброса пароля, когда перезаписывали `init=/bin/bash`.
+====
+
+Механизм namespaces позволяет создавать отдельное ответвление дерева процессов с собственным PID 1. Процесс, который создаёт такое ответвление, являются частью основного дерева (namespace), но его дочерний процесс уже будет корневым в новом дереве.
+
+Процессы в новом дереве никак не взаимодействуют с родительским процессом и даже не «видят» его. В то же время процессам в основном дереве доступны все процессы дочернего дерева. Наглядно это показано на следующей схеме:
+
+.Пространство имён PID{nbsp}<<Namespaces-habr-intro>>
+image::images/namespaces-pid.png[]
+
+Можно создавать несколько вложенных пространств имён PID: один процесс запускает дочерний процесс в новом пространстве имён PID, a тот в свою очередь порождает новый процесс в новом пространстве и т.д.
+
+Один и тот же процесс может иметь несколько идентификаторов PID (отдельный идентификатор в каждом пространстве имён - **см. пары идентификаторов на схеме**).
+
+Пространство имён PID может быть создано только в момент порождения нового процесса с помощью link:{man-clone_2}[clone(2)] с флагом `CLONE_NEWPID`. Как только link:{man-clone_2}[clone(2)] вызывается с этим флагом, новый процесс немедленно оказывается в новом пространстве имён PID, в корне нового дерева процессов.
+
+При уничтожении PID namespace процесс с PID 1 должен собрать все zombie-процессы.
+
+.Пример: создание PID namespace в коде
+
+Рассмотрим пример создания PID namespace в коде (файл `{example-pid_namespace_ex1}`).
+
+[source,c,linenum,options="nowrap"]
+----
+#define _GNU_SOURCE
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+static char child_stack[1048576];
+
+static int child_fn() {
+    printf("[child]  Parent's PID in the new PID namespace: %ld\n", (long)getppid());
+    printf("[child]  Child's PID in the new PID namespace:  %ld\n", (long)getpid());
+    return 0;
+}
+
+int main() {
+    printf("[parent] Parent's PID in the main PID namespace: %ld\n", (long)getpid());
+
+    pid_t child_pid = clone(child_fn, child_stack+1048576, CLONE_NEWPID | SIGCHLD, NULL);
+    printf("[parent] Child's PID in the main PID namespace:  %ld\n", (long)child_pid);
+
+    waitpid(child_pid, NULL, 0);
+    return 0;
+}
+----
+
+Скомпилируем и запустим:
+[source,console]
+----
+$ cd examples
+$ gcc -o pid_namespace 01_isolation__pid_namespace.c
+$ ./pid_namespace
+[parent] Parent's PID in the main PID namespace: 4295
+[parent] Child's PID in the main PID namespace:  -1
+$ sudo ./pid_namespace
+[parent] Parent's PID in the main PID namespace: 4298
+[parent] Child's PID in the main PID namespace:  4299
+[child]  Parent's PID in the new PID namespace: 0
+[child]  Child's PID in the new PID namespace:  1
+----
+
+Функция link:{man-clone_2}[clone(2)] создала новый процесс, клонировав текущий, и начала его выполнение. При этом для нового процесса было создано отдельное дерево процессов.
+
+Обратите внимание:
+
+* в исходном (основном) пространстве имён PID namespace идентификаторы "обычные" - потомки `init`;
+* в новом PID namespace PID дочернего == 1, т.е. он как бы подменяет `init`, причём в новом namespace у него нет родителя (PPID = 0).
+
+Внесём в программу одно изменение и уберём флаг `CLONE_NEWPID` из вызова link:{man-clone_2}[clone(2)]:
+[source,c,linenum,start=19]
+----
+pid_t child_pid = clone(child_fn, child_stack+1048576, SIGCHLD, NULL);
+----
+
+Перекомпилируем и запустим:
+[source,console]
+----
+$ gcc -o pid_namespace 01_isolation__pid_namespace.c
+$ ./pid_namespace
+[parent] Parent's PID in the main PID namespace: 4371
+[child]  Parent's PID in the new PID namespace: 4371
+[child]  Child's PID in the new PID namespace:  4372
+[parent] Child's PID in the main PID namespace:  4372
+$ sudo ./pid_namespace
+[parent] Parent's PID in the main PID namespace: 4375
+[parent] Child's PID in the main PID namespace:  4376
+[child]  Parent's PID in the new PID namespace: 4375
+[child]  Child's PID in the new PID namespace:  4376
+----
+
+Теперь link:{man-clone_2}[clone(2)] просто создаёт новый процесс - **почти** также, как link:{man-fork_2}[fork(2)]:
+
+* link:{man-fork_2}[fork(2)] создаёт дочерний процесс, который представляет копию родительского, однако адресные пространства независимы;
+* link:{man-clone_2}[clone(2)] не просто создаёт копию, но позволяет разделять элементы контекста выполнения между дочерним и родительским процессами;
+
+[NOTE]
+====
+В приведённом выше примере с link:{man-clone_2}[clone(2)] используется аргумент `child_stack`, который задаёт положение стека для дочернего процесса. Так как дочерний и родительский процессы могут разделять адресное пространство, дочерний процесс не может выполняться на том же стеке, что и родительский. Поэтому родительский процесс должен установить пространство памяти для стека дочернего процесса и передать указатель на него в вызове link:{man-clone_2}[clone(2)].
+====
+
+.Пример: создание вложенных PID namespace
+
+Рассмотрим пример создания вложенных PID namespace в коде (файл `{example-pid_namespace_ex2}`).
+
+[source,c,linenum,options="nowrap"]
+----
+#define _GNU_SOURCE
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+static int delay = 60;
+static char child_stack[1048576];
+static char child_stack2[1048576];
+
+
+static int child_fn2() {
+    printf("[child 2] Child's PID in the second new PID namespace:      %ld\n", (long)getppid());
+    printf("[child 2] Grandchild's PID in the second new PID namespace: %ld\n", (long)getpid());
+
+    printf("[child 2] Sleeping for %d seconds...\n", delay);
+    sleep(delay);
+    printf("[child 2] Done\n");
+
+    return 0;
+}
+
+static int child_fn() {
+    printf("[child 1] Parent's PID in the new PID namespace:            %ld\n", (long)getppid());
+    printf("[child 1] Child's PID in the new PID namespace:             %ld\n", (long)getpid());
+
+    printf("[child 1] Spawning a grandchild process...\n");
+
+    pid_t child_pid = clone(child_fn2, child_stack2+1048576, CLONE_NEWPID | SIGCHLD, NULL);
+    printf("[child 1] Grandchild's PID in the new PID namespace:        %ld\n", (long)child_pid);
+
+    waitpid(child_pid, NULL, 0);
+    printf("[child 1] Done\n");
+
+    return 0;
+}
+
+int main(int argc, const char* argv[]) {
+    if (argc > 1) {
+        delay = atoi(argv[1]);
+    }
+
+    printf("[parent]  Parent's PID in the main PID namespace:           %ld\n", (long)getpid());
+
+    pid_t child_pid = clone(child_fn, child_stack+1048576, CLONE_NEWPID | SIGCHLD, NULL);
+    printf("[parent]  Child's PID in the main PID namespace:            %ld\n", (long)child_pid);
+
+    waitpid(child_pid, NULL, 0);
+    printf("[parent]  Done\n");
+
+    return 0;
+}
+----
+
+Скомпилируем и запустим:
+[source,console]
+----
+$ gcc -o nested_pid_namespace 02_isolation__nested_pid_namespace.c
+
+$ ./nested_pid_namespace 3
+[parent]  Parent's PID in the main PID namespace:           4554
+[parent]  Child's PID in the main PID namespace:            -1  <1>
+[parent]  Done
+
+$ sudo ./nested_pid_namespace 180 &
+[parent]  Parent's PID in the main PID namespace:           4633  <2>
+[parent]  Child's PID in the main PID namespace:            4634  <3>
+[child 1] Parent's PID in the new PID namespace:            0
+[child 1] Child's PID in the new PID namespace:             1     <3>
+[child 1] Spawning a grandchild process...
+[child 1] Grandchild's PID in the new PID namespace:        2     <4>
+[child 2] Child's PID in the second new PID namespace:      0
+[child 2] Grandchild's PID in the second new PID namespace: 1     <4>
+[child 2] Sleeping for 180 seconds...
+
+$ sudo ps -o pid,pidns,args -p 4633  <5>
+    PID      PIDNS COMMAND
+   4633 4026531836 ./nested_pid_namespace 180
+$ sudo ps -o pid,pidns,args -p 4634
+    PID      PIDNS COMMAND
+   4634 4026532386 ./nested_pid_namespace 180
+$ sudo ps -o pid,pidns,args -p 4635
+    PID      PIDNS COMMAND
+   4635 4026532387 ./nested_pid_namespace 180
+
+$ pstree -a -p 4643  <6>
+nested_pid_name,4633 180
+  └─nested_pid_name,4634 180
+      └─nested_pid_name,4635 180
+$ sudo ps --forest -a -o pid,pidns,args  <6>
+    PID      PIDNS COMMAND
+   4643 4026531836 ps --forest -a -o pid,pidns,args
+   4633 4026531836 ./nested_pid_namespace 180
+   4634 4026532386  \_ ./nested_pid_namespace 180
+   4635 4026532387      \_ ./nested_pid_namespace 180
+...
+
+$ sudo ls -lai /proc/4633/ns | grep pid  <7>
+28036 lrwxrwxrwx 1 root root 0 Dec 23 03:20 pid -> 'pid:[4026531836]'
+28255 lrwxrwxrwx 1 root root 0 Dec 23 03:22 pid_for_children -> 'pid:[4026531836]'
+$ sudo ls -lai /proc/4634/ns  | grep pid
+28049 lrwxrwxrwx 1 root root 0 Dec 23 03:20 pid -> 'pid:[4026532386]'
+32025 lrwxrwxrwx 1 root root 0 Dec 23 03:22 pid_for_children -> 'pid:[4026532386]'
+$ sudo ls -lai /proc/4635/ns | grep pid
+28062 lrwxrwxrwx 1 root root 0 Dec 23 03:20 pid -> 'pid:[4026532387]'
+32037 lrwxrwxrwx 1 root root 0 Dec 23 03:22 pid_for_children -> 'pid:[4026532387]'
+
+$ sudo lsns -l | grep pid  <8>
+4026531836 pid       197     1 root             /sbin/init splash
+4026532386 pid         1  4634 root             ./nested_pid_namespace 180
+4026532387 pid         1  4635 root             ./nested_pid_namespace 180
+
+$ sudo ls -lai /proc/1/ns | grep pid
+25901 lrwxrwxrwx 1 root root 0 Dec 23 03:17 pid -> pid:[4026531836]
+32926 lrwxrwxrwx 1 root root 0 Dec 23 03:35 pid_for_children -> pid:[4026531836]
+----
+<1> link:{man-clone_2}[clone(2)] без привилегий не выполнился
+<2> Запускаем с правами `root`
+<3> Дочернему процессу назначен PID 4634 в основном namespace и PID 1 в новом (первом созданном)
+<4> Процессу-внуку назначен PID 2 в первом созданном PID NS и PID 1 в новом (втором созданном) PID NS
+<5> Все три процесса иерархии живут в своих PID NS
+<6> Утилиты `pstree` и `ps` с флагом `--forest` позволяют увидеть PID NS процессов
+<7> PID NS также можно найти с помощью `procfs`
+<8> Специальная утилита `lsns` позволяет просматривать текущие namespaces в системе
+
+=== Сетевое пространство имён (CLONE_NEWNET)
+
+Network namespace предоставляет отдельный сетевой стек{nbsp}<<Namespaces-lwn-part7>><<Namespaces-toptal-intro>><<Namespaces-habr-intro>>:
+
+* интерфейсы;
+* IP-адреса;
+* маршруты;
+* firewall;
+* пространство портов.
+
+Благодаря пространству имён NET мы можем выделять для изолированных процессов собственные сетевые интерфейсы, даже loopback-интерфейс для каждого пространства имён будет отдельным.
+
+[NOTE]
+====
+После создания Net namespace содержит только интерфейс loopback, причём в выключенном состоянии.
+====
+
+Сетевые пространства имён можно создавать с помощью:
+
+* системного вызова link:{man-clone_2}[clone(2)] с флагом `CLONE_NEWNET`;
+* системного вызова link:{man-unshare_2}[unshare(2)]: `unshare` позволяет процессу или потоку отделять части контекста исполнения, общие с другими процессами (потоками).
+
+Помещения процессов в новое сетевое пространство имён возможно следующими способами:
+
+* Процесс, создавший новое пространство имён, может порождать другие процессы, и каждый из этих процессов будет наследовать сетевое пространство имён родителя;
+* В ядре имеется специальный системный вызов — link:{man-setns_2}[setns(2)], с его помощью можно поместить вызывающий процесс или поток в нужное пространство имён. Для этого требуется файловый дескриптор, который на это пространство имён ссылается. Он хранится в файле `/proc/<PID{nbsp}процесса>/ns/net`. Открыв этот файл, мы можем передать файловый дескриптор функции link:{man-setns_2}[setns(2)].
+* При создании нового пространства имён с помощью команды ip создаётся файл в директории `/var/run/netns/`. Чтобы получить файловый дескриптор, достаточно просто открыть этот файл.
+
+.Пример: создание Net namespace
+
+[source,console]
+----
+$ sudo ip netns add ns1  <1>
+$ sudo ip netns exec ns1 ip addr  <2>
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000  <3>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+$ sudo ip netns exec ns1 ping 127.0.0.1  <4>
+ping: connect: Network is unreachable
+$ sudo ip netns exec ns1 ip link set lo up  <5>
+$ sudo ip netns exec ns1 ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+$ sudo ip netns exec ns1 ping 127.0.0.1  <6>
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.029 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.019 ms
+^C
+--- 127.0.0.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1004ms
+rtt min/avg/max/mdev = 0.019/0.024/0.029/0.005 ms
+
+$ sudo ip netns delete ns1  <7>
+----
+<1> Создаём сетевое пространство имён
+<2> Выводим список интерфейсов нового Net NS
+<3> В новом Net NS создан всего один интерфейс - `loopback`, причём изначально он выключен
+<4> Интерфейс loopback не пингуется
+<5> Включаем loopback
+<6> Теперь пинги пошли
+<7> Удаляем сетевое пространство имён
+
+.Пример: соединение с хостом через veth
+
+Настраиваем пару интерфейсов `veth`, создаём Net namespace `ns2` и помещаем один интерфейс в `ns2`, настраиваем адреса:
+
+[source,console,options="nowrap"]
+----
+$ sudo ip netns add ns2  <1>
+$ sudo ip link add veth0 type veth peer name veth1  <2>
+$ ip link  <3>
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 08:00:27:89:d9:83 brd ff:ff:ff:ff:ff:ff
+5: veth1@veth0: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether b2:6b:0e:4c:93:6e brd ff:ff:ff:ff:ff:ff
+6: veth0@veth1: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether fa:6d:62:a6:44:9f brd ff:ff:ff:ff:ff:ff
+
+$ sudo ip link set veth1 netns ns2  <4>
+$ ip link  <5>
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 08:00:27:89:d9:83 brd ff:ff:ff:ff:ff:ff
+6: veth0@if5: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether fa:6d:62:a6:44:9f brd ff:ff:ff:ff:ff:ff link-netns ns2
+
+$ sudo ip addr add 10.0.0.1/24 dev veth0  <6>
+$ sudo ip link set veth0 up
+$ ip addr show veth0
+6: veth0@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether fa:6d:62:a6:44:9f brd ff:ff:ff:ff:ff:ff link-netns ns2
+    inet 10.0.0.1/24 scope global veth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f86d:62ff:fea6:449f/64 scope link
+       valid_lft forever preferred_lft forever
+
+$ sudo ip netns exec ns2 ip addr add 10.0.0.2/24 dev veth1  <7>
+$ sudo ip netns exec ns2 ip link set veth1 up
+$ sudo ip netns exec ns2 ip link
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+5: veth1@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether b2:6b:0e:4c:93:6e brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 10.0.0.2/24 scope global veth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b06b:eff:fe4c:936e/64 scope link
+       valid_lft forever preferred_lft forever
+
+$ sudo ip netns exec ns2 ip route add default via 10.0.0.1 dev veth1  <8>
+$ sudo ip netns exec ns2 ip route
+default via 10.0.0.1 dev veth1
+10.0.0.0/24 dev veth1 proto kernel scope link src 10.0.0.2
+$ sudo sysctl -w net.ipv4.ip_forward=1  <9>
+$ sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -o enp0s3 -j MASQUERADE
+----
+<1> Создаём пространство имён `ns2`
+<2> Создаём пару виртуальных интерфейсов `veth`
+<3> Видим в списке созданных интерфейсов пару `veth` (#5 и #6)
+<4> Добавляем `venth1` в Net namespace `ns2`
+<5> Видим, что из списка интерфейсов основного сетевого пространства `veth1` пропал
+<6> Конфигурируем адрес 10.0.0.1/24 на интерфейсе `veth0`
+<7> Конфигурируем адрес 10.0.0.2/24 на интерфейсе `veth1`
+<8> Настраиваем default gateway для `veth1`
+<9> Настраиваем source NAT (т.н. маскарадинг) для `veth0`, чтобы через `veth1` был виден Интернет
+
+Яростно пингуем из сетевого интерфейса `ns2` мост (`veth0`) и хост, располагающиеся в основном сетевом пространстве, а также CloudFlare DNS:
+[source,bash]
+----
+$ sudo ip netns exec ns2 ping 10.0.0.1
+PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
+64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=0.035 ms
+^C
+--- 10.0.0.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.035/0.035/0.035/0.000 ms
+$ sudo ip netns exec ns2 ping 10.0.2.15
+
+PING 10.0.2.15 (10.0.2.15) 56(84) bytes of data.
+64 bytes from 10.0.2.15: icmp_seq=1 ttl=64 time=0.047 ms
+64 bytes from 10.0.2.15: icmp_seq=2 ttl=64 time=0.023 ms
+^C
+--- 10.0.2.15 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1027ms
+rtt min/avg/max/mdev = 0.023/0.035/0.047/0.012 ms
+
+$ sudo ip netns exec ns2 ping 1.1.1.1
+PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=56 time=17.4 ms
+^C
+--- 1.1.1.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 16.635/16.635/16.635/0.000 ms
+----
+
+=== Пространство имён UTS (CLONE_NEWUTS)
+
+UTS namespace изолирует системные идентификаторы: имя хоста (`hostname`) и доменное имя NIS (`domainname`){nbsp}<<Namespaces-lwn-overview>>.
+
+.Пример
+
+[source,console]
+----
+$ sudo unshare --uts /bin/bash  <1>
+$ sudo hostname container1  <2>
+$ sudo hostname  <3>
+sudo: unable to resolve host container: Temporary failure in name resolution
+container
+# exit
+$ sudo hostname  <4>
+vm
+----
+<1> Создаём UTS namespace
+<2> Изменяем имя хоста
+<3> Имя хоста изменилось в созданном UTC namespace
+<4> Однако имя хоста остаётся неизменным в основном пространстве имён
+
+=== Пространство имён пользователей (User Namespace)
+
+==== Виртуализация привилегий
+
+Пространство имён пользователей изолирует *идентификаторы пользователей и групп* (UID/GID). User namespace позволяет процессам иметь один набор UID/GID внутри пространства имён и другой - снаружи, в родительском пространстве{nbsp}<<Namespaces-lwn-part5>><<Namespaces-lwn-part6>>.
+
+В частности, пространства имён позволяют процессам иметь UID 0 (root) *внутри контейнера*, оставаясь непривилегированным пользователем на хосте. Это важнейшее, часто применяемое отображение позволяет выполнять привилегированные действия внутри изолированной среды, не влияя на систему в целом.
+
+==== Создание пространств имён пользователей
+
+Создание пространств имён пользователей выполняется с помощью вызова link:{man-clone_2}[clone(2)] или link:{man-unshare_2}[unshare(2)] с флагом `CLONE_NEWUSER`. Создание Net namespace не требует повышенных привилегий.
+
+*Первый* процесс в новом пространстве получает полный набор capabilities внутри него. Повышенные привилегии позволяют первому процессу выполнять все необходимые инициализации в пространстве имен до того, как в нем будут созданы другие процессы.
+
+[NOTE]
+====
+Первый вызов `exec()` приводит к сбросу всех capabilities.
+ +
+Как следствие, даже если при запуске процесса в пространстве имён пользователей выполняется настройка namespace и запуск программы с помощью `exec` - без создания нового процесса - capabilities всё равно сбрасываются, и вновь запущенная программа исполняется без повышенных привилегий.
+====
+
+При этом, хотя новый процесс имеет полный набор capabilities в новом пространстве имен пользователя, он не получает никаких capabilities в родительском пространстве имен, независимо от идентификаторов и capabilities процесса, вызывающего link:{man-clone_2}[clone(2)]. В частности, даже если root использует `clone(CLONE_NEWUSER)`, результирующий дочерний процесс не будет иметь capabilities в родительском пространстве имен.
+
+==== Отображение UID/GID (UID/GID mapping)
+
+Когда процесс попадает в пользовательское пространство имён, видимые ему идентификаторы пользователей и групп могут отличаться от идентификаторов тех же пользователей и групп в родительском пространстве. Например, процесс может быть запущен от UID 0 (root) внутри User namespace, но иметь UID 1000 (непривилегированный пользователь) вне этого пространства имён.
+
+Чтобы такая схема работала корректно, ядру необходимо знать соответствие идентификаторов дочернего и родительского пространств имён. Это соответствие задаётся посредством механизма отображения UID/GID.
+
+В новом пространстве имён по умолчанию сопоставление идентификаторов не задано, поэтому все UID/GID отображаются в значение overflow-ID, представляемое псевдофайлами `/proc/sys/kernel/overflowuid` и `/proc/sys/kernel/overflowgid`, соответственно (обычно overflow-ID=65534).
+
+[NOTE]
+====
+Значения overflow-ID используются для всех UID/GID, для которых отображение не задано.
+====
+
+===== Механизм отображения: файлы uid_map и gid_map
+
+При запуске процесса в `/proc` создаются два специальных файла:
+
+* `/proc/<PID>/uid_map`;
+* `/proc/<PID>/gid_map`.
+
+Эти файлы определяют, как числовые идентификаторы внутри пространства имён преобразуются в идентификаторы родительского пространства. Изначально файлы пустые, т.к. по умолчанию сопоставление не задаётся.
+
+Каждая строка в `uid_map` и `gid_map` имеет формат:
+----
+  ID-inside-ns   ID-outside-ns   length
+----
+где ID-inside-ns - начальный идентификатор внутри namespace, ID-outside-ns - соответствующий идентификатор в родительском пространстве, length - количество последовательных ID в диапазоне.
+
+.Примеры
+
+* `0 1000 1` означает сопоставление ID 0 внутри пространства имён с ID 1000 во родительском пространстве.
+* `0 1000 5` означает сопоставление *пяти* ID [0, 4] внутри namespace с пятью ID [1000, 1004] в родительском пространстве.
+
+[IMPORTANT]
+====
+При выполнении сопоставления ID-outside-ns всегда интерпретируется как ID в родительском пространстве имён.
+====
+
+===== Правила записи в uid_map и gid_map
+
+Процесс, выполняющий запись в файлы отображений, должен иметь соответствующие capabilities:
+
+* `CAP_SETUID` - для записи в `uid_map`;
+* `CAP_SETGID` - для записи в `gid_map`;
+* `CAP_DAC_OVERRIDE` - для открытия файлов.
+
+[NOTE]
+====
+Технически, установка capabilities изменяет контекст безопасности процесса, что, помимо прочего, влечёт за собой монтирование файлов в `/proc/<PID>` с владельцем root:root.
+
+Как следствие, непривилегированный процесс не может открыть файлы `uid_map` / `gid_map` - для обхода проверок DAC требуется `CAP_DAC_OVERRIDE`.
+====
+
+Процесс должен находиться либо в том же user namespace, что и целевой процесс, либо в родительском пространстве имён.
+
+Записываемое отображение должно:
+
+* либо состоять из одной строки, сопоставляющей только собственный эффективный UID/GID процесса-писателя;
+* либо процесс должен иметь `CAP_SETUID` / `CAP_SETGID` в родительском пространстве имён, чтобы задавать произвольные диапазоны.
+
+Как следствие этих правил, первый процесс в новом пользовательском пространстве имён не может сам задать произвольные сопоставления, так как у него нет привилегий в родительском пространстве. Для задания сложных или широких диапазонов отображений это должен сделать процесс из родительского namespace.
+
+Ядро разрешает однократное выполнение записи в файлы `uid_map` и `gid_map` для каждого пространства имён. После того как сопоставление установлено, изменить его невозможно.
+При этом сопоставление может быть задано несколькими строками, разделёнными `\n`, но должно быть записано одной операцией записи в файл.
+
+С целью настройки возможности изменения групп (посредством системного вызова link:{man-setgroups_2}[setgroups(2)]) при создании процесса в `/proc` монтируется файл `/proc/<PID>>/setgroups`, содержимое которого определяет статус системного вызова:
+
+* `allow` -	`setgroups()` разрешён;
+* `deny` - `setgroups()` запрещён.
+
+Задание отображений GID родительского и дочернего User namespace из *непривилегированного* процесса возможно только в случае запрета `setgroups()` в дочернем пространстве. Как следствие, запись в файл `/proc/<PID>/gid_map` должна предварять операция:
+----
+$ echo deny > /proc/<PID>>/setgroups
+----
+
+[WARNING]
+====
+Как показано в <<Namespaces-lwn-groups-dropping>><<Namespaces-lwn-loophole>>, сброс групп, интуитивно представляемый как операция, снижающая привилегии, на самом деле может приводить к повышению прав доступа.
+
+Например, файл `file` доступен для владельца `user` и пользователей, не состоящих в группе `dev`:
+----
+$ ls -l file
+-rwx---rwx 1 user dev 16448 Dec 31 23:59 file
+----
+Предположим, что некий процесс `proc` запущен от имени пользователя `user2` и содержит группу `dev` в списке групп процесса. Тогда проверки прав доступа выполняются по второму триплету, поэтому `proc` не может выполнять операции с `file`.
+ +
+Предположим далее, группа `dev` удаляется из списка групп процесса. Теперь проверки прав доступа выполняются по третьему триплету, что предоставляет полный доступ к `file`.
+
+Подобный механизм ограничения доступа через группы действительно применяется на практике, поэтому операция сброса групп является потенциально опасной.
+====
+
+==== Пример User namespace с отображением UID и GID
+
+Создадим User namespace с помощью утилиты `unshare` с флагом `--user` и запустим интерпретатор `python` в новом пространстве имён:
+
+[source,console]
+----
+$ sudo -u user -g x bash
+$ id
+uid=1000(user) gid=1001(x) groups=1001(x),4(adm),27(sudo),30(dip),46(plugdev),100(users)  <1>
+$ unshare --user bash  <2>
+nobody@vm$ id
+uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)  <3>
+nobody@vm$ python3
+Python 3.12.3 (main, Nov  6 2025, 13:44:16) [GCC 13.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import os
+>>> print(f'PID={os.getpid()}')
+PID=26890  <4>
+>>> print(f'UID={os.getuid()}, GID={os.getgid()}')
+UID=65534, GID=65534  <3>
+----
+<1> bash запущен от пользователя с UID=1000 и GID=1001
+<2> Создаём User namespace
+<3> Отображения UID/GID не настроены - все идентификаторы пользователей системы отображаются на overflow-ID = 65534
+<4> Идентификатор процесса python3 - 26890
+
+В другом терминале, находящемся в родительском пространстве имён пользователей, зададим отображение идентификаторов:
+
+[source,console]
+----
+$ echo '0 1000 1' | sudo tee /proc/26890/uid_map  <1>
+0 1000 1
+$ echo deny | sudo tee /proc/26890/setgroups  <2>
+deny
+$ echo '0 1000 2' | sudo tee /proc/26890/gid_map  <3>
+0 1000 2
+----
+<1> Задаём отображение UID: `1000 {lt}-{gt} 0`
+<2> Запрещаем сискол `setgroups()` для задания отображения GID
+<3> Задаём отображение GID: `1000 {lt}-{gt} 0`, `1001 {lt}-{gt} 1`
+
+В первом терминале проверяем ID процесса `python3`:
+
+[source,console]
+----
+>>> print(f'UID={os.getuid()}, GID={os.getgid()}')
+UID=0, GID=1
+----
+
+Как можно видеть, идентификаторы процесса в новом пространстве имён изменились согласно заданному отображению.
+
+==== Ограничения механизма User namespace
+
+* Не все файловые системы поддерживают User namespaces.
+* Так как четвёрки идентификаторов UID/GID используются повсеместно в коде ядра, реализация механизма User namespaces крайне сложна; работы по исправлению многочисленных багов были завершены примерно ко времени появления версии 3.8. Однако вполне может быть, что какие-то ошибки всё ещё не найдены...
+* Как и все новые механизмы, сопряжение со старыми конфигурациями системы может повлечь за собой неожиданные проблемы (наподобие обсуждённого ранее повышения привилегий через сброс групп).
+
+=== Linux namespaces в задачах обеспечения безопасности
+
+// TODO: нормальные примеры, больше текста!
+
+.Что дают пространства имён с точки зрения безопасности
+
+* Ограничение видимости ресурсов.
+* Снижение последствий компрометации процесса.
+* Изоляция сетевых атак и sniffing.
+
+.Важные ограничения
+
+* Все пространства имён *делят одно ядро*.
+* Уязвимость в ядре = риск для всех контейнеров.
+* Namespace ≠ sandbox по умолчанию.
+
+.User namespace и привилегии
+
+* root внутри user namespace ≠ root на хосте.
+* Существенно снижает риск при запуске контейнеров.
+* Требует осторожной настройки (особенно на серверах).
+
+.Best practices
+
+* Всегда комбинировать namespaces с cgroups.
+* Минимизировать capabilities.
+* Использовать seccomp и LSM (SELinux, AppArmor).
+
+=== Домашний контейнер - пример совместного использования cgroup, seccomp, Linux namespaces и capabilities
+
+==== Разбор кода лаунчера {example-container}
+
+. Создание дочернего процесса и новых пространств имён
++
+[source,c,linenums,start=661,options="nowrap"]
+----
+    // 3. Создаём процесс и новые пространства имён
+    int flags = CLONE_NEWNS  | CLONE_NEWUSER | CLONE_NEWPID |
+                CLONE_NEWUTS | CLONE_NEWNET  | SIGCHLD;  <1>
+
+    pid_t child_pid = clone(child, stack + STACK_SIZE, flags, &args);  <2>
+    if (child_pid < 0) {
+        perror("clone");
+        exit(EXIT_FAILURE);
+    }
+----
+<1> С помощью флагов указываем необходимые пространства имён
+<2> Запускаем дочерний процесс, помещённый в новые Mount, User, PID, Net и UTS namespaces
+
+. Настройка User namespace
++
+[source,c,linenums,start=85,options="nowrap"]
+----
+static void setup_user_namespace(uid_t child_pid, int verbose) {
+    char path[256], mapping[32];
+
+    // получаем real UID и GID - эти ID необходимо отразить на 0 во вновь созданном User namespace
+    uid_t real_uid = getuid();
+    gid_t real_gid = getgid();
+
+    if (verbose) {
+        printf("[Parent]    UID=%jd GID=%jd;  capabilities: %s\n", (intmax_t) real_uid, (intmax_t) real_gid, cap_to_text(cap_get_proc(), NULL));
+    }
+
+    // real UID <-> 0
+    snprintf(path, sizeof(path), "/proc/%jd/uid_map", (intmax_t) child_pid);  <1>
+    snprintf(mapping, sizeof(mapping), "0 %jd 1", (intmax_t) real_uid);
+    write_file(path, mapping);
+
+    if (verbose) {
+        printf("[Parent]    Mapped real UID %jd <-> User ns 0\n", (intmax_t) real_uid);
+    }
+
+    // запрет `setgroups(2)` для защиты от сброса групп через User namespace (см. https://lwn.net/Articles/621612/)
+    // необходимо для настройки отображения GID
+    snprintf(path, sizeof(path), "/proc/%jd/setgroups", (intmax_t) child_pid);  <2>
+    write_file(path, "deny");
+
+    if (verbose) {
+        printf("[Parent]    Switched off setgroups(2)\n");
+    }
+
+    // real GID <-> 0
+    snprintf(path, sizeof(path), "/proc/%jd/gid_map", (intmax_t) child_pid);  <3>
+    snprintf(mapping, sizeof(mapping), "0 %jd 1", (intmax_t) real_gid);
+    write_file(path, mapping);
+
+    if (verbose) {
+        printf("[Parent]    Mapped real GID %jd <-> User ns 0\n", (intmax_t) real_gid);
+    }
+}
+----
+<1> Настраиваем отображение UID пользователя x (UID=1001) на root (UID=0): записываем `0 1001 1` в файл `/proc/<PID>/uid_map`
+<2> Отключаем системный вызов `setgroups` для дальнейшей настройки отображения GID: записываем `deny` в файл `/proc/<PID>/setgroups`
+<3> Настраиваем отображение GID пользователя x (GID=1001) на root (GID=0): записываем `0 1001 1` в файл `/proc/<PID>/gid_map`
+
+. Настройка Mount namespace
++
+[source,c,linenums,start=128,options="nowrap"]
+----
+static void setup_mount_namespace(void) {
+    // 1. Изменяем тип всех точек монтирования нового пространства имён на "MS_PRIVATE" (для изоляции от хостовой FS)
+    mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL);  <1>
+
+    // 2. Монтируем корень контейнера ("/" -> "/container/root")
+    // i. делаем новый корень точкой монтирования - это требуется для использования `pivot_root`
+    mount(HOST_NEW_ROOT, HOST_NEW_ROOT, "bind", MS_BIND | MS_REC, NULL);
+
+    // ii. создаём директорию для перемонтирования текущего корня (сейчас это корень хостовой FS)
+    int err = mkdir(HOST_OLD_ROOT, 0777);
+    if (err != 0 && errno != EEXIST) {
+        perror("[Container] mkdir");
+        exit(EXIT_FAILURE);
+    }
+
+    // iii. с помощью `pivot_root` перемонтируем корень FS на "/container/root"
+    if (syscall(SYS_pivot_root, HOST_NEW_ROOT, HOST_OLD_ROOT) != 0) {  <2>
+        perror("[Container] pivot_root");
+        exit(EXIT_FAILURE);
+    }
+
+    if (chdir("/") != 0) {
+        perror("[Container] chdir");
+        exit(EXIT_FAILURE);
+    }
+
+    // 3. Отвязываем старый корень и удаляем временную директорию `oldroot`
+    // N.B. Обратите внимание, теперь путь к нему не "/container/root/oldroot", а "/oldroot"
+    umount2(CONT_OLD_ROOT, MNT_DETACH);
+    rmdir(CONT_OLD_ROOT);
+
+    // 4. Монтируем proc FS
+    mount("proc", "/proc", "proc", 0, NULL);
+}
+----
+<1> Изменяем тип точки монтирования корня `/` на `MS_PRIVATE` для полноценной изоляции дочернего пространства от родительского (основного) +
+*N.B.* Операция выполняется в новом пространстве имён монтирования, точка монтирования `/` хостовой FS не изменяется.
+<2> Монтируем директорию с Alpine Linux `/container/root` на корень FS `/` в новом Mount namespace
+
+. Настройка Net namespace
++
+Сетевой код использует библиотеку `libnl` для создания и настройки пары veth-интерфейсов, а также помещения одного из интерфейсов в новый Net namespace.
++
+Функция `setup_veth_parent(child_pid)`:
++
+  * создаёт пару veth-интерфейсов `veth-host` и `veth-cont`;
+  * настраивает адрес 172.16.42.1/24 и запускает интерфейс `veth-host`;
+  * переносит интерфейс `veth-cont` во вновь созданный Net namespace.
++
+Функция `setup_veth_child(void)` (все операции выполняются в новом Net namespace):
++
+  * запускает интерфейс `lo`;
+  * переименовывает интерфейс `veth-cont` в `eth0`, настраивает адрес 172.16.42.2/24 и запускает `eth0`;
+  * настраивает маршрут по умолчанию (default gateway) через 172.16.42.1.
++
+*N.B.* Для огранизации доступа в Интернет из контейнера необходимо настроить source NAT между интерфейсом `veth-host`, на который будут приходить пакеты из контейнера, и физическим интерфейсом хоста (обычно `enp0s3`). В рамках настоящего примера это делается на хосте (см. следующий раздел).
+
+. Настройка Cgroup
++
+[source,c,linenums,start=430,options="nowrap"]
+----
+static void add_pid_to_cgroup(pid_t pid) {
+    FILE *f = fopen("/sys/fs/cgroup/mycontainer/cgroup.procs", "w");  <1>
+    if (!f) {
+        perror("cgroup.procs");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(f, "%jd\n", (intmax_t) pid);
+    fclose(f);
+}
+----
+<1> Записываем в файл группы управления `cgroup.procs` PID дочернего процесса, тем самым помещая контейнер в cgroup "mycontainer"
++
+*N.B.* Остальная настройка cgroup "mycontainer" выполняется на хосте перед запуском лаунчера (см. следующий раздел).
+
+. Настройка Seccomp
++
+Для конфигурации правил seccomp используется библиотека `libseccomp`. В зависимости от запускаемого процесса устанавливается либо профиль "shell" (при запуске `/bin/sh`), позволяющий практически любые действия в системе, либо "restricted" (при запуске остальных исполняемых файлов), существенно ограничивающий возможности процессов:
++
+[source,c,linenums,start=550,options="nowrap"]
+----
+void setup_seccomp(const char *programm, int verbose) {
+    if (strcmp(programm, "/bin/sh") == 0) {
+        if (verbose) {
+            printf("[Container] Using shell seccomp profile\n");
+        }
+        install_shell_profile();  <1>
+    } else {
+        if (verbose) {
+            printf("[Container] Using restricted seccomp profile\n");
+        }
+        install_restricted_profile();  <2>
+    }
+}
+----
+<1> Устанавливаем профиль "shell"
+<2> Устанавливаем профиль "restricted"
++
+Создание правил выполняется в соответствующих функциях, для "shell" - `install_shell_profile()`:
++
+[source,c,linenums,start=522,options="nowrap"]
+----
+static void install_shell_profile(void) {
+    /*
+     *  Менее органичивающий профиль, позволяющий нормальное функционирование командного интерпретатора `/bin/sh`
+     */
+    scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);  <1>
+    if (!ctx) {
+        perror("seccomp_init");
+        exit(EXIT_FAILURE);
+    }
+
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(clone), 0);  <2>
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(clone3), 0);
+
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(ptrace), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(bpf), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(kexec_load), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(perf_event_open), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(init_module), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(finit_module), 0);
+
+    if (seccomp_load(ctx) < 0) {  <3>
+        perror("seccomp_load (shell)");
+        exit(EXIT_FAILURE);
+    }
+
+    seccomp_release(ctx);
+}
+----
+<1> Устанавливаем действие по умолчанию: разрешение системного вызова (действие `SCMP_ACT_ALLOW`)
+<2> Добавляем правила, запрещающее исполнение ряда системных вызовов (действие `SCMP_ACT_KILL`): `clone`, `clone3`, `ptrace` и др.
+<3> Загружаем сформированный набор правил
++
+Профиль "restricted" конфигурируется в функции `install_restricted_profile()` аналогичным образом.
+
+==== Эксперимент
+
+. Создаём окружение
++
+[source,console]
+----
+$ sudo mkdir -p /container/root
+$ sudo chown $USER:$USER -R /container
+
+$ cp examples/04_container.c /container/
+
+$ wget https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-minirootfs-3.23.2-x86_64.tar.gz
+$ tar xvf alpine-minirootfs-3.23.2-x86_64.tar.gz -C /container/root
+
+$ tree /container/ -L 2
+/container/
+├── 04_container.c
+└── root
+    ├── bin
+    ├── dev
+    ├── etc
+    ├── home
+    ├── lib
+    ├── media
+    ├── mnt
+    ├── opt
+    ├── proc
+    ├── root
+    ├── run
+    ├── sbin
+    ├── srv
+    ├── sys
+    ├── tmp
+    ├── usr
+    └── var
+----
++
+В корне `/container/root` размещаем root-FS ОС Alpine Linux, которую будем "запускать" в контейнере.
++
+. Компилируем `container` и выдаём необходимые capabilities
++
+[source,console]
+----
+$ sudo apt install libseccomp-dev libcap-dev libnl-3-dev libnl-route-3-dev pkg-config  <1>
+
+$ gcc -O2 -Wall 04_container.c -o container -lcap -lseccomp $(pkg-config --cflags --libs libnl-3.0 libnl-route-3.0)  <2>
+$ sudo setcap cap_setgid,cap_dac_override,cap_net_admin+ep ./container  <3>
+----
+<1> Устанавливаем зависимости для работы с seccomp и netlink-сокетами
+<2> Компилируем пример, компонуем с зависимостями (`-lcap`, `-lseccomp` и все зависимости библиотек `libnl` и `libnl-route`)
+<3> Выдаём исполняемому файлу `./container` права `CAP_SETGID` (для сброса групп), `CAP_DAC_OVERRIDE` (для задания отображений UID/GID через файлы `uid_map`/`gid_map`) и `CAP_NET_ADMIN` (для создания veth-интерфейсов и настройки Net namespace)
++
+. [ВАЖНО] Выключаем link:{info-apparmor}[AppArmor] для `./container`
++
+[source,console,options="nowrap"]
+----
+$ sudo nano /etc/apparmor.d/container
+abi <abi/4.0>,
+include <tunables/global>
+
+profile container /container/container flags=(unconfined) {
+  userns,
+
+  # Site-specific additions and overrides. See local/README for details.
+  include if exists <local/container>
+}
+
+$ sudo systemctl reload apparmor
+----
++
+[IMPORTANT]
+====
+В Debian-based системах в случае создания пространства имён пользователей (User namespace) от имени непривилегированного пользователя link:{info-apparmor}[AppArmor] изменяет контекст безопасности первого процесса нового пространства: все capabilities сбрасываются!
+
+Как следствие, дочерний процесс лаунчера `./container` не обладает достаточными правами для исполнения `pivot_root` и функция `setup_mount_namespace(void)` завершается с ошибкой.
+
+Попробуйте запустить контейнер без установленного профиля `/etc/apparmor.d/container` и увидеть эффект AppArmor:
+
+[source,console]
+----
+$ sudo rm /etc/apparmor.d/container
+$ sudo systemctl reload apparmor
+$ ./container -v
+$ sudo dmesg | grep apparmor | grep container
+----
+====
++
+. Создаём `cgroup` `mycontainer` и настраиваем лимиты
++
+[source,console]
+----
+$ sudo mkdir /sys/fs/cgroup/mycontainer
+
+$ echo "+cpu +cpuset" | sudo tee /sys/fs/cgroup/cgroup.subtree_control
+
+$ # 70% CPU (например, 70ms из 100ms)
+$ echo "70000 100000" | sudo tee /sys/fs/cgroup/mycontainer/cpu.max
+
+$ # прикрепляем процессы на CPU #0
+$ echo 0 | sudo tee /sys/fs/cgroup/mycontainer/cpuset.cpus
+$ echo 0 | sudo tee /sys/fs/cgroup/mycontainer/cpuset.mems
+----
++
+. Настраиваем маскарадинг для сети контейнера
++
+[source,console]
+----
+$ sudo sysctl -w net.ipv4.ip_forward=1
+$ sudo iptables -t nat -A POSTROUTING -s 172.16.42.0/24 -o enp0s3 -j MASQUERADE
+
+$ sudo iptables -A FORWARD -i enp0s3 -o veth-host -m state --state RELATED,ESTABLISHED -j ACCEPT
+$ sudo iptables -A FORWARD -i veth-host -o enp0s3 -j ACCEPT
+----
++
+. Запускаем контейнер
++
+.Namespaces работают
++
+[source,console]
+----
+$ ./container -v
+[Parent]    Launching: /bin/sh
+[Parent]    Spawned the child, pid=27344
+[Parent]    Real UID=1001
+[Parent]    Real GID=1001
+[Parent]    Mapped real UID 1001 <-> User ns 0
+[Parent]    Switched off setgroups(2)
+[Parent]    Mapped real GID 1001 <-> User ns 0
+[Parent]    Moved the child 27344 to the cgroup "mycontainer"
+[Parent]    Set up veth-cont for the child 27344
+[Container] UID=0
+[Container] GID=0
+[Container] Using shell seccomp profile
+/ # whoami
+root
+/ # id
+uid=0(root) gid=0(root)  <1>
+/ #
+/ # hostname
+container  <2>
+
+/ # ip a  <3>
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+6: eth0@if142: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether aa:e8:ec:2f:a4:54 brd ff:ff:ff:ff:ff:ff
+    inet 172.16.42.2/24 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a8e8:ecff:fe2f:a454/64 scope link
+       valid_lft forever preferred_lft forever
+/ # ping 8.8.8.8  <4>
+PING 8.8.8.8 (8.8.8.8): 56 data bytes
+64 bytes from 8.8.8.8: seq=0 ttl=105 time=34.777 ms
+64 bytes from 8.8.8.8: seq=1 ttl=105 time=32.745 ms
+^C
+--- 8.8.8.8 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 32.745/33.761/34.777 ms
+
+/ # ls /  <5>
+bin    dev    etc    home   lib    media  mnt    opt    proc   root   run    sbin   srv    sys    tmp    usr    var
+/ # cat /etc/os-release
+NAME="Alpine Linux"  <5>
+ID=alpine
+VERSION_ID=3.23.2
+PRETTY_NAME="Alpine Linux v3.23"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
+/ # echo "Hello, container!" > 1.txt  <6>
+/ # ls /
+1.txt  bin    dev    etc    home   lib    media  mnt    opt    proc   root   run    sbin   srv    sys    tmp    usr    var
+/ # exit
+[Parent]    Destroying the container
+$ cat /container/root/1.txt  <6>
+Hello, container!
+$ ls -l /container/root/1.txt
+-rw-rw-r-- 1 x x 18 Dec 31 23:59 /container/root/1.txt  <7>
+----
+<1> Пользователь в контейнере виден как root - UID=0, GID=0 (User namespace)
+<2> Имя хоста - `container` (UTS Namespace)
+<3> В контейнере создан и настроен интерфейс (Net namespace)
+<4> Интерфейс `eth0` даёт доступ в Интернет (Net namespace)
+<5> В корень / контейнера смонтирована `/container/root`, а не корень основной ОС (Mount namespace)
+<6> Создаём файл `1.txt` в контейнере и читаем содержимое вне контейнера - файл виден в основной ОС (Mount namespace)
+<7> Владелец файла `file.txt` - пользователь `x`, не `root` (User namespace + Mount namespace)
++
+.Cgroup накладывает ограничения на CPU
++
+[source,console]
+----
+$ ./container
+/ # apk add stress-ng  <1>
+/ # stress-ng --metrics --verbose --cpu 4 --timeout 60s  <2>
+...
+/ # exit
+----
+<1> Устанавливаем утилиту `stress-ng`
+<2> Запускаем cpu burner на четырёх процессах
++
+В соседнем терминале (вне контейнера):
++
+[source,console]
+----
+$ top -H
+top - 21:34:43 up 3 days,  9:34,  5 users,  load average: 2.32, 1.34, 0.63
+Threads: 697 total,   5 running, 692 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  6.7 us,  0.1 sy,  0.0 ni, 93.1 id,  0.0 wa,  0.0 hi,  0.1 si,  0.0 st
+MiB Mem :   7943.8 total,   2882.0 free,   1837.0 used,   3546.2 buff/cache
+MiB Swap:   4096.0 total,   4096.0 free,      0.0 used.   6106.8 avail Mem
+
+    PID USER     S  %CPU  %MEM     TIME+ COMMAND         P
+  28193 x        R  17.2   0.1   0:07.17 stress-ng-cpu   0  <1>
+  28190 x        R  16.9   0.1   0:07.16 stress-ng-cpu   0  <1>
+  28191 x        R  16.9   0.1   0:07.16 stress-ng-cpu   0  <1>
+  28192 x        R  16.9   0.1   0:07.16 stress-ng-cpu   0  <1>
+...
+----
+<1> Суммарное потребление CPU четырьмя процессами, запущенными в контейнере, не превышает 70% (столбец %CPU), причём все процессы запущены на одном ядре #0 (столбец P)
++
+.Seccomp ограничивает системные вызовы согласно определённым профилям
++
+[source,console]
+----
+$ ./container -v
+[Parent]    Launching: /bin/sh  <1>
+[Parent]    Spawned the child, pid=28306
+[Parent]    Real UID=1001
+[Parent]    Real GID=1001
+[Parent]    Mapped real UID 1001 <-> User ns 0
+[Parent]    Switched off setgroups(2)
+[Parent]    Mapped real GID 1001 <-> User ns 0
+[Parent]    Moved the child 28306 to the cgroup "mycontainer"
+[Parent]    Set up veth-cont for the child 28306
+[Container] UID=0
+[Container] GID=0
+[Container] Using shell seccomp profile  <1>
+/ # ping 1.1.1.1
+PING 1.1.1.1 (1.1.1.1): 56 data bytes
+64 bytes from 1.1.1.1: seq=0 ttl=56 time=17.706 ms
+^C
+--- 1.1.1.1 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 17.706/17.706/17.706 ms
+/ # exit
+
+$ ./container -v -- ping 1.1.1.1
+[Parent]    Launching: ping 1.1.1.1  <2>
+[Parent]    Spawned the child, pid=28332
+[Parent]    Real UID=1001
+[Parent]    Real GID=1001
+[Parent]    Mapped real UID 1001 <-> User ns 0
+[Parent]    Switched off setgroups(2)
+[Parent]    Mapped real GID 1001 <-> User ns 0
+[Parent]    Moved the child 28332 to the cgroup "mycontainer"
+[Parent]    Set up veth-cont for the child 28332
+[Container] UID=0
+[Container] GID=0
+[Container] Using restricted seccomp profile  <2>
+[Parent]    Destroying the container
+
+$  sudo dmesg | tail -n 1  <3>
+[294566.537574] audit: type=1326 audit(1768067376.902:5906): auid=1001 uid=1001 gid=1001 ses=136 subj=unconfined pid=28362 comm="container" exe="/container/container" sig=31 arch=c000003e syscall=32 compat=0 ip=0x7af1da31696b code=0x0
+----
+<1> При запуске `/bin/sh` устанавливается профиль "shell", позволяющий выполнять сетевые запросы
+<2> При запуске `ping` напрямую устанавливается профиль "restricted", запрещающий сетевую активность
+<3> Как можно видеть в выводе `dmesg` (читающей сообщения из _кольцевого буфера ядра_, _kernel ring buffer_), запуск `ping` был прерван на попытке выполнить системный вызов syscall=32 (link:{man-dup_2}[dup(2)]), который не перечислен в списке разрешённых вызовов профиля "restricted"
+
+[TIP]
+====
+Как мы увидели в настоящем разделе, пример `{example-container}` предполагает некоторые предварительные действия:
+
+* скачивание и распаковка файловой системы целевой ОС ("alpine-minirootfs");
+* создание и настройка cgroup "mycontainer";
+* включение IP forwarding и настройка source NAT.
+
+Эти подготовительные операции также можно выполнять в коде - при создании контейнера.
+
+Также в текущем виде код `{example-container}` организован так, что запретить системный вызов `execve()` средствами seccomp не представляется возможным без модификации запускаемого в контейнере приложения. Среди возможных способов реализации контроля за исполнением `execve()`:
+
+* создание специального профиля link:{info-apparmor}[AppArmor] / link:{man-selinux_8}[SELinux(8)];
+* создание белого списка доступных для запуска с помощью `execve()` программ посредством механизма link:{man-landlock_7}[Landlock(7)];
+* кастомный фильтр link:{info-ebpf}[eBPF], выполняющий динамическую фильтрацию системных вызовов.
+
+Оставляем реализацию описанных выше улучшений читателю в качестве упражнения. Да прибудет с вами сила!
+====
+
+==== То же с помощью Docker
+
+Аналогичный функционал средствами Docker.
+
+. `/bin/sh` в контейнере:
++
+[source,console]
+----
+$ docker run -it \  <1>
+  --rm \
+  --cpuset-cpus="0" \  <4>
+  --cpus="0.7" \       <4>
+  --security-opt seccomp=04_seccomp_shell.json \  <5>
+  alpine:3.23 \  <2>
+  /bin/sh  <3>
+
+/ # id
+uid=0(root) gid=0(root) groups=0(root),0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)
+/ # hostname
+1afa4fbce548
+/ # ls
+bin    dev    etc    home   lib    media  mnt    opt    proc   root   run    sbin   srv    sys    tmp    usr    var
+/ # cat /etc/os-release
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.23.2
+PRETTY_NAME="Alpine Linux v3.23"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
+/ # ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0@if172: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP
+    link/ether e2:11:2a:29:ba:a0 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+/ # ping 1.1.1.1
+PING 1.1.1.1 (1.1.1.1): 56 data bytes
+64 bytes from 1.1.1.1: seq=0 ttl=56 time=18.012 ms
+^C
+--- 1.1.1.1 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 18.012/18.012/18.012 ms
+----
+<1> Запускаем контейнер в интерактивном режиме (`-i`) c терминалом tty (`-t`)
+<2> Запускаем в контейнере Alpine Linux v3.32
+<3> Запускаем `/bin/sh` в интерактивном режиме
+<4> Ограничиваем потребление CPU 70% и прикрепляем процессы контейнера к CPU #0 средствами Cgroup
+<5> Устанавливаем профиль Seccomp, заданный файлом `04_seccomp_shell.json`
++
+Профиль `shell` задаётся следующим образом:
++
+[source,console]
+----
+$ cat 04_seccomp_shell.json
+{
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "archMap": [
+    {
+      "architecture": "SCMP_ARCH_X86_64",
+      "subArchitectures": [
+        "SCMP_ARCH_X86",
+        "SCMP_ARCH_X32"
+      ]
+    }
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "clone",
+        "clone3",
+        "ptrace",
+        "bpf",
+        "kexec_load",
+        "perf_event_open",
+        "init_module",
+        "finit_module"
+      ],
+      "action": "SCMP_ACT_KILL"
+    }
+  ]
+}
+----
++
+При запуске контейнера без его удаления по завершении работы (без ключа `--rm`) пользовательские файлы остаются в корневой файловой системе:
++
+[source,console]
+----
+$ docker run -it --name container alpine:3.23 /bin/sh  <1>
+/ # cd /root/
+~ # echo "Hello" > file-in-container.txt  <2>
+~ #
+
+$ sudo find / -name file-in-container.txt
+/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs/root/file-in-container.txt  <3>
+
+$ sudo ls -la /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs/root/
+total 16
+drwx------ 2 root root 4096 Jan 13 00:53 .
+drwxr-xr-x 3 root root 4096 Jan 13 00:53 ..
+-rw------- 1 root root   47 Jan 13 00:53 .ash_history
+-rw-r--r-- 1 root root    6 Jan 13 00:53 file-in-container.txt
+$ sudo cat /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs/root/file-in-container.txt  <4>
+Hello
+$ echo "Hello, container!" | sudo tee /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5/fs/root/file-in-container.txt  <5>
+Hello, container!
+
+$ docker container start -i container
+/ # cat /root/file-in-container.txt  <6>
+Hello, container!
+/ #
+----
+<1> Создаём контейнер "container"
+<2> Создаём файл "file-in-container.txt" в директории `/root` в контейнере
+<3> Файловая система контейнера хранится в поддиректории `/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/`
+<4> Чтение содержимого файла `file-in-container.txt` показывает, что это именно тот файл, который был создан в контейнере
+<5> Изменяем содержимое файла `file-in-container.txt`
+<6> Читаем файл `file-in-container.txt` в контейнере - изменения содержимого видны в контейнере
++
+. `ping` в контейнере:
++
+[source,console]
+----
+$ docker run -it \
+  --rm \
+  --cpuset-cpus="0" \
+  --cpus="0.7" \
+  --security-opt seccomp=04_seccomp_shell.json \  <1>
+  alpine:3.23 \
+  ping 1.1.1.1  <1>
+64 bytes from 1.1.1.1: seq=0 ttl=56 time=18.384 ms
+64 bytes from 1.1.1.1: seq=1 ttl=56 time=17.504 ms
+^C
+--- 1.1.1.1 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 17.504/17.944/18.384 ms
+
+$ docker run -it \
+  --rm \
+  --cpuset-cpus="0" \
+  --cpus="0.7" \
+  --security-opt seccomp=04_seccomp_restricted.json \  <2>
+  alpine:3.23 \
+  ping 1.1.1.1  <2>
+...
+----
+<1> Запуск `ping` с профилем "shell" успешен
+<2> Запуск `ping` с профилем "restricted" приводит к "зависанию", т.к. `04_seccomp_restricted.json` запрещает использование сетевых системных вызовов
+
+
+
+[bibliography]
+== Источники
+
+* [[[Wiki-chroot,1]]] link:{wiki-chroot}[[Wikipedia\] chroot]
+* [[[Wiki-archlinux-chroot,2]]] link:{wiki-archlinux-chroot}[[Arch Wiki\] chroot]
+* [[[Build-custom-livecd,3]]] link:{github-live-custom-ubuntu}[[github.com\] How to create a custom Ubuntu live from scratch]
+* [[[Namespaces-lwn-overview,4]]] link:{namespaces-lwn-overview}[[lwn.net\] Namespaces in operation, part 1: namespaces overview]
+* [[[Namespaces-lwn-part2,5]]] link:{namespaces-lwn-part2}[[lwn.net\] Namespaces in operation, part 2: the namespaces API]
+* [[[Namespaces-lwn-part3,6]]] link:{namespaces-lwn-part3}[[lwn.net\] Namespaces in operation, part 3: PID namespaces]
+* [[[Namespaces-lwn-part4,7]]] link:{namespaces-lwn-part4}[[lwn.net\] Namespaces in operation, part 4: more on PID namespaces]
+* [[[Namespaces-lwn-part5,8]]] link:{namespaces-lwn-part5}[[lwn.net\] Namespaces in operation, part 5: User namespaces]
+* [[[Namespaces-lwn-part6,9]]] link:{namespaces-lwn-part6}[[lwn.net\] Namespaces in operation, part 6: more on user namespaces]
+* [[[Namespaces-lwn-part7,10]]] link:{namespaces-lwn-part7}[[lwn.net\] Namespaces in operation, part 7: Network namespaces]
+* [[[Namespaces-lwn-mount-ns,11]]] link:{namespaces-lwn-mount-ns}[[lwn.net\] Mount namespaces and shared subtrees]
+* [[[Namespaces-lwn-mount-ns-2,12]]] link:{namespaces-lwn-mount-ns-2}[[lwn.net\] Mount namespaces, mount propagation, and unbindable mounts]
+* [[[Namespaces-lwn-groups-dropping,13]]] link:{namespaces-lwn-groups-dropping}[[lwn.net\] The trouble with dropping groups]
+* [[[Namespaces-lwn-loophole,14]]] link:{namespaces-lwn-setgroups-loophole}[[lwn.net\] User namespaces and setgroups()]
+* [[[Namespaces-toptal-intro,15]]] link:{namespaces-toptal-intro}[[toptal.com\] Separation Anxiety: A Tutorial for Isolating Your System with Linux Namespaces]
+* [[[Namespaces-habr-intro,16]]] link:{namespaces-habr-intro}[[habr.ru\] Механизмы контейнеризации: namespaces]
+* [[[Namespaces-habr-deep-dive,17]]] [habr.ru] Ifeanyi Ubah. Глубокое погружение в Linux namespaces (Перевод) +
+link:{namespaces-habr-deep-dive-p1}[Часть 1] link:{namespaces-habr-deep-dive-p2}[Часть 2] link:{namespaces-habr-deep-dive-p3}[Часть 3] link:{namespaces-habr-deep-dive-p4}[Часть 4]
+* [[[Namespaces-rh-home-made-container,18]]] [Red Hat Blog] Steve Ovens. Building a container by hand using namespaces +
+link:{namespaces-rh-7-linux-namespaces}[Часть 1] link:{namespaces-rh-building-container-namespaces}[Часть 2] link:{namespaces-rh-mount-namespaces}[Часть 3] link:{namespaces-rh-pid-namespace}[Часть 4] link:{namespaces-rh-uts-namespace}[Часть 5] link:{namespaces-rh-net-namespaces}[Часть 6]

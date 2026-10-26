@@ -16,7 +16,7 @@
     },
     {
       "id": "02-identity-and-access-management",
-      "title": "Тема 2. Управление и безопасность УЗ пользователя в ОС Linix",
+      "title": "Тема 2. Управление и безопасность УЗ пользователя в ОС Linux",
       "lectures": [
         { "id": "02-classical-unix-mechanisms", "title": "Лекция 2. Классические механизмы управления пользователями в ОС Unix" },
         { "id": "02-classical-unix-mechanisms_old", "title": "Лекция 2 (старая версия). Классические механизмы управления пользователями в ОС Unix" },
@@ -25,19 +25,17 @@
       ]
     },
     {
-      "id": "03-access-control",
-      "title": "Тема 3. Механизмы разграничения доступа ОС Linux",
-      "lectures": []
+      "id": "03-resources-management",
+      "title": "Тема 3. Разграничение ресурсов и изоляция процессов ОС Linux",
+      "lectures": [
+        { "id": "05-resources-management", "title": "Лекция 5. Разграничение ресурсов и изоляция процессов ОС Linux" }
+      ]
     },
     {
-      "id": "04-resources-management",
-      "title": "Тема 4. Разграничение ресурсов и изоляция процессов ОС Linux",
-      "lectures": []
-    },
-    {
-      "id": "05-processes-isolation",
-      "title": "Тема 5. Изоляция процессов ОС Linux",
-      "lectures": []
+      "id": "04-processes-isolation",
+      "title": "Тема 4. Изоляция процессов ОС Linux",
+      "lectures": [
+      ]
     }
   ]
 }
