@@ -22,5 +22,21 @@
   { "id": "man-setresuid", "text": "setresuid(2) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man2/setresuid.2.html" },
   { "id": "man-execve", "text": "execve(2) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man2/execve.2.html" },
   { "id": "linux-kernel", "text": "The Linux kernel source tree, v6.18 LTS (include/linux/cred.h, kernel/cred.c, kernel/sys.c, fs/exec.c, security/commoncap.c).", "url": "https://github.com/torvalds/linux/tree/v6.18" },
-  { "id": "kerrisk-tlpi", "text": "Kerrisk M. The Linux Programming Interface: A Linux and UNIX System Programming Handbook. — San Francisco: No Starch Press, 2010. — Ch. 9 «Process Credentials», ch. 38 «Writing Secure Privileged Programs».", "url": "https://man7.org/tlpi/" }
+  { "id": "kerrisk-tlpi", "text": "Kerrisk M. The Linux Programming Interface: A Linux and UNIX System Programming Handbook. — San Francisco: No Starch Press, 2010. — Ch. 9 «Process Credentials», ch. 38 «Writing Secure Privileged Programs».", "url": "https://man7.org/tlpi/" },
+  { "id": "man-shadow", "text": "shadow(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/shadow.5.html" },
+  { "id": "man-gshadow", "text": "gshadow(5) — Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/gshadow.5.html" },
+  { "id": "man-crypt", "text": "crypt(5) — форматы и характеристики алгоритмов хеширования паролей (libxcrypt), Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/crypt.5.html" },
+  { "id": "man-passwd1", "text": "passwd(1) — shadow-utils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man1/passwd.1.html" },
+  { "id": "man-chage", "text": "chage(1) — shadow-utils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man1/chage.1.html" },
+  { "id": "man-logindefs", "text": "login.defs(5) — shadow-utils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/login.defs.5.html" },
+  { "id": "man-gpasswd", "text": "gpasswd(1) — shadow-utils, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man1/gpasswd.1.html" },
+  { "id": "md5crypt", "text": "Kamp P.-H. md5crypt (история создания алгоритма).", "url": "https://phk.freebsd.dk/sagas/md5crypt/" },
+  { "id": "bcrypt", "text": "Provos N., Mazières D. A Future-Adaptable Password Scheme // USENIX Annual Technical Conference, 1999.", "url": "https://www.usenix.org/legacy/events/usenix99/provos.html" },
+  { "id": "ubuntu-hash", "text": "Ubuntu Security documentation. Password hashing.", "url": "https://documentation.ubuntu.com/security/security-features/cryptography/password-hashing/" },
+  { "id": "astra-gost-hash", "text": "Astra Linux: алгоритмы хеширования паролей (gost12_512, $gost12512hash$). Справочный центр Astra Linux.", "url": "https://wiki.astralinux.ru/pages/viewpage.action?pageId=216540367" },
+  { "id": "ctss-50th", "text": "Walden D., Van Vleck T. (eds.) The Compatible Time-Sharing System (1961–1973): Fiftieth Anniversary Commemorative Overview. — IEEE Computer Society, 2011.", "url": "https://multicians.org/thvv/compatible-time-sharing-system.pdf" },
+  { "id": "shadow-maint", "text": "shadow-utils (Shadow Password Suite): репозиторий и история пакета (J. F. Haugh, 1987—).", "url": "https://github.com/shadow-maint/shadow" },
+  { "id": "fbi-morris", "text": "The Morris Worm: 30 Years Since First Major Attack on the Internet. — FBI News, 02.11.2018.", "url": "https://www.fbi.gov/news/stories/morris-worm-30-years-since-first-major-attack-on-internet-110218" },
+  { "id": "scrypt-percival", "text": "Percival C. Stronger Key Derivation via Sequential Memory-Hard Functions (scrypt). — BSDCan, 2009.", "url": "https://www.tarsnap.com/scrypt/scrypt.pdf" },
+  { "id": "rfc9106", "text": "RFC 9106: Argon2 Memory-Hard Function for Password Hashing and Proof-of-Work Applications. — IRTF CFRG, 2021.", "url": "https://www.rfc-editor.org/rfc/rfc9106" }
 ]

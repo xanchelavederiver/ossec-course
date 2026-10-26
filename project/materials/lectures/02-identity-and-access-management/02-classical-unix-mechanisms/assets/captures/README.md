@@ -45,5 +45,26 @@ GID 1010. Табуляция развёрнута (`expand -t 8`), иначе к
   сброс setuid(ruid) с отказом setuid(0); повторяет эксперименты exp_3/exp_4
   из учебного примера `.sources/misc/03_resids_output_ids.c`.
 
+- `17-etc-shadow.txt` — транскрипт, снятый 26.10.2026 в одноразовом контейнере
+  `ubuntu:26.04` (Ubuntu 26.04.1 LTS, установлены `openssh-server`, `whois`,
+  `util-linux-extra`; пользователи как в 15/16: `bob` 1001 (+`project`),
+  `carol` 1002, `alice` 1003 (+`adm`, `project`), группа `project` — GID 1010;
+  у `bob` и `alice` задан одинаковый пароль, у `carol` пароль не задан).
+  Секции: полный `cat /etc/shadow`, выборка строк `/etc/gshadow`, права
+  доступа (сеанс `bob`: `ls -l`, отказ `cat`, setuid/setgid-утилиты).
+- `05-password-hashing.txt` — демо 05 (тот же контейнер, корневой сеанс):
+  воспроизведение хеша `bob` командой `mkpasswd` с солью из `/etc/shadow`
+  (верный/неверный пароль), `sha256sum` без соли, случайная соль
+  (одинаковый пароль `bob`/`alice` — разные хеши), фиксированная соль.
+  Пароль примера публичный: `Lab-Demo-42!`. Сценарий —
+  `demos/05-password-hashing.sh` (там временные пользователи `ossec-demo*`).
+- `06-password-policy.txt` — демо 06 (тот же контейнер): поля устаревания
+  до и после `chage -m 1 -M 90 -W 7 -I 14 -E 2027-12-31`, значения по
+  умолчанию из `login.defs`, блокировка `passwd -l alice` с попыткой `su`
+  с верным паролем, пустое поле хеша (`passwd -d carol`, `su` без запроса
+  пароля — в `common-auth` Ubuntu у `pam_unix` включён `nullok`), пароль
+  группы `!` в `/etc/gshadow` (`newgrp` член/не-член). Сценарий —
+  `demos/06-password-policy.sh`. День 20752 = 26.10.2026, 21183 = 31.12.2027.
+
 Остальные captures переносятся из `../../02-classical-unix-mechanisms_old/assets/captures/`
 вместе со слайдами, которые на них ссылаются.

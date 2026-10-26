@@ -1,0 +1,56 @@
+===== Файл /etc/shadow =====
+
+# cat /etc/shadow
+root:*:20723:0:99999:7:::
+daemon:*:20723:0:99999:7:::
+bin:*:20723:0:99999:7:::
+sys:*:20723:0:99999:7:::
+sync:*:20723:0:99999:7:::
+games:*:20723:0:99999:7:::
+man:*:20723:0:99999:7:::
+lp:*:20723:0:99999:7:::
+mail:*:20723:0:99999:7:::
+news:*:20723:0:99999:7:::
+uucp:*:20723:0:99999:7:::
+proxy:*:20723:0:99999:7:::
+www-data:*:20723:0:99999:7:::
+backup:*:20723:0:99999:7:::
+list:*:20723:0:99999:7:::
+irc:*:20723:0:99999:7:::
+_apt:*:20723:0:99999:7:::
+nobody:*:20723:0:99999:7:::
+ubuntu:!:20723:0:99999:7:::
+systemd-network:!*:20752:::::1:
+systemd-timesync:!*:20752:::::1:
+messagebus:!*:20752::::::
+systemd-resolve:!*:20752:::::1:
+sshd:!*:20752::::::
+bob:$y$j9T$qqeJEuQm2uJ6Baz8ciP2l0$vZvVYUhndF7wNaEijhocsHq6JCT8ovr5ae4Fzr/n.LB:20752:0:99999:7:::
+carol:!:20752:0:99999:7:::
+alice:$y$j9T$st1UNSf810jWDFAAD5axe/$ehKPhJ4N8UH8YIuhshFhIlQCqaKUwQJwXLaHtKw/ZP.:20752:0:99999:7:::
+
+===== Файл /etc/gshadow =====
+
+# grep -E '^(root|adm|sudo|shadow|project|bob|carol|alice):' /etc/gshadow
+root:*::
+adm:*::ubuntu,alice
+sudo:*::ubuntu
+shadow:*::
+project:!::bob,alice
+bob:!::
+carol:!::
+alice:!::
+
+===== Права доступа =====
+
+$ ls -l /etc/passwd /etc/group /etc/shadow /etc/gshadow
+-rw-r--r-- 1 root root    697 Oct 26 09:39 /etc/group
+-rw-r----- 1 root shadow  594 Oct 26 09:39 /etc/gshadow
+-rw-r--r-- 1 root root   1345 Oct 26 09:39 /etc/passwd
+-rw-r----- 1 root shadow  868 Oct 26 09:39 /etc/shadow
+$ cat /etc/shadow
+cat: /etc/shadow: Permission denied
+$ ls -l /usr/bin/passwd /usr/bin/gpasswd /usr/bin/chage
+-rwxr-sr-x 1 root shadow 85256 Feb  2  2026 /usr/bin/chage
+-rwsr-xr-x 1 root root   76328 Feb  2  2026 /usr/bin/gpasswd
+-rwsr-xr-x 1 root root   93640 Feb  2  2026 /usr/bin/passwd
