@@ -920,7 +920,7 @@ layout: section
 <div>
 
 Субъект для монитора обращений — **процесс** (раздел 2.1). Процесс идентифицируется с помощью
-UID пользователя, GID его первичной и ID дополнительных групп. Причём для каждого процесса 
+UID пользователя, GID его первичной и дополнительных групп. Причём для каждого процесса 
 в учётных данных (credentials, <Man p="credentials(7)" />) определены по четыре вида UID и GID:
 
 </div>
@@ -932,7 +932,7 @@ UID пользователя, GID его первичной и ID дополни
 | **ruid** / rgid | real — реальный | кто запустил процесс: наследуется от родителя и хранит «настоящего» пользователя |
 | **euid** / egid | effective — эффективный | по нему ядро проверяет привилегии процесса; euid 0 — права root |
 | **suid** / sgid | saved — сохранённый | копия euid на момент запуска программы: позволяет временно сбросить привилегии и затем вернуть их |
-| **fsuid** / fsgid | filesystem — файловый | использовался в проверках доступа к файлам; сейчас всегда следует за euid, <Man p="setfsuid(2)" /> — исторический |
+| **fsuid** / fsgid | filesystem — файловый | использовался в проверках доступа к файлам; сейчас всегда совпадает с euid, <Man p="setfsuid(2)" /> — исторический |
 
 </div>
 
@@ -1007,56 +1007,53 @@ filesystem; это ответ на вопрос со слайда «Субъек
 <!--
 Сначала root-оболочка: grep по /proc/$$/status — четыре нуля в Uid и Gid. Затем фоновый
 sleep пользователя bob: четыре 1001. Пока все значения совпадают; те же числа по
-отдельности выводит ps (ruid,euid,suid,fsuid). Расхождение значений появляется при
-запуске setuid-программы — следующий слайд.
+отдельности выводит ps (ruid,euid,suid,fsuid). Способы, которыми значения могут
+разойтись, — следующий слайд.
 -->
 
 ---
 
-# Демо 03: setuid-программа работает с чужим euid
+# euid расходится с ruid в двух сценариях
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-3 items-start">
 <div>
 
-<TerminalCapture src="captures/03-process-credentials.txt" section="3" title="demo 03 · passwd, запущенный bob">
-  <TCallout :line="2" :col="4" :span="1" :n="1" />
-  <TCallout :line="2" :col="14" :span="4" :n="2" />
-  <TCallout :line="8" :col="9" :span="4" :n="3" />
-  <TCallout :line="8" :col="17" :span="17" :n="4" />
-</TerminalCapture>
+В демонстрации все четыре идентификатора совпадали. Ядро изменяет euid независимо
+от ruid только в двух точках — других способов «разойтись» у идентификаторов нет:
 
 </div>
-<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-<b>Читаем демонстрацию:</b>
-<div class="mt-1 space-y-1.5">
-<div><span class="co-ball">1</span> у <code>/usr/bin/passwd</code> вместо <code>x</code> — бит <code>s</code> (setuid): «при запуске дать процессу euid владельца файла»</div>
-<div><span class="co-ball">2</span> владелец файла — <code>root</code></div>
-<div><span class="co-ball">3</span> ruid не изменился: 1001 — по нему <code>passwd</code> знает, чей пароль менять</div>
-<div><span class="co-ball">4</span> euid, suid и fsuid стали 0 — процесс действует с правами root; внизу то же показывает <code>ps</code></div>
+
+<div class="t-table text-xs mt-2">
+
+| Механизм | Момент срабатывания | Кто управляет |
+|---|---|---|
+| **setuid/setgid-бит** на исполняемом файле | запуск программы: при <Man p="execve(2)" /> ядро делает euid/egid равным владельцу/группе файла | владелец файла или root заранее помечает файл: `chmod u+s`, `chmod g+s` |
+| **системные вызовы** <Man p="setuid(2)" />, <Man p="seteuid(2)" />, <Man p="setresuid(2)" /> и их GID-аналоги | в любой момент работы: процесс меняет собственные идентификаторы | ядро: привилегированному процессу — любые значения, остальным — лишь перестановка своих (следующий слайд) |
+
 </div>
+
+<div class="mt-2 p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Типовые сценарии, требующие euid&nbsp;≠&nbsp;ruid:</b>
+<div class="mt-1 space-y-1">
+<div>– <b>доступ пользователя к защищённому объекту</b>: <Man p="passwd(1)" /> с euid 0 пишет в <code>/etc/shadow</code>, а по ruid определяет, чей пароль менять (демо далее);</div>
+<div>– <b>выполнение команд от имени другого пользователя</b>: setuid-root-программы <code>su</code> и <code>sudo</code> (раздел 7);</div>
+<div>– <b>доступ через группу файла</b>: setgid-программа <Man p="chage(1)" /> читает <code>/etc/shadow</code> с egid группы <code>shadow</code>, не включая в неё пользователей (раздел 3);</div>
+<div>– <b>временное понижение привилегий</b>: привилегированный процесс опускает euid до ruid на время опасных операций и затем возвращает — слайд «Безопасное программирование».</div>
 </div>
 </div>
 
-<v-click>
-
-<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
-<b>Вывод:</b> setuid-программа работает с правами <b>владельца файла</b>, но по ruid «помнит»
-реального пользователя — так <Man p="passwd(1)" /> пишет в недоступный остальным
-<code>/etc/shadow</code> (раздел 3). Какие значения и когда выставляет ядро — далее.
-</div>
-
-</v-click>
-
-<div class="text-xs opacity-70 mt-1">
-См. <code>demos/03-process-credentials.sh</code>.
-</div>
+<Refs ids="man-credentials man-execve man-setuid kerrisk-tlpi" />
 
 <!--
-Ответ на вопрос «зачем процессу отдельные real и effective»: passwd должен записывать
-в недоступный пользователю /etc/shadow, поэтому файл /usr/bin/passwd имеет setuid-бит:
-при execve euid (и вслед за ним suid и fsuid) становится равным владельцу файла — root.
-ruid остаётся прежним: по нему passwd знает, чей пароль менять. Механизм — на следующих
-слайдах.
+До сих пор идентификаторы совпадали. Разойтись euid и ruid могут ровно двумя путями:
+setuid/setgid-бит на исполняемом файле (срабатывает внутри execve: euid становится
+равным владельцу файла) и системные вызовы семейства set*uid — их правила на следующем
+слайде. fork не в счёт: он лишь копирует потомку уже разошедшийся набор родителя.
+Сценарии: passwd (euid даёт запись в shadow, ruid говорит, чей пароль менять), su и
+sudo (смена пользователя), setgid-программы для доступа через группу файла (chage
+и expiry в Ubuntu 26.04 — setgid shadow; wall с 24.04 setgid-бита лишён,
+CVE-2024-28085), временное понижение привилегий
+привилегированной программой — развитие в слайде о безопасном программировании.
+Демонстрация расхождения на примере passwd — после него.
 -->
 
 ---
@@ -1089,8 +1086,7 @@ ruid остаётся прежним: по нему passwd знает, чей п
 <div class="mt-3 p-3 border-l-4 border-amber-500 bg-amber-500/10">
 <b>Ключевое правило:</b> непривилегированный процесс не может получить <b>чужой</b>
 идентификатор — только переставлять <b>свои</b> ruid/euid/suid. Новые UID появляются
-у процесса лишь двумя путями: вход в систему (процедура логина — раздел 5) и запуск
-setuid-программ.
+у процесса лишь двумя путями: вход в систему и запуск setuid-программ.
 </div>
 
 <Refs ids="man-setuid man-seteuid man-setresuid man-credentials" />
@@ -1171,7 +1167,7 @@ execve перезаписывается копией (нового) euid — в 
 
 ---
 
-# Безопасное программирование: управление привилегиями
+# Концепция безопасного программирования
 
 <div>
 
@@ -1180,23 +1176,25 @@ setuid-программы — классический источник уязв
 
 </div>
 
-<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-2 items-start">
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 -mt-5 items-start">
 <div>
 
 **Держать привилегии минимум времени** — «качели привилегий»:
 
 ```c
-uid_t euid = geteuid();  /* владелец файла: 0  */
+uid_t euid = geteuid();  /* владелец исполняемого файла */
+/* привилегированные операции */
 
-seteuid(getuid());       /* сброс: работаем с
-                            правами пользователя */
+seteuid(getuid());       /* сброс: права пользователя */
 /* …разбор ввода, вычисления, файлы… */
 
-seteuid(euid);           /* возврат — только вокруг
-                            привилегированной операции */
+seteuid(euid);           /* возврат: права владельца */
+/* привилегированные операции */
+
+setuid(getuid());       /* окончательный сброс прав */
 ```
 
-<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<div class="mt-1 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
 Привилегии больше не нужны — <b>сбрасывать насовсем</b>: <code>setuid(getuid())</code>
 при euid 0 затирает все три идентификатора; надёжнее явный
 <code>setresuid(u,&nbsp;u,&nbsp;u)</code>.
@@ -1230,6 +1228,55 @@ Writing Secure Privileged Programs) и Saltzer–Schroeder (принцип на�
 код возврата: у sendmail неудавшийся (из-за лимита) setuid однажды остался незамеченным.
 Помнить о наследовании: suid переживает fork — «пониженные» воркеры могут вернуть root.
 Современная альтернатива setuid-root — служебные учётные записи, file capabilities, sudo.
+-->
+
+---
+
+# Демо 03: setuid-программа работает с чужим euid
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/03-process-credentials.txt" section="3" title="demo 03 · passwd, запущенный bob">
+  <TCallout :line="2" :col="4" :span="1" :n="1" />
+  <TCallout :line="2" :col="14" :span="4" :n="2" />
+  <TCallout :line="8" :col="9" :span="4" :n="3" />
+  <TCallout :line="8" :col="17" :span="17" :n="4" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> у <code>/usr/bin/passwd</code> вместо <code>x</code> — бит <code>s</code> (setuid): «при запуске дать процессу euid владельца файла»</div>
+<div><span class="co-ball">2</span> владелец файла — <code>root</code></div>
+<div><span class="co-ball">3</span> ruid не изменился: 1001 — по нему <code>passwd</code> знает, чей пароль менять</div>
+<div><span class="co-ball">4</span> euid, suid и fsuid стали 0 — процесс действует с правами root; внизу то же показывает <code>ps</code></div>
+</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> setuid-программа работает с правами <b>владельца файла</b>, но по ruid «помнит»
+реального пользователя — так <Man p="passwd(1)" /> пишет в недоступный остальным
+<code>/etc/shadow</code> (раздел 3). Значения — в точности по алгоритму
+<Man p="execve(2)" />: euid стал равен владельцу файла, suid — копии нового euid.
+</div>
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+См. <code>demos/03-process-credentials.sh</code>.
+</div>
+
+<!--
+Ответ на вопрос «зачем процессу отдельные real и effective»: passwd должен записывать
+в недоступный пользователю /etc/shadow, поэтому файл /usr/bin/passwd имеет setuid-бит:
+при execve euid (и вслед за ним suid и fsuid) становится равным владельцу файла — root.
+ruid остаётся прежним: по нему passwd знает, чей пароль менять. Демонстрация
+подтверждает алгоритм execve с предыдущих слайдов.
 -->
 
 ---
@@ -1538,9 +1585,9 @@ SYSCALL_DEFINE0(geteuid)
 
 <div class="mt-3">
 
-`current_euid()` выбирает поле `euid` из `cred` **текущего** процесса; так реализованы
-системные вызовы <Man p="getuid(2)" />/<Man p="geteuid(2)" />. Проверки привилегий
-(`capable()`) используют euid-набор, проверки доступа к файлам — `current_fsuid()`.
+`current_uid()`/`current_euid()` выбирает поле `uid`/`euid` из `cred` **текущего** процесса; 
+так реализованы системные вызовы <Man p="getuid(2)" />/<Man p="geteuid(2)" /> используют. 
+Проверки привилегий (`capable()`) используют euid-набор, проверки доступа к файлам — `current_fsuid()`.
 
 </div>
 
@@ -1607,8 +1654,8 @@ int copy_creds(struct task_struct *p,
 <div class="mt-2">
 
 Наследование из <Man p="credentials(7)" /> — это один `memcpy`: новый процесс получает
-**побайтовую копию** `struct cred` родителя (все UID/GID, capabilities, группы). Поток
-внутри процесса cred не копирует, а разделяет.
+**побайтовую копию** `struct cred` родителя (все UID/GID, capabilities, группы). Потоки
+процесса используют экземпляр `struct cred` процесса.
 
 </div>
 
