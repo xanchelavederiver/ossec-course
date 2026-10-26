@@ -20,7 +20,8 @@
       "lectures": [
         { "id": "02-classical-unix-mechanisms", "title": "Лекция 2. Классические механизмы управления пользователями в ОС Unix" },
         { "id": "02-classical-unix-mechanisms_old", "title": "Лекция 2 (старая версия). Классические механизмы управления пользователями в ОС Unix" },
-        { "id": "03-pam", "title": "Лекция 3. Pluggable Authentication Module" }
+        { "id": "03-pam", "title": "Лекция 3. Pluggable Authentication Module" },
+        { "id": "04-dac", "title": "Лекция 4. Механизмы разграничения доступа ОС Linux" }
       ]
     },
     {

@@ -1,0 +1,23 @@
+
+===== Маска umask и права создаваемых файлов =====
+
+$ umask
+0022
+$ touch file-default
+$ mkdir dir-default
+$ ls -l
+total 4
+drwxr-xr-x 2 bob bob 4096 Oct 25 22:31 dir-default
+-rw-r--r-- 1 bob bob    0 Oct 25 22:31 file-default
+
+$ umask 077
+$ umask
+0077
+$ touch file-077
+$ mkdir dir-077
+$ ls -l
+total 8
+drwx------ 2 bob bob 4096 Oct 25 22:31 dir-077
+drwxr-xr-x 2 bob bob 4096 Oct 25 22:31 dir-default
+-rw------- 1 bob bob    0 Oct 25 22:31 file-077
+-rw-r--r-- 1 bob bob    0 Oct 25 22:31 file-default

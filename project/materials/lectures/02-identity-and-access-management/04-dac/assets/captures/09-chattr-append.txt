@@ -1,0 +1,44 @@
+
+===== Журнал /var/log/auth.log =====
+
+# ls -l /var/log/auth.log
+-rw-r----- 1 syslog adm 1166 Oct 25 22:40 /var/log/auth.log
+# lsattr /var/log/auth.log
+--------------e------- /var/log/auth.log
+# tail -n 1 /var/log/auth.log
+2026-10-25T22:40:14.092173+00:00 srv sshd-session[5901]: pam_unix(sshd:session): session closed for user bob
+
+===== Атрибут a: запись разрешена только в конец файла =====
+
+# chattr +a /var/log/auth.log
+# lsattr /var/log/auth.log
+-----a--------e------- /var/log/auth.log
+
+$ ssh bob@srv id
+spawn ssh -o StrictHostKeyChecking=accept-new bob@srv id
+bob@srv's password:
+uid=1001(bob) gid=1001(bob) groups=1001(bob),27(sudo),100(users)
+
+# tail -n 3 /var/log/auth.log
+2026-10-25T22:40:26.641133+00:00 srv sshd-session[5947]: Received disconnect from 172.17.0.2 port 33400:11: disconnected by user
+2026-10-25T22:40:26.641372+00:00 srv sshd-session[5947]: Disconnected from user bob 172.17.0.2 port 33400
+2026-10-25T22:40:26.642449+00:00 srv sshd-session[5934]: pam_unix(sshd:session): session closed for user bob
+
+===== Файл с атрибутом a: усечение и удаление недоступны даже root =====
+
+# cp /var/log/auth.log /tmp/auth.log
+# rm /var/log/auth.log
+rm: cannot remove '/var/log/auth.log': Operation not permitted
+# mv /var/log/auth.log /var/log/auth-moved.log
+mv: cannot move '/var/log/auth.log' to '/var/log/auth-moved.log': Operation not permitted
+# echo "" > /var/log/auth.log
+bash: /var/log/auth.log: Operation not permitted
+
+# echo "hehehe" >> /var/log/auth.log
+# tail -n 2 /var/log/auth.log
+2026-10-25T22:40:26.642449+00:00 srv sshd-session[5934]: pam_unix(sshd:session): session closed for user bob
+hehehe
+
+===== Сброс атрибута =====
+
+# chattr -a /var/log/auth.log

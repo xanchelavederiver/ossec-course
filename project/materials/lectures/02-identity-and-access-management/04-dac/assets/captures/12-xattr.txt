@@ -1,0 +1,43 @@
+
+===== Пространства имён user, trusted, security =====
+
+$ touch 1.txt
+$ getfattr -d 1.txt
+
+$ setfattr -n user.mylabel -v "User" 1.txt
+$ sudo setfattr -n trusted.mylabel -v "Trusted" 1.txt
+$ sudo setfattr -n security.mylabel -v "Security" 1.txt
+$ setfattr -n trusted.other -v "x" 1.txt
+setfattr: 1.txt: Operation not permitted
+
+$ getfattr -d 1.txt
+# file: 1.txt
+user.mylabel="User"
+
+$ sudo getfattr -d 1.txt
+# file: 1.txt
+user.mylabel="User"
+
+$ sudo getfattr -n trusted.mylabel 1.txt
+# file: 1.txt
+trusted.mylabel="Trusted"
+
+$ sudo getfattr -n security.mylabel 1.txt
+# file: 1.txt
+security.mylabel="Security"
+
+
+$ sudo setfattr -x security.mylabel 1.txt
+$ sudo getfattr -n security.mylabel 1.txt
+1.txt: security.mylabel: No such attribute
+
+===== Файловые capabilities хранятся в security.capability =====
+
+$ gcc -o hello hello.c
+$ sudo setcap cap_net_bind_service=+ep ./hello
+$ getcap ./hello
+./hello cap_net_bind_service=ep
+$ getfattr -d -m "security.*" ./hello
+# file: ./hello
+security.capability=0sAQAAAgAEAAAAAAAAAAAAAAAAAAA=
+

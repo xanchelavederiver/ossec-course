@@ -1,0 +1,38 @@
+
+===== Без setgid: эффективный GID равен реальному =====
+
+$ gcc -o groupinfo groupinfo.c
+$ ./groupinfo
+Реальный GID  (группа запустившего): 1001 (bob)
+Эффективный GID (кем исполняется):   1001 (bob)
+$ sudo -g users ./groupinfo
+Реальный GID  (группа запустившего): 100 (users)
+Эффективный GID (кем исполняется):   100 (users)
+
+===== setgid: эффективный GID равен группе владельцев файла =====
+
+$ sudo chgrp carol groupinfo
+$ sudo chmod g+s groupinfo
+$ ls -l groupinfo
+-rwxr-sr-x 1 bob carol 16200 Oct 25 22:32 groupinfo
+$ ./groupinfo
+Реальный GID  (группа запустившего): 1001 (bob)
+Эффективный GID (кем исполняется):   1002 (carol)
+$ sudo -u alice ./groupinfo
+Реальный GID  (группа запустившего): 1003 (alice)
+Эффективный GID (кем исполняется):   1002 (carol)
+
+===== setgid на каталоге: наследование группы владельцев =====
+
+$ mkdir shared
+$ sudo chgrp carol shared
+$ sudo chmod 2775 shared
+$ ls -ld shared
+drwxrwsr-x 2 bob carol 4096 Oct 25 22:32 shared
+
+$ echo "Hello" > shared/1.txt
+$ sudo -u carol touch shared/2.txt
+$ ls -l shared/
+total 4
+-rw-r--r-- 1 bob   carol 6 Oct 25 22:32 1.txt
+-rw-r--r-- 1 carol carol 0 Oct 25 22:32 2.txt

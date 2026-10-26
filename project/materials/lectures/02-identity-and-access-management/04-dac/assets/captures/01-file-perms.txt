@@ -1,0 +1,39 @@
+
+===== Исполняемый файл ELF: достаточно права x =====
+
+$ cp /bin/ls ./ls
+$ chmod 0111 ls
+$ /bin/ls -l ls
+---x--x--x 1 bob bob 11807104 Oct 25 22:30 ls
+$ ./ls -l ls
+---x--x--x 1 bob bob 11807104 Oct 25 22:30 ls
+$ cat ls
+cat: ls: Permission denied
+
+===== Скрипт: нужны права r и x =====
+
+$ echo "/bin/ls -l" > ls.sh
+$ chmod 0111 ls.sh
+$ ./ls.sh
+bash: ./ls.sh: Permission denied
+$ chmod 0555 ls.sh
+$ ./ls.sh
+total 11536
+---x--x--x 1 bob bob 11807104 Oct 25 22:30 ls
+-r-xr-xr-x 1 bob bob       11 Oct 25 22:30 ls.sh
+
+$ printf 'import os\nos.system("/bin/ls -l")\n' > ls.py
+$ chmod 0555 ls.py
+$ ./ls.py
+./ls.py: line 1: import: command not found
+./ls.py: line 2: syntax error near unexpected token `"/bin/ls -l"'
+./ls.py: line 2: `os.system("/bin/ls -l")'
+
+$ sed -i "1i #!/usr/bin/python3" ls.py
+$ head -1 ls.py
+#!/usr/bin/python3
+$ ./ls.py
+total 11540
+---x--x--x 1 bob bob 11807104 Oct 25 22:30 ls
+-r-xr-xr-x 1 bob bob       53 Oct 25 22:30 ls.py
+-r-xr-xr-x 1 bob bob       11 Oct 25 22:30 ls.sh

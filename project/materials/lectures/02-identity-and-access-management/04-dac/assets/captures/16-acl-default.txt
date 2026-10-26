@@ -1,0 +1,112 @@
+
+===== Список по умолчанию создаётся вместе с обычным =====
+
+$ mkdir /tmp/d
+$ setfacl -d -m u::rwx,g::wx,o::x /tmp/d
+$ getfacl --omit-header /tmp/d
+getfacl: Removing leading '/' from absolute path names
+user::rwx
+group::r-x
+other::r-x
+default:user::rwx
+default:group::-wx
+default:other::--x
+
+
+===== Создание файла: вместо umask маскирует список по умолчанию =====
+
+$ mkdir /tmp/no-acl /tmp/acl
+$ umask
+0022
+$ touch /tmp/no-acl/file
+$ ls -l /tmp/no-acl/file
+-rw-r--r-- 1 bob bob 0 Oct 25 22:37 /tmp/no-acl/file
+
+$ setfacl -d -m u::rwx,g::wx,o::x /tmp/acl
+$ getfacl -d --omit-header /tmp/acl
+getfacl: Removing leading '/' from absolute path names
+user::rwx
+group::-wx
+other::--x
+
+$ touch /tmp/acl/file
+$ ls -l /tmp/acl/file
+-rw--w---- 1 bob bob 0 Oct 25 22:37 /tmp/acl/file
+$ getfacl --omit-header /tmp/acl/file
+getfacl: Removing leading '/' from absolute path names
+user::rw-
+group::-w-
+other::---
+
+
+===== Создание поддиректории: список по умолчанию наследуется =====
+
+$ mkdir /tmp/acl/dir
+$ ls -ld /tmp/acl/dir
+drwx-wx--x+ 2 bob bob 4096 Oct 25 22:37 /tmp/acl/dir
+$ getfacl --omit-header /tmp/acl/dir
+getfacl: Removing leading '/' from absolute path names
+user::rwx
+group::-wx
+other::--x
+default:user::rwx
+default:group::-wx
+default:other::--x
+
+
+===== Расширенный список по умолчанию и маска =====
+
+$ mkdir /tmp/acl/sub
+$ setfacl -d -m g:nogroup:x /tmp/acl/sub
+$ getfacl -d --omit-header /tmp/acl/sub
+getfacl: Removing leading '/' from absolute path names
+user::rwx
+group::-wx
+group:nogroup:--x
+mask::-wx
+other::--x
+
+
+$ touch /tmp/acl/sub/file
+$ ls -l /tmp/acl/sub/file
+-rw--w----+ 1 bob bob 0 Oct 25 22:37 /tmp/acl/sub/file
+$ getfacl --omit-header /tmp/acl/sub/file
+getfacl: Removing leading '/' from absolute path names
+user::rw-
+group::-wx      #effective:-w-
+group:nogroup:--x       #effective:---
+mask::-w-
+other::---
+
+
+===== После наследования списки независимы =====
+
+$ setfacl -m u:alice:rwx /tmp/acl/file
+$ getfacl --omit-header /tmp/acl/file
+getfacl: Removing leading '/' from absolute path names
+user::rw-
+user:alice:rwx
+group::-w-
+mask::rwx
+other::---
+
+$ getfacl -d --omit-header /tmp/acl
+getfacl: Removing leading '/' from absolute path names
+user::rwx
+group::-wx
+other::--x
+
+
+===== Хранение: расширенные атрибуты system.posix_acl_* =====
+
+$ getfattr -d -m "system.posix_acl_*" /tmp/acl/sub
+getfattr: Removing leading '/' from absolute path names
+# file: tmp/acl/sub
+system.posix_acl_default=0sAgAAAAEABwD/////BAADAP////8IAAEA/v8AABAAAwD/////IAABAP////8=
+
+
+$ getfattr -d -m "system.posix_acl_*" /tmp/acl/sub/file
+getfattr: Removing leading '/' from absolute path names
+# file: tmp/acl/sub/file
+system.posix_acl_access=0sAgAAAAEABgD/////BAADAP////8IAAEA/v8AABAAAgD/////IAAAAP////8=
+

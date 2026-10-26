@@ -1,0 +1,30 @@
+
+===== Типичный пример: каталог /tmp =====
+
+$ ls -ld /tmp
+drwxrwxrwt 2 root root 4096 Oct 25 22:31 /tmp
+
+===== Каталог без sticky-бита: чужой файл удаляется =====
+
+$ mkdir -p /tmp/experiments
+$ echo "Hello" > /tmp/experiments/file.txt
+$ sudo chown alice /tmp/experiments/file.txt
+$ ls -la /tmp/experiments
+total 12
+drwxr-xr-x 2 bob   bob  4096 Oct 25 22:31 .
+drwxrwxrwt 3 root  root 4096 Oct 25 22:31 ..
+-rw-r--r-- 1 alice bob     6 Oct 25 22:31 file.txt
+$ whoami
+bob
+$ rm /tmp/experiments/file.txt
+$ ls -l /tmp/experiments/file.txt
+ls: cannot access '/tmp/experiments/file.txt': No such file or directory
+
+===== Каталог со sticky-битом: чужой файл удалить нельзя =====
+
+$ echo "Hello" > /tmp/file2.txt
+$ sudo chown alice /tmp/file2.txt
+$ ls -l /tmp/file2.txt
+-rw-r--r-- 1 alice bob 6 Oct 25 22:31 /tmp/file2.txt
+$ rm /tmp/file2.txt
+rm: cannot remove '/tmp/file2.txt': Operation not permitted

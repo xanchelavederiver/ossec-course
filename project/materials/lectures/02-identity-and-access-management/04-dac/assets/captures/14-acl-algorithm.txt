@@ -1,0 +1,215 @@
+
+===== Привилегированному процессу нужен бит x хотя бы в одном правиле =====
+
+$ gcc -o 3 hello.c
+$ ./3
+Hello!
+$ chmod ugo-x 3
+$ ls -l 3
+-rw-r--r-- 1 bob bob 15952 Oct 25 22:35 3
+$ sudo ./3
+sudo: cannot execute '/home/bob/demo14/3': Permission denied (os error 13)
+
+$ setfacl -m g:users:--x 3
+$ getfacl --omit-header 3
+user::rw-
+group::r--
+group:users:--x
+mask::r-x
+other::r--
+
+$ ./3
+bash: ./3: Permission denied
+$ sudo ./3
+Hello!
+
+===== Права владельца: ACL_USER_OBJ, маска не применяется =====
+
+$ echo "Hello" > 4.txt
+$ setfacl -m u:alice:r 4.txt
+$ chmod u-r 4.txt
+$ ls -l 4.txt
+--w-r--r--+ 1 bob bob 6 Oct 25 22:35 4.txt
+$ getfacl --omit-header 4.txt
+user::-w-
+user:alice:r--
+group::r--
+mask::r--
+other::r--
+
+$ cat 4.txt
+cat: 4.txt: Permission denied
+
+$ chmod u+r 4.txt
+$ cat 4.txt
+Hello
+
+$ setfacl -m mask::--x 4.txt
+$ getfacl --omit-header 4.txt
+user::rw-
+user:alice:r--  #effective:---
+group::r--      #effective:---
+mask::--x
+other::r--
+
+$ cat 4.txt
+Hello
+$ sudo -u alice cat 4.txt
+cat: 4.txt: Permission denied
+
+===== Именованный пользователь: ACL_USER, маска применяется =====
+
+$ echo "Hello" > 5.txt
+$ chmod ugo-r 5.txt
+$ setfacl -m u:alice:r 5.txt
+$ ls -l 5.txt
+--w-r-----+ 1 bob bob 6 Oct 25 22:35 5.txt
+$ getfacl --omit-header 5.txt
+user::-w-
+user:alice:r--
+group::---
+mask::r--
+other::---
+
+
+$ cat 5.txt
+cat: 5.txt: Permission denied
+$ sudo -u alice cat 5.txt
+Hello
+$ sudo -u carol cat 5.txt
+cat: 5.txt: Permission denied
+
+$ setfacl -m mask::--x 5.txt
+$ getfacl --omit-header 5.txt
+user::-w-
+user:alice:r--  #effective:---
+group::---
+mask::--x
+other::---
+
+$ sudo -u alice cat 5.txt
+cat: 5.txt: Permission denied
+
+===== Группа владельцев: ACL_GROUP_OBJ =====
+
+$ echo "Hello" > 6.txt
+$ sudo chown carol 6.txt
+$ sudo setfacl -m group:nogroup:-wx 6.txt
+$ getfacl 6.txt
+# file: 6.txt
+# owner: carol
+# group: bob
+user::rw-
+group::r--
+group:nogroup:-wx
+mask::rwx
+other::r--
+
+
+$ id -gn
+bob
+$ cat 6.txt
+Hello
+
+$ sudo -g nogroup groups
+nogroup sudo users bob
+$ sudo -g nogroup cat 6.txt
+Hello
+
+===== Именованная группа: ACL_GROUP =====
+
+$ echo "Hello" > 7.txt
+$ sudo chown carol:carol 7.txt
+$ sudo chmod 0000 7.txt
+$ sudo setfacl -m group:bob:rwx 7.txt
+$ getfacl 7.txt
+# file: 7.txt
+# owner: carol
+# group: carol
+user::---
+group::---
+group:bob:rwx
+mask::rwx
+other::---
+
+
+$ groups
+bob sudo users
+$ cat 7.txt
+Hello
+
+$ sudo -u nobody -g nogroup groups
+nogroup
+$ sudo -u nobody -g nogroup cat 7.txt
+cat: 7.txt: Permission denied
+
+===== Пользователь johnny и права из трёх правил ACL_GROUP =====
+
+$ sudo useradd -m -G alice,carol,dave johnny
+$ sudo -u johnny id
+uid=1005(johnny) gid=1005(johnny) groups=1005(johnny),1002(carol),1003(alice),1004(dave)
+
+$ gcc -o 8 hello.c
+$ printf "#!/bin/bash\n\necho \"Hello\"\n" > 8.sh
+$ chmod 0000 8 8.sh
+$ setfacl -m g:alice:r -m g:carol:w -m g:dave:x 8 8.sh
+$ ls -l 8 8.sh
+----rwx---+ 1 bob bob 15952 Oct 25 22:35 8
+----rwx---+ 1 bob bob    26 Oct 25 22:35 8.sh
+$ getfacl --omit-header 8.sh
+user::---
+group::---
+group:carol:-w-
+group:alice:r--
+group:dave:--x
+mask::rwx
+other::---
+
+
+$ sudo -u johnny cat ./8 | xxd -l 16
+00000000: 7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
+$ sudo -u johnny ./8
+Hello!
+
+$ sudo -u johnny cat 8.sh
+#!/bin/bash
+
+echo "Hello"
+$ echo "echo \"World!\"" | sudo -u johnny tee -a 8.sh
+echo "World!"
+$ sudo -u johnny ./8.sh
+Hello
+World!
+
+===== Одно правило должно давать все запрошенные права сразу =====
+
+$ grep -n "O_RDWR" file_reader.c
+19:    fd = open(argv[1], O_RDWR);
+$ gcc -o file_reader file_reader.c
+$ sudo -u johnny ./file_reader 8.sh
+Error opening file '8.sh': Permission denied
+
+$ setfacl -m g:alice:rw- 8.sh
+$ getfacl --omit-header 8.sh
+user::---
+group::---
+group:carol:-w-
+group:alice:rw-
+group:dave:--x
+mask::rwx
+other::---
+
+$ sudo -u johnny ./file_reader 8.sh
+File '8.sh' opened successfully. Contents:
+
+#!/bin/bash
+
+echo "Hello"
+echo "World!"
+
+File reading completed.
+
+$ setfacl -m g:alice:r 8.sh
+$ sudo -u johnny ./8.sh
+Hello
+World!

@@ -1,0 +1,41 @@
+
+===== Минимальный ACL-список соответствует триплетам прав =====
+
+$ touch 1.txt
+$ ls -l 1.txt
+-rw-r--r-- 1 bob bob 0 Oct 25 22:35 1.txt
+$ getfacl 1.txt
+# file: 1.txt
+# owner: bob
+# group: bob
+user::rw-
+group::r--
+other::r--
+
+
+$ getfattr -d -m "system.posix_acl_*" 1.txt
+
+===== Расширенный ACL-список и атрибут system.posix_acl_access =====
+
+$ touch 2.txt
+$ getfacl --omit-header 2.txt
+user::rw-
+group::r--
+other::r--
+
+
+$ setfacl -m user:alice:rx 2.txt
+$ getfacl --omit-header 2.txt
+user::rw-
+user:alice:r-x
+group::r--
+mask::r-x
+other::r--
+
+$ ls -l 2.txt
+-rw-r-xr--+ 1 bob bob 0 Oct 25 22:35 2.txt
+
+$ getfattr -d -m "system.posix_acl_*" 2.txt
+# file: 2.txt
+system.posix_acl_access=0sAgAAAAEABgD/////AgAFAOsDAAAEAAQA/////xAABQD/////IAAEAP////8=
+

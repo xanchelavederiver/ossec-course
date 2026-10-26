@@ -1,0 +1,53 @@
+
+===== Право r без x: имена видны, содержимое недоступно =====
+
+$ mkdir f
+$ touch f/1.txt f/2.txt
+$ echo "Hello" > f/3.txt
+$ cat f/3.txt
+Hello
+$ chmod 0400 f
+$ ls -ld f
+dr-------- 2 bob bob 4096 Oct 25 22:31 f
+$ ls -l f/
+total 0
+-????????? ? ? ? ?            ? 1.txt
+-????????? ? ? ? ?            ? 2.txt
+-????????? ? ? ? ?            ? 3.txt
+$ cat f/3.txt
+cat: f/3.txt: Permission denied
+
+===== Право x без r: доступ только по известному имени =====
+
+$ mkdir f2
+$ echo "Hello!" > f2/file.txt
+$ chmod 0100 f2
+$ ls -ld f2
+d--x------ 2 bob bob 4096 Oct 25 22:31 f2
+$ ls -l f2/
+ls: cannot open directory 'f2/': Permission denied
+$ cat f2/file.txt
+Hello!
+
+===== Право w действует только вместе с x =====
+
+$ mkdir f3
+$ echo "Hello" > f3/1.txt
+$ chmod 0200 f3
+$ ls -ld f3
+d-w------- 2 bob bob 4096 Oct 25 22:31 f3
+$ touch f3/2.txt
+touch: setting times of 'f3/2.txt': Permission denied
+$ cp f3/1.txt f3/1-copy.txt
+cp: cannot stat 'f3/1.txt': Permission denied
+$ mv f3/1.txt f3/1-moved.txt
+mv: cannot stat 'f3/1.txt': Permission denied
+$ rm f3/1.txt
+rm: cannot remove 'f3/1.txt': Permission denied
+
+$ chmod 0700 f3
+$ touch f3/2.txt
+$ mv f3/1.txt f3/1-moved.txt
+$ rm f3/1-moved.txt
+$ ls f3/
+2.txt

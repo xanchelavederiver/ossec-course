@@ -1,0 +1,66 @@
+
+===== Каталог с файлами нескольких пользователей =====
+
+$ mkdir /tmp/experiments
+$ sudo chgrp alice /tmp/experiments
+$ sudo chmod 775 /tmp/experiments
+$ cd /tmp/experiments
+$ touch 1.txt
+$ mkdir 1
+$ echo "Hello" | sudo -u alice tee 2.txt
+Hello
+$ sudo -u alice mkdir 2
+$ ls -la
+total 20
+drwxrwxr-x 4 bob   alice 4096 Oct 25 22:37 .
+drwxrwxrwt 3 root  root  4096 Oct 25 22:37 ..
+drwxr-xr-x 2 bob   bob   4096 Oct 25 22:37 1
+-rw-r--r-- 1 bob   bob      0 Oct 25 22:37 1.txt
+drwxr-xr-x 2 alice alice 4096 Oct 25 22:37 2
+-rw-r--r-- 1 alice alice    6 Oct 25 22:37 2.txt
+
+===== Атрибут a на каталоге: удалять нельзя, создавать можно =====
+
+$ sudo chattr +a /tmp/experiments
+$ sudo lsattr /tmp | grep experiments
+-----a--------e------- /tmp/experiments
+
+$ rm -f 1.txt
+rm: cannot remove '1.txt': Operation not permitted
+$ sudo -u alice rm -r 2
+rm: cannot remove '2': Operation not permitted
+$ sudo rm -r 1 1.txt 2 2.txt
+rm: cannot remove '1': Operation not permitted
+rm: cannot remove '1.txt': Operation not permitted
+rm: cannot remove '2': Operation not permitted
+rm: cannot remove '2.txt': Operation not permitted
+
+$ touch new.txt
+$ sudo -u alice mkdir new
+$ ls -la | grep new
+drwxr-xr-x 2 alice alice 4096 Oct 25 22:37 new
+-rw-r--r-- 1 bob   bob      0 Oct 25 22:37 new.txt
+
+===== Атрибут i на каталоге: структура фиксируется =====
+
+$ sudo chattr -a /tmp/experiments
+$ sudo chattr +i /tmp/experiments
+$ sudo lsattr /tmp | grep experiments
+----i---------e------- /tmp/experiments
+
+$ touch /tmp/experiments/newer.txt
+touch: cannot touch '/tmp/experiments/newer.txt': Permission denied
+$ sudo -u alice mkdir /tmp/experiments/newer
+mkdir: Permission denied
+$ sudo mkdir /tmp/experiments/newer
+mkdir: Permission denied
+
+===== Сброс атрибутов: каталог вновь можно удалить =====
+
+$ cd /
+$ sudo chattr =e /tmp/experiments
+$ sudo lsattr /tmp | grep experiments
+--------------e------- /tmp/experiments
+$ sudo rm -r /tmp/experiments
+$ ls -ld /tmp/experiments
+ls: cannot access '/tmp/experiments': No such file or directory

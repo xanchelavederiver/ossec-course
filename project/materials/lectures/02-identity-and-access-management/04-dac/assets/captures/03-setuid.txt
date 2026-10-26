@@ -1,0 +1,62 @@
+
+===== setuid-программы в каталоге /usr/bin =====
+
+$ find /usr/bin -perm -4000 -type f -exec ls -l {} \;
+-rwsr-xr-x 1 root root 48936 Feb  2  2026 /usr/bin/chsh
+-rwsr-xr-x 1 root root 39376 Aug 19 14:23 /usr/bin/umount
+-rwsr-xr-x 1 root root 55760 Aug 19 14:23 /usr/bin/su
+-rwsr-xr-x 1 root root 51664 Aug 19 14:23 /usr/bin/mount
+-rwsr-xr-x 1 root root 72840 Feb  2  2026 /usr/bin/chfn
+-rwsr-xr-x 1 root root 76328 Feb  2  2026 /usr/bin/gpasswd
+-rwsr-xr-x 1 root root 93640 Feb  2  2026 /usr/bin/passwd
+-rwsr-xr-x 1 root root 282080 Oct  6 13:13 /usr/bin/sudo.ws
+
+===== Без setuid: эффективный UID равен реальному =====
+
+$ gcc -o userinfo userinfo.c
+$ ls -l userinfo
+-rwxr-xr-x 1 bob bob 16200 Oct 25 22:32 userinfo
+$ ./userinfo
+Реальный UID  (кто запустил):      1001 (bob)
+Эффективный UID (кем исполняется): 1001 (bob)
+$ sudo -u carol ./userinfo
+Реальный UID  (кто запустил):      1002 (carol)
+Эффективный UID (кем исполняется): 1002 (carol)
+
+===== setuid: эффективный UID равен UID владельца файла =====
+
+$ sudo chown alice:alice userinfo
+$ sudo chmod u+s userinfo
+$ ls -l userinfo
+-rwsr-xr-x 1 alice alice 16200 Oct 25 22:32 userinfo
+$ ./userinfo
+Реальный UID  (кто запустил):      1001 (bob)
+Эффективный UID (кем исполняется): 1003 (alice)
+$ sudo -u carol ./userinfo
+Реальный UID  (кто запустил):      1002 (carol)
+Эффективный UID (кем исполняется): 1003 (alice)
+
+===== Бит s без права x владельца: буква S =====
+
+$ sudo chmod u-x userinfo
+$ ls -l userinfo
+-rwSr-xr-x 1 alice alice 16200 Oct 25 22:32 userinfo
+$ sudo -u alice ./userinfo
+sudo: cannot execute '/home/bob/demo03/userinfo': Permission denied (os error 13)
+$ ./userinfo
+Реальный UID  (кто запустил):      1001 (bob)
+Эффективный UID (кем исполняется): 1003 (alice)
+
+===== setuid на скрипте игнорируется =====
+
+$ printf "#!/bin/bash\n\nid\n" > id.sh
+$ chmod a+x id.sh
+$ ./id.sh
+uid=1001(bob) gid=1001(bob) groups=1001(bob),27(sudo),100(users)
+
+$ sudo chown alice id.sh
+$ sudo chmod u+s id.sh
+$ ls -l id.sh
+-rwsr-xr-x 1 alice bob 16 Oct 25 22:32 id.sh
+$ ./id.sh
+uid=1001(bob) gid=1001(bob) groups=1001(bob),27(sudo),100(users)
