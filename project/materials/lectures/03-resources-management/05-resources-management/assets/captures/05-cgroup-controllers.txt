@@ -1,0 +1,32 @@
+===== Доступные и включённые контроллеры =====
+
+$ cat demo-cgroup/cgroup.controllers
+cpu memory pids
+$ cat demo-cgroup/cgroup.subtree_control
+$ echo "+cpu +memory -io" | sudo tee demo-cgroup/cgroup.subtree_control
++cpu +memory -io
+$ cat demo-cgroup/cgroup.subtree_control
+cpu memory
+
+===== Ограничение сверху вниз =====
+
+$ sudo mkdir demo-cgroup/child
+$ cat demo-cgroup/child/cgroup.controllers
+cpu memory
+$ echo "+pids" | sudo tee demo-cgroup/child/cgroup.subtree_control
+tee: demo-cgroup/child/cgroup.subtree_control: No such file or directory
+
+===== Уведомление о населённости поддерева =====
+
+$ cat demo-cgroup/cgroup.events
+populated 0
+frozen 0
+$ sleep 200 & echo $! | sudo tee demo-cgroup/child/cgroup.procs
+17431
+$ cat demo-cgroup/cgroup.events
+populated 1
+frozen 0
+$ kill %1
+$ cat demo-cgroup/child/cgroup.events
+populated 0
+frozen 0

@@ -1,0 +1,45 @@
+===== Исчерпание файловых дескрипторов (-n) =====
+
+$ ulimit -n 128
+$ python3 -c "[open(f'/tmp/file_{i}', 'w') for i in range(128+10)]"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    [open(f"/tmp/file_{i}", "w") for i in range(128+10)]
+     ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 24] Too many open files: '/tmp/file_125'
+
+===== Форк-бомба (-u) =====
+
+$ ulimit -u 200
+$ :(){ :|:& };:
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: Interrupted system call
+
+===== Переполнение диска (-f) =====
+
+$ ulimit -f 10240
+$ dd if=/dev/urandom bs=11M count=1 of=/tmp/dd
+File size limit exceeded (core dumped)
+
+===== Потребление памяти (-v) =====
+
+$ ulimit -v 102400
+$ python3 -c 'import os; os.urandom(100 * 1024 * 1024)'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import os; os.urandom(100 * 1024 * 1024)
+               ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+MemoryError
+$ dd if=/dev/urandom bs=92M count=1 of=/dev/null
+dd: IO error: out of memory
+
+===== Процессорное время (-t) =====
+
+$ ulimit -t 5
+$ python3 -c 'while True: pass'
+Killed
+$ echo $?
+137

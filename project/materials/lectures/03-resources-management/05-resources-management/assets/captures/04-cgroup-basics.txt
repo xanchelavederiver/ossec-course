@@ -1,0 +1,66 @@
+===== Создание группы управления =====
+
+$ sudo mkdir /sys/fs/cgroup/demo-cgroup
+$ sudo ls /sys/fs/cgroup/demo-cgroup
+cgroup.controllers      cpu.stat             memory.peak
+cgroup.events           cpu.stat.local       memory.pressure
+cgroup.freeze           cpu.uclamp.max       memory.reclaim
+cgroup.kill             cpu.uclamp.min       memory.stat
+cgroup.max.depth        cpu.weight           memory.swap.current
+cgroup.max.descendants  cpu.weight.nice      memory.swap.events
+cgroup.pressure         io.pressure          memory.swap.high
+cgroup.procs            memory.current       memory.swap.max
+cgroup.stat             memory.events        memory.swap.peak
+cgroup.subtree_control  memory.events.local  memory.zswap.current
+cgroup.threads          memory.high          memory.zswap.max
+cgroup.type             memory.low           memory.zswap.writeback
+cpu.idle                memory.max           pids.current
+cpu.max                 memory.min           pids.events
+cpu.max.burst           memory.numa_stat     pids.max
+cpu.pressure            memory.oom.group     pids.peak
+$ cat /sys/fs/cgroup/demo-cgroup/cgroup.procs
+$ cat /sys/fs/cgroup/demo-cgroup/cgroup.controllers
+cpu memory pids
+$ cat /sys/fs/cgroup/demo-cgroup/cgroup.stat
+nr_descendants 0
+nr_dying_descendants 0
+
+===== Добавление процесса в группу =====
+
+$ echo $$
+5020
+$ cat /proc/$$/cgroup
+0::/user.slice/user-1001.slice/session-4.scope
+$ echo $$ | sudo tee -a /sys/fs/cgroup/demo-cgroup/cgroup.procs
+5020
+$ cat /sys/fs/cgroup/demo-cgroup/cgroup.procs
+5020
+14789
+$ cat /sys/fs/cgroup/demo-cgroup/pids.current
+2
+$ cat /proc/$$/cgroup
+0::/demo-cgroup
+$ cat /sys/fs/cgroup/user.slice/user-1001.slice/session-4.scope/cgroup.procs
+
+===== Лимит числа процессов =====
+
+$ echo 5 | sudo tee /sys/fs/cgroup/demo-cgroup/pids.max
+5
+$ for a in $(seq 1 5); do sleep 10 & done
+[1] 14968
+[2] 14969
+[3] 14970
+[4] 14971
+-bash: fork: retry: Resource temporarily unavailable
+-bash: fork: retry: Resource temporarily unavailable
+-bash: fork: retry: Resource temporarily unavailable
+-bash: fork: Interrupted system call
+
+===== Удаление группы =====
+
+$ sudo rmdir /sys/fs/cgroup/demo-cgroup
+rmdir: failed to remove '/sys/fs/cgroup/demo-cgroup': Device or resource busy
+$ echo $$ | sudo tee -a /sys/fs/cgroup/user.slice/user-1001.slice/session-4.scope/cgroup.procs
+5020
+$ sudo rmdir /sys/fs/cgroup/demo-cgroup
+$ ls /sys/fs/cgroup | grep demo

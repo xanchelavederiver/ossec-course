@@ -1,0 +1,26 @@
+===== Постоянный лимит в /etc/security/limits.conf =====
+
+# sudo tee -a /etc/security/limits.conf
+x    hard    fsize    1024
+
+===== Применение лимита при входе по ssh =====
+
+$ ssh x@srv
+x@srv's password:
+x@srv:~$ ulimit -Hf
+1024
+x@srv:~$ cd /tmp
+x@srv:/tmp$ dd if=/dev/urandom bs=1024 count=32 of=/tmp/random_file
+32+0 records in
+32+0 records out
+32768 bytes (33 kB, 32 KiB) copied, 0.000553784 s, 33 MB/s
+x@srv:/tmp$ echo $?
+0
+x@srv:/tmp$ python3 -c "open('/tmp/random_file2','wb+').write(os.urandom(2**10 * 2**11))"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    open('/tmp/random_file2', 'wb+').write(os.urandom(2**10 * 2**11))
+OSError: [Errno 27] File too large
+x@srv:/tmp$ ls -l /tmp/random_file*
+-rw-rw-r-- 1 x x   32768 Oct 26 06:06 /tmp/random_file
+-rw-rw-r-- 1 x x 1048576 Oct 26 06:06 /tmp/random_file2

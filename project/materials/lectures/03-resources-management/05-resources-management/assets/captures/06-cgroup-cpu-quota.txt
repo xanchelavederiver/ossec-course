@@ -1,0 +1,31 @@
+===== Квоты по иерархии: A=50%, P=10%, Q=15%, R=25% =====
+
+$ cat A/cpu.max
+max 100000
+$ echo "50000 100000" | sudo tee A/cpu.max
+50000 100000
+$ echo "10000 100000" | sudo tee A/P/cpu.max
+10000 100000
+$ echo "15000 100000" | sudo tee A/Q/cpu.max
+15000 100000
+$ echo "25000 100000" | sudo tee A/R/cpu.max
+25000 100000
+
+===== По одному процессу в P, Q, R =====
+
+$ stress-ng --cpu 3 --timeout 45s &
+$ _PID=`pgrep -x stress-ng-cpu`
+$ for g in P Q R; do read p; echo $p | sudo tee A/$g/cgroup.procs; done <<< "$_PID"
+$ pidstat -u 5 1 -C stress-ng
+      UID       PID    %usr %system  %guest    %CPU  Command
+     1001      5145   10.00    0.00    0.00   10.00  stress-ng-cpu
+     1001      5146   15.00    0.00    0.00   15.00  stress-ng-cpu
+     1001      5147   25.00    0.00    0.00   25.00  stress-ng-cpu
+
+===== Три процесса в одной группе R (делят 25%) =====
+
+$ pidstat -u 5 1 -C stress-ng
+      UID       PID    %usr %system  %guest    %CPU  Command
+     1001      5171    7.80    0.00    0.00    7.80  stress-ng-cpu
+     1001      5172    8.20    0.00    0.00    8.20  stress-ng-cpu
+     1001      5173    8.80    0.00    0.00    8.80  stress-ng-cpu

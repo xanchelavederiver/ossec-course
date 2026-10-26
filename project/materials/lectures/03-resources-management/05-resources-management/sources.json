@@ -1,0 +1,15 @@
+[
+  { "id": "kernel-cgroup-v2", "text": "Control Group v2 — Linux kernel admin-guide documentation (cgroup-v2.rst).", "url": "https://docs.kernel.org/admin-guide/cgroup-v2.html" },
+  { "id": "cgroups-wiki", "text": "cgroups — Wikipedia, the free encyclopedia.", "url": "https://en.wikipedia.org/wiki/Cgroups" },
+  { "id": "kerrisk-cgroup-intro", "text": "Kerrisk M. An introduction to control groups (cgroups) version 2. NDC TechTown, 2021 (слайды, видео).", "url": "https://man7.org/conf/ndctechtown2021/cgroups-v2-part-1-intro-NDC-TechTown-2021-Kerrisk.pdf" },
+  { "id": "kerrisk-cgroup-deep", "text": "Kerrisk M. Diving deeper into control groups (cgroups) v2. NDC TechTown, 2021 (слайды, видео).", "url": "https://man7.org/conf/ndctechtown2021/cgroups-v2-part-2-diving-deeper-NDC-TechTown-2021-Kerrisk.pdf" },
+  { "id": "kerrisk-tlpi", "text": "Керриск М. Linux API. Исчерпывающее руководство. СПб.: Питер, 2017 (Kerrisk M. The Linux Programming Interface. No Starch Press, 2010). Гл. 36.", "url": "https://man7.org/tlpi/" },
+  { "id": "man-getrlimit", "text": "getrlimit(2), setrlimit(2), prlimit(2) — Linux manual pages.", "url": "https://man7.org/linux/man-pages/man2/getrlimit.2.html" },
+  { "id": "man-bash", "text": "bash(1) — Linux manual page (встроенная команда ulimit).", "url": "https://man7.org/linux/man-pages/man1/bash.1.html" },
+  { "id": "man-limits-conf", "text": "limits.conf(5) — Linux manual page (пакет pam).", "url": "https://man7.org/linux/man-pages/man5/limits.conf.5.html" },
+  { "id": "man-pam-limits", "text": "pam_limits(8) — Linux manual page: ограничение ресурсов сессии.", "url": "https://man7.org/linux/man-pages/man8/pam_limits.8.html" },
+  { "id": "man-cgroups", "text": "cgroups(7) — Linux manual page: Linux control groups.", "url": "https://man7.org/linux/man-pages/man7/cgroups.7.html" },
+  { "id": "man-mkdir", "text": "mkdir(2), rmdir(2) — Linux manual pages.", "url": "https://man7.org/linux/man-pages/man2/mkdir.2.html" },
+  { "id": "man-sysconf", "text": "sysconf(3), ulimit(3) — Linux manual pages.", "url": "https://man7.org/linux/man-pages/man3/ulimit.3.html" },
+  { "id": "man-systemd-resource", "text": "systemd.resource-control(5) — Linux manual page: управление ресурсами юнитов через cgroup2.", "url": "https://man7.org/linux/man-pages/man5/systemd.resource-control.5.html" }
+]
