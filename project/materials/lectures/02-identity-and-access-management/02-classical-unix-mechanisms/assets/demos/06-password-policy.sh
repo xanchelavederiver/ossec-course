@@ -6,24 +6,31 @@ demo_init "$@"
 need chage passwd chpasswd useradd userdel groupadd groupdel su newgrp runuser
 DEMO_PASS='Lab-Demo-42!'
 
-U1=ossec-demo1 U2=ossec-demo2 G=ossec-proj
+U1=ossec-demo1 U2=ossec-demo2 G=ossec-proj G2=ossec-aud
+GPASS='Audit-Demo-7!'
 for u in "$U1" "$U2"; do
   ! getent passwd "$u" >/dev/null || die "$u already exists"
 done
-! getent group "$G" >/dev/null || die "$G already exists"
+for g in "$G" "$G2"; do
+  ! getent group "$g" >/dev/null || die "$g already exists"
+done
 cleanup() {
-  local u rc=0
+  local u g rc=0
   for u in "$U1" "$U2"; do
     if getent passwd "$u" >/dev/null; then
       userdel -r "$u" 2>/dev/null || userdel "$u" || { printf 'Remove %s manually\n' "$u" >&2; rc=1; }
     fi
   done
-  if getent group "$G" >/dev/null; then
-    groupdel "$G" || { printf 'Remove group %s manually\n' "$G" >&2; rc=1; }
-  fi
+  for g in "$G" "$G2"; do
+    if getent group "$g" >/dev/null; then
+      groupdel "$g" || { printf 'Remove group %s manually\n' "$g" >&2; rc=1; }
+    fi
+  done
   return "$rc"
 }
 run groupadd "$G"
+run groupadd "$G2"
+printf '%s:%s\n' "$G2" "$GPASS" | chgpasswd   # group password: G2 stays member-less
 run useradd -m -U -s /bin/bash -G "$G" "$U1"
 run useradd -m -U -s /bin/bash "$U2"
 printf '%s:%s\n%s:%s\n' "$U1" "$DEMO_PASS" "$U2" "$DEMO_PASS" | chpasswd
@@ -54,9 +61,11 @@ printf '$ su - %s -c id   # run as %s: no password prompt\n' "$U2" "$U1"
 runuser -u "$U1" -- su - "$U2" -c id
 printf '%s:%s\n' "$U2" "$DEMO_PASS" | chpasswd   # restore
 
-printf '\n### 5. Group password: "!" in /etc/gshadow\n'
-run grep "^$G:" /etc/gshadow
+printf '\n### 5. Group password: "!" vs a hash in /etc/gshadow\n'
+run grep -E "^($G|$G2):" /etc/gshadow
 printf '$ newgrp %s; id -gn   # member %s: no password required\n' "$G" "$U1"
 runuser -u "$U1" -- newgrp "$G" <<< 'id -gn'
-printf '$ newgrp %s   # non-member %s: "!" means no password will fit\n' "$G" "$U2"
-printf 'x\n' | runuser -u "$U2" -- newgrp "$G" || true
+printf '$ newgrp %s; id -gn   # non-member %s: knows the group password (%s — type it at the prompt)\n' "$G2" "$U2" "$GPASS"
+runuser -u "$U2" -- newgrp "$G2" <<< 'id -gn' || true   # newgrp prompts on the terminal
+printf '$ newgrp %s   # non-member %s: wrong password is rejected\n' "$G2" "$U1"
+printf 'x\n' | runuser -u "$U1" -- newgrp "$G2" || true

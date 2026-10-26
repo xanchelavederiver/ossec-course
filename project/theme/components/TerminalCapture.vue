@@ -1,5 +1,5 @@
 <script setup>
-import { computed, provide } from 'vue'
+import { computed, provide, reactive } from 'vue'
 
 /**
  * TerminalCapture — renders a captured terminal transcript on a slide.
@@ -305,6 +305,10 @@ const displayTitle = computed(() =>
 
 const gutterCh = computed(() => props.numbers ? String(shownLines.value.length).length + 2 : 0)
 provide('tc-gutter-ch', gutterCh)
+
+// Shared registry of this capture's numbered boxes: lets each TCallout badge
+// detect a neighbouring box on the adjacent line and dodge to another corner.
+provide('tc-callout-registry', reactive([]))
 
 const bodyStyle = computed(() => {
   const s = { '--tc-gutter': `${gutterCh.value}ch` }

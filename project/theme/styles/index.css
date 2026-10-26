@@ -137,7 +137,10 @@
   /* Outset so the border sits beside the first/last character, not on it. */
   box-sizing: content-box;
   padding: 0 2px;
-  transform: translateX(-2px);
+  /* Centre the frame on the annotated cells: -4px compensates the left
+   * padding+border, the Y term centres the thinner box (height is set by
+   * TCallout as rows*lh - 0.3em) inside the covered line boxes. */
+  transform: translate(-4px, calc(0.15em - 2px));
 }
 .t-callout-underline .t-callout-box {
   border-width: 0 0 2px 0;
@@ -396,21 +399,27 @@
   font-size: 0.82em;
   font-weight: 700;
   line-height: 1;
-  vertical-align: -0.25em;
+  /* Inline (legend) use: keep the digit on the optical middle of the text
+   * line that follows — -0.25em sat the ball visibly too low. */
+  vertical-align: -0.12em;
   user-select: none;
 }
 .t-callout-num .co-ball { font-size: 0.95em; margin-top: 0.06em; }
 
 /* Numbered step callout (screenshot-annotation convention): with `span`,
- * a rounded rectangle localizes the region and the number badge sits on its
- * top-right corner. Box and ball share the amber accent. */
+ * a rounded rectangle localizes the region and the number badge sits on one
+ * of its corners — top-right by default, auto-flipped to bottom-right when a
+ * neighbouring box on the line above is in the way (see TCallout `badge`
+ * prop for manual placement). Box and ball share the amber accent. */
 .t-callout-num .t-callout-box { border-color: var(--ossec-amber); }
 .t-callout-num .co-ball-tag {
   position: absolute;
-  top: -0.62em;
-  left: calc(100% - 0.72em);
   margin-top: 0;
 }
+.t-callout-num .co-ball-tag-tr { top: -0.45em; left: calc(100% - 0.72em); }
+.t-callout-num .co-ball-tag-br { bottom: -0.45em; left: calc(100% - 0.72em); }
+.t-callout-num .co-ball-tag-tl { top: -0.45em; right: calc(100% - 0.72em); }
+.t-callout-num .co-ball-tag-bl { bottom: -0.45em; right: calc(100% - 0.72em); }
 
 /* ---------------------------------------------------------------------------
  * Slide furniture: page number (theme global-bottom) and the per-slide

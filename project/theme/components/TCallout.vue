@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject } from 'vue'
+import { computed, inject, onBeforeUnmount } from 'vue'
 
 /**
  * TCallout — positioned annotation inside a <TerminalCapture>.
@@ -34,8 +34,48 @@ const props = defineProps({
   kind: { type: String, default: 'box' },
   /** Callout number: renders a numbered ball (asciidoctor style) at line/col. */
   n: { type: Number, default: 0 },
+  /**
+   * Corner of the numbered badge: tr | br | tl | bl. Empty (default) = auto:
+   * top-right, flipped to bottom-right when another numbered box occupies the
+   * line directly above and the badge would land on it.
+   */
+  badge: { type: String, default: '' },
   /** Accent colour of the marker and label border. */
   color: { type: String, default: 'var(--tc-callout)' },
+})
+
+// Numbered boxes of the same TerminalCapture register themselves, so each
+// badge can detect a neighbour on the adjacent line and dodge it.
+const registry = inject('tc-callout-registry', null)
+const me = { line: props.line, rows: props.rows, col: props.col, span: props.span }
+if (registry && props.n > 0 && props.span > 0)
+  registry.push(me)
+onBeforeUnmount(() => {
+  if (!registry)
+    return
+  const i = registry.indexOf(me)
+  if (i >= 0)
+    registry.splice(i, 1)
+})
+
+/** True when a sibling box covers the given line within the badge's x-zone. */
+function badgeCollides(atLine) {
+  if (!registry)
+    return false
+  // The ball sits on the box's right corner: roughly the last two cells of
+  // the region and one cell beyond it.
+  const x1 = props.col + props.span - 2
+  const x2 = props.col + props.span + 1
+  return registry.some(o =>
+    o !== me
+    && atLine >= o.line && atLine <= o.line + (o.rows || 1) - 1
+    && o.col <= x2 && o.col + o.span - 1 >= x1)
+}
+
+const badgeSide = computed(() => {
+  if (props.badge)
+    return props.badge
+  return badgeCollides(props.line - 1) ? 'br' : 'tr'
 })
 
 const gutterCh = inject('tc-gutter-ch', computed(() => 0))
@@ -50,14 +90,16 @@ const rootStyle = computed(() => ({
 
 const boxStyle = computed(() => ({
   width: props.span > 0 ? `${props.span}ch` : '0.75em',
-  height: `calc(${props.rows} * var(--tc-lh))`,
+  // Slightly thinner than the covered line boxes: the frame hugs the glyphs
+  // and boxes on adjacent lines don't touch (centering is done in CSS).
+  height: `calc(${props.rows} * var(--tc-lh) - 0.3em)`,
 }))
 </script>
 
 <template>
   <div v-if="n > 0" class="t-callout t-callout-num" :style="rootStyle">
     <div v-if="span > 0" class="t-callout-box" :style="boxStyle" />
-    <span class="co-ball" :class="{ 'co-ball-tag': span > 0 }">{{ n }}</span>
+    <span class="co-ball" :class="span > 0 ? ['co-ball-tag', `co-ball-tag-${badgeSide}`] : []">{{ n }}</span>
   </div>
   <div v-else class="t-callout" :class="[`t-callout-${side}`, `t-callout-${kind}`]" :style="rootStyle">
     <div class="t-callout-box" :style="boxStyle" />

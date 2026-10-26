@@ -16,8 +16,11 @@ For a new visual identity, begin with the CSS variables in `styles/index.css`. K
   callout instead of a marker box — with `:span` it is a step callout
   (screenshot-annotation convention: a rounded rectangle localizing the region,
   the number badge on its corner), without `:span` a plain asciidoctor-style
-  ball. Pair either with a legend that repeats the numbers inline:
-  `<span class="co-ball">1</span>`.
+  ball. The badge sits on the top-right corner and flips to the bottom-right
+  automatically when a numbered box on the line directly above is in the way;
+  `badge="tr|br|tl|bl"` pins it to a corner by hand (e.g. move it to the left
+  when the right side is crowded). Pair either with a legend that repeats the
+  numbers inline: `<span class="co-ball">1</span>`.
 - **BlockFlow** — horizontal scheme of blocks connected by arrows (subject →
   reference monitor → object, KDF pipelines). Blocks take `head`/`q`/`sub`,
   fills `tint|dark|accent|amber|green|red`; arrows take optional labels and colours.

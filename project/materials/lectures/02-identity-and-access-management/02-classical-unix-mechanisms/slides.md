@@ -919,9 +919,9 @@ layout: section
 
 <div>
 
-Субъект для монитора обращений — **процесс** (раздел 2.1). Ядро хранит в учётных
-данных (credentials, <Man p="credentials(7)" />) каждого процесса не один UID,
-а **четыре** — и столько же GID:
+Субъект для монитора обращений — **процесс** (раздел 2.1). Процесс идентифицируется с помощью
+UID пользователя, GID его первичной и ID дополнительных групп. Причём для каждого процесса 
+в учётных данных (credentials, <Man p="credentials(7)" />) определены по четыре вида UID и GID:
 
 </div>
 
@@ -929,10 +929,10 @@ layout: section
 
 | Идентификатор | Название | Назначение |
 |---|---|---|
-| **ruid** / rgid | real — реальный | кто запустил процесс: наследуется от родителя и хранит «настоящего» пользователя |
-| **euid** / egid | effective — эффективный | по нему ядро проверяет привилегии процесса; euid 0 — права root |
-| **suid** / sgid | saved — сохранённый | копия euid на момент запуска программы: позволяет временно сбросить привилегии и затем вернуть их |
-| **fsuid** / fsgid | filesystem — файловый | использовался в проверках доступа к файлам; сейчас всегда следует за euid, <Man p="setfsuid(2)" /> — исторический |
+| **ruid** / rgid | real — реальный | кто запустил процесс: наследуется от родителя и хранит «настоящего» пользователя |
+| **euid** / egid | effective — эффективный | по нему ядро проверяет привилегии процесса; euid 0 — права root |
+| **suid** / sgid | saved — сохранённый | копия euid на момент запуска программы: позволяет временно сбросить привилегии и затем вернуть их |
+| **fsuid** / fsgid | filesystem — файловый | использовался в проверках доступа к файлам; сейчас всегда следует за euid, <Man p="setfsuid(2)" /> — исторический |
 
 </div>
 
@@ -2157,8 +2157,8 @@ layout: section
 <div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Поле 2 — пароль группы</b>
 <div class="mt-1 space-y-1">
-<div><i>хеш</i> — <code>newgrp</code> впустит в группу по паролю даже не-члена</div>
-<div><code>!</code> или <i>пусто</i> — пароль не задан: группа доступна <b>только членам</b>; в Debian/Ubuntu по умолчанию <code>!</code></div>
+<div>– <i>хеш</i> — <code>newgrp</code> впустит в группу по паролю даже не-члена</div>
+<div>– <code>!</code> или <i>пусто</i> — пароль не задан: группа доступна <b>только членам</b>; в Debian/Ubuntu по умолчанию <code>!</code></div>
 </div>
 </div>
 
@@ -2178,7 +2178,7 @@ layout: section
 <TerminalCapture src="captures/17-etc-shadow.txt" section="2" title="Ubuntu Server 26.04 · строки /etc/gshadow">
   <TCallout :line="6" :col="9" :span="1" :n="1" />
   <TCallout :line="6" :col="12" :span="9" :n="2" />
-  <TCallout :line="3" :col="8" :span="12" :n="3" />
+  <TCallout :line="3" :col="6" :span="2" :n="3" />
 </TerminalCapture>
 
 <div class="text-xs opacity-70 mt-1">
@@ -2280,7 +2280,7 @@ layout: section
   { head: 'Пароль', sub: 'вводит пользователь' },
   { head: '+ соль', sub: 'случайная, своя для\nкаждого пароля' },
   { head: 'Односторонняя функция', fill: 'dark', sub: 'медленное хеширование —\ncrypt(5)' },
-  { head: '/etc/shadow', fill: 'accent', sub: '$алгоритм$параметры$соль$хеш' },
+  { head: '/etc/shadow', fill: 'accent', sub: '$алгоритм$параметры\n$соль$хеш' },
 ]" />
 
 <div class="text-xs opacity-70 mb-1 mt-2">Вход в систему — login, sshd</div>
@@ -2348,7 +2348,7 @@ layout: section
 </div>
 <div class="p-3 border border-slate-400/40 rounded">
 <b>Умножает работу перебора</b><br/>
-перебор паролей сразу по всем N записям неовзможен — у каждой записи
+перебор паролей сразу по всем N записям невозможен — у каждой записи
 своя соль, следовательно, работа атакующего растёт с количеством записей.
 </div>
 </div>
@@ -2503,10 +2503,10 @@ libxcrypt (modular crypt format), у отдельных алгоритмов с�
 
 <TerminalCapture src="captures/05-password-hashing.txt" section="1" title="demo 05 · mkpasswd пересчитывает хеш bob" fontSize="0.47rem">
   <TCallout :line="2" :col="5" :span="73" :n="1" />
-  <TCallout :line="3" :col="28" :span="29" :n="2" />
-  <TCallout :line="4" :col="1" :span="73" :n="3" />
-  <TCallout :line="5" :col="60" :span="12" :n="4" />
-  <TCallout :line="6" :col="31" :span="43" :n="5" />
+  <TCallout :line="4" :col="28" :span="29" :n="2" />
+  <TCallout :line="5" :col="1" :span="73" :n="3" />
+  <TCallout :line="7" :col="60" :span="12" :n="4" />
+  <TCallout :line="8" :col="31" :span="43" :n="5" />
 </TerminalCapture>
 
 </div>
@@ -2585,7 +2585,7 @@ libxcrypt (modular crypt format), у отдельных алгоритмов с�
 <b>Вывод:</b> хеш пароля — значение детерминированной хеш-функции от <code>соль||пароль</code>. Нет соли (или соль
 общая) и одинаковые пароли дают одинаковые записи: по украденной базе сразу видны
 совпадения, а один предвычисленный словарь работает против всей базы.<br/><br/>
-Однако детерминизм не недостаток — это делает проверку возможной пароля; случайной должна быть соль.
+Однако детерминизм не недостаток — именно он делает проверку пароля возможной; случайной должна быть соль.
 </div>
 
 </v-click>
@@ -2614,8 +2614,8 @@ libxcrypt (modular crypt format), у отдельных алгоритмов с�
 <TerminalCapture src="captures/05-password-hashing.txt" section="3" title="demo 05 · у bob и alice одинаковый пароль" fontSize="0.47rem">
   <TCallout :line="2" :col="12" :span="22" :n="1" />
   <TCallout :line="3" :col="14" :span="22" :n="2" />
-  <TCallout :line="5" :col="8" :span="22" :n="3" />
-  <TCallout :line="7" :col="8" :span="22" :n="4" />
+  <TCallout :line="6" :col="8" :span="22" :n="3" />
+  <TCallout :line="9" :col="8" :span="22" :n="4" />
 </TerminalCapture>
 
 </div>
@@ -2741,24 +2741,25 @@ min/max/warn/inact — интервалы в днях, отсчитываемы�
 
 ---
 
-# Демо 06: управление устареванием с помощью`chage`
+# Демо 06: управление устареванием с помощью `chage`
 
 <div class="grid grid-cols-2 gap-4 mt-3 items-start">
 <div>
 
 <TerminalCapture src="captures/06-password-policy.txt" section="1" title="demo 06 · до: политика по умолчанию" fontSize="0.45rem">
-  <TCallout :line="2" :col="79" :span="15" :n="1" />
-  <TCallout :line="9" :col="59" :span="5" :n="2" />
+  <TCallout :line="2" :col="33" :span="15" :n="1" />
+  <TCallout :line="4" :col="1" :span="70" :n="2" />
+  <TCallout :line="8" :col="59" :span="5" :rows="3" :n="3" />
 </TerminalCapture>
 
 </div>
 <div>
 
 <TerminalCapture src="captures/06-password-policy.txt" section="2" title="demo 06 · после chage" fontSize="0.45rem">
-  <TCallout :line="1" :col="9" :span="35" :n="3" />
-  <TCallout :line="3" :col="79" :span="21" :n="4" />
-  <TCallout :line="6" :col="59" :span="12" :n="5" />
-  <TCallout :line="8" :col="59" :span="12" :n="6" />
+  <TCallout :line="1" :col="9" :span="35" :n="4" />
+  <TCallout :line="3" :col="39" :span="15" :n="5" />
+  <TCallout :line="6" :col="59" :span="12" :n="6" />
+  <TCallout :line="8" :col="59" :span="12" :n="7" />
 </TerminalCapture>
 
 </div>
@@ -2768,11 +2769,13 @@ min/max/warn/inact — интервалы в днях, отсчитываемы�
 <b>Читаем демонстрацию:</b>
 <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-1">
 <div><span class="co-ball">1</span> умолчания в записи: <code>0:99999:7</code> и пустые inact/expire</div>
-<div><span class="co-ball">4</span> поля 4–8 заполнены: <code>1:90:7:14:21183</code></div>
-<div><span class="co-ball">2</span> <code>chage -l</code> переводит дни в даты: 99999 — «never»</div>
-<div><span class="co-ball">5</span> истечение пароля — вычислено: смена + 90 дней</div>
-<div><span class="co-ball">3</span> одна команда задаёт все интервалы и дату истечения</div>
-<div><span class="co-ball">6</span> истечение записи — дата из <code>-E</code></div>
+<div><span class="co-ball">4</span> одна команда задаёт все интервалы и дату истечения</div>
+<div><span class="co-ball">2</span> <code>chage -l</code> переводит дни в даты: день 20752 — Oct 26, 2026</div>
+<div><span class="co-ball">5</span> поля 4–8 заполнены: <code>1:90:7:14:21183</code></div>
+<div><span class="co-ball">3</span> поля 4–6 записи: <code>0</code>, <code>99999</code> («never») и <code>7</code></div>
+<div><span class="co-ball">6</span> истечение пароля — вычислено: смена + 90 дней</div>
+<div></div>
+<div><span class="co-ball">7</span> истечение записи — дата из <code>-E</code></div>
 </div>
 </div>
 
@@ -2872,7 +2875,7 @@ pam_unix это вход вовсе без пароля; демонстраци�
 <div>
 
 <TerminalCapture src="captures/06-password-policy.txt" section="4" title="demo 06 · passwd -l: «!» перед хешем" fontSize="0.45rem">
-  <TCallout :line="4" :col="7" :span="1" :n="1" />
+  <TCallout :line="4" :col="7" :span="75" :n="1" />
   <TCallout :line="6" :col="7" :span="1" :n="2" />
   <TCallout :line="9" :col="1" :span="26" :n="3" />
   <TCallout :line="13" :col="7" :span="1" :n="4" />
@@ -2883,8 +2886,9 @@ pam_unix это вход вовсе без пароля; демонстраци�
 
 <TerminalCapture src="captures/06-password-policy.txt" section="5" title="demo 06 · passwd -d: пароль не требуется" fontSize="0.45rem">
   <TCallout :line="2" :col="7" :span="1" :n="5" />
-  <TCallout :line="9" :col="6" :span="2" :n="6" />
-  <TCallout :line="11" :col="1" :span="51" :n="7" />
+  <TCallout :line="5" :col="1" :span="26" :n="6" />
+  <TCallout :line="9" :col="6" :span="2" :n="7" />
+  <TCallout :line="11" :col="1" :span="51" :n="8" />
 </TerminalCapture>
 
 </div>
@@ -2896,10 +2900,11 @@ pam_unix это вход вовсе без пароля; демонстраци�
 <div><span class="co-ball">1</span> <code>!</code> перед хешем <code>alice</code>; хеш сохранён</div>
 <div><span class="co-ball">5</span> у <code>carol</code> пароль не задан (<code>!</code>): вход по паролю невозможен</div>
 <div><span class="co-ball">2</span> <code>passwd -S</code>: состояние <code>L</code> (locked)</div>
-<div><span class="co-ball">6</span> <code>passwd -d</code> оставил поле <b>пустым</b></div>
+<div><span class="co-ball">6</span> пароль запрошен — и отвергнут: предъявить нечего</div>
 <div><span class="co-ball">3</span> даже <b>верный</b> пароль отвергнут</div>
-<div><span class="co-ball">7</span> <code>su</code> пустил <b>без запроса пароля</b> (<code>nullok</code>)</div>
+<div><span class="co-ball">7</span> <code>passwd -d</code> оставил поле <b>пустым</b></div>
 <div><span class="co-ball">4</span> <code>passwd -u</code> вернул прежний пароль: <code>P</code></div>
+<div><span class="co-ball">8</span> <code>su</code> пустил <b>без запроса пароля</b> (<code>nullok</code>)</div>
 </div>
 </div>
 
@@ -2934,19 +2939,23 @@ su с верным паролем — Authentication failure; passwd -u возв
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-3 items-start">
 <div>
 
-<TerminalCapture src="captures/06-password-policy.txt" section="6" title="demo 06 · newgrp: член и не-член группы" fontSize="0.55rem">
+<TerminalCapture src="captures/06-password-policy.txt" section="6" title="demo 06 · newgrp: членство против пароля группы" fontSize="0.55rem">
   <TCallout :line="2" :col="9" :span="1" :n="1" />
-  <TCallout :line="5" :col="1" :span="7" :n="2" />
-  <TCallout :line="8" :col="1" :span="25" :n="3" />
+  <TCallout :line="3" :col="7" :span="27" :n="2" />
+  <TCallout :line="6" :col="1" :span="7" :n="3" />
+  <TCallout :line="10" :col="1" :span="5" :n="4" />
+  <TCallout :line="13" :col="1" :span="25" :n="5" />
 </TerminalCapture>
 
 </div>
 <div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем вывод:</b>
 <div class="mt-1 space-y-1.5">
-<div><span class="co-ball">1</span> <code>!</code> — пароль группы не задан (по умолчанию в Ubuntu)</div>
-<div><span class="co-ball">2</span> членство достаточно: <code>newgrp</code> сменил первичную группу <code>bob</code> без пароля</div>
-<div><span class="co-ball">3</span> не-члену <code>carol</code> предъявить нечего — отказ</div>
+<div><span class="co-ball">1</span> <code>!</code> — пароль группы <code>project</code> не задан (по умолчанию в Ubuntu)</div>
+<div><span class="co-ball">2</span> у <code>audit</code> пароль группы задан — в поле 2 хеш (записал <Man p="gpasswd(1)" />)</div>
+<div><span class="co-ball">3</span> членство достаточно: <code>newgrp</code> сменил первичную группу <code>bob</code> без пароля</div>
+<div><span class="co-ball">4</span> <code>bob</code> — не член <code>audit</code>, но, предъявив пароль группы, сделал её первичной</div>
+<div><span class="co-ball">5</span> не-члену <code>carol</code> пароль неизвестен — отказ</div>
 </div>
 </div>
 </div>
@@ -2955,24 +2964,26 @@ su с верным паролем — Authentication failure; passwd -u возв
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
 <b>Вывод:</b> с <code>!</code> в <code>/etc/gshadow</code> группа доступна только
-членам — это безопасное умолчание. Задать пароль группы (<Man p="gpasswd(1)" />)
-значит завести <b>общий секрет</b>, открывающий группу любому, кто его узнал, —
+членам — это безопасное умолчание. Пароль группы — <b>общий секрет</b>: он открыл
+<code>audit</code> не-члену <code>bob</code> и откроет любому, кто его узнал, —
 на практике вместо этого пользователя добавляют в группу (раздел 2.3).
 </div>
 
 </v-click>
 
 <div class="text-xs opacity-70 mt-1">
-См. <code>demos/06-password-policy.sh</code>.
+См. <code>demos/06-password-policy.sh</code>. Пароль группы <code>audit</code>
+в примере: <code>Audit-Demo-7!</code>.
 </div>
 
 <!--
-Замыкает раздел: поле 2 /etc/gshadow в действии. «!» — пароль группы не задан:
-newgrp для члена группы (bob) работает без пароля — меняет первичную группу
-процесса; не-члену (carol) предъявить нечего — permission denied после пустого
-запроса пароля. Если бы в поле был хеш, carol могла бы войти в группу, зная общий
-пароль, — но общий секрет не отзывается персонально, поэтому практика — членство
-вместо пароля группы. gpasswd -R/-r из предыдущего слайда управляют этим полем.
+Замыкает раздел: поле 2 /etc/gshadow в действии. «!» у project — пароль группы не
+задан: newgrp для члена (bob) работает без пароля, меняя первичную группу процесса.
+У audit пароль задан (хеш записан gpasswd/chgpasswd): newgrp по верному паролю
+впускает даже не-члена — bob сделал audit своей первичной группой; carol пароля
+не знает — permission denied. Пароль группы — общий секрет: его нельзя выдать
+одному и отозвать у другого, поэтому практика — членство вместо пароля группы.
+gpasswd -R/-r из предыдущего слайда управляют этим полем.
 -->
 
 ---
