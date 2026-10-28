@@ -21,6 +21,21 @@ For a new visual identity, begin with the CSS variables in `styles/index.css`. K
   `badge="tr|br|tl|bl"` pins it to a corner by hand (e.g. move it to the left
   when the right side is crowded). Pair either with a legend that repeats the
   numbers inline: `<span class="co-ball">1</span>`.
+- **CodeSnippet** — source-code excerpt (kernel, libc, demo sources) with
+  C/C++ highlighting, a file-path title bar and controllable line numbering:
+  sequential from 1, hidden (`:numbers="false"`), or original file numbers.
+  Snippet files live in the deck's `assets/snippets/` (resolved by suffix,
+  deck-local first, like captures) and hold verbatim excerpts; a marker line
+  `@@ <n>` renumbers the following lines (at the top of the file it only sets
+  the start; elsewhere it also renders a dim `⋯` skip row), a bare `@@` renders
+  a skip row without renumbering. Keep excerpts verbatim — extract with
+  `sed -n 'a,bp'` from the pinned source tree (see the deck's
+  `assets/snippets/README.md`). Tabs are expanded (`:tab-size`, default 8) so
+  TCallout cell coordinates hold; callouts work exactly as in TerminalCapture,
+  with rows counted over the shown excerpt (skip rows count). Other props:
+  `lang` (`c`/`cpp`; anything else renders unhighlighted), `title`, `tag`
+  (muted right side of the title bar, e.g. "Linux v6.18"), `plain`,
+  `highlight`, `maxHeight`, `fontSize`, `padBottom`.
 - **BlockFlow** — horizontal scheme of blocks connected by arrows (subject →
   reference monitor → object, KDF pipelines). Blocks take `head`/`q`/`sub`,
   fills `tint|dark|accent|amber|green|red`; arrows take optional labels and colours.

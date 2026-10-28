@@ -1500,44 +1500,44 @@ layout: section
 <div class="grid grid-cols-[1.25fr_1fr] gap-4">
 <div>
 
-```c
-/* include/linux/cred.h, строки 111–138 (сокращено) */
-struct cred {
-	atomic_long_t	usage;
-	kuid_t		uid;	 /* real UID of the task */
-	kgid_t		gid;	 /* real GID of the task */
-	kuid_t		suid;	 /* saved UID of the task */
-	kgid_t		sgid;	 /* saved GID of the task */
-	kuid_t		euid;	 /* effective UID of the task */
-	kgid_t		egid;	 /* effective GID of the task */
-	kuid_t		fsuid;	 /* UID for VFS ops */
-	kgid_t		fsgid;	 /* GID for VFS ops */
-	/* … capabilities, keyrings, LSM, user_ns … */
-	struct group_info *group_info; /* supplementary groups */
-} __randomize_layout;
-```
+<CodeSnippet src="snippets/cred-struct.h" title="include/linux/cred.h" tag="Linux v6.18">
+  <TCallout :line="3" :col="9" :span="6" :rows="8" :n="1" />
+  <TCallout :line="12" :col="9" :span="30" :n="2" />
+</CodeSnippet>
+
+- Все идентификаторы процесса живут в одной структуре **`struct cred`** — вместе с capabilities, keyrings и ссылкой на user namespace (строки 121–140 опущены).
+- `task_struct` каждого процесса держит указатель на **неизменяемый** `cred`: смена идентификаторов — это подготовка новой копии (`prepare_creds`) и её атомарная фиксация (`commit_creds`).
 
 </div>
 <div>
 
-- Все идентификаторы процесса живут в одной структуре **`struct cred`** — вместе с capabilities и вторичными группами (`group_info`).
-- `task_struct` каждого процесса держит указатель на **неизменяемый** `cred`: смена идентификаторов — это подготовка новой копии (`prepare_creds`) и её атомарная фиксация (`commit_creds`).
-- Именно эти поля показывают `/proc/PID/status` и `ps` (демо 03).
+<CodeSnippet src="snippets/uidgid_types.h" title="include/linux/uidgid_types.h" />
+
+<CodeSnippet src="snippets/cred-group_info.h" title="include/linux/cred.h" />
+
+<div class="text-xs mt-2">
+<div><span class="co-ball">1</span> поля идентификаторов — не «сырые» числа, а обёртки <code>kuid_t</code>/<code>kgid_t</code> над <code>uid_t</code>/<code>gid_t</code>: система типов не даёт перепутать UID пространства ядра с UID из пользовательского пространства</div>
+<div class="mt-1"><span class="co-ball">2</span> вторичные группы хранятся отдельной структурой <code>group_info</code> — счётчик ссылок и массив GID переменной длины</div>
+</div>
 
 </div>
 </div>
 
 <div class="text-xs opacity-70 mt-2">
 Linux v6.18 (LTS):
-<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/cred.h#L111">include/linux/cred.h#L111</a>
-(поля uid…fsgid — строки 113–121).
+<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/cred.h#L111">include/linux/cred.h#L111</a> ·
+<a href="https://github.com/torvalds/linux/blob/v6.18/include/linux/uidgid_types.h#L7">uidgid_types.h#L7</a>.
 </div>
 
 <Refs ids="linux-kernel man-credentials" />
 
 <!--
 Подраздел «реализация в ядре»: смотрим, как то, что мы видели в /proc, определено в ядре.
-Comments в struct cred дословно повторяют терминологию credentials(7): real/saved/effective/VFS.
+Comments в struct cred дословно повторяют терминологию credentials(7): real/saved/effective/VFS;
+именно эти поля показывают /proc/PID/status и ps (демо 03). kuid_t/kgid_t — приём
+«типобезопасной обёртки»: внутри лишь uid_t val, но присвоить kuid_t «сырое» число без
+явного преобразования (make_kuid/from_kuid) компилятор не позволит — защита от смешения
+отображений user namespace.
 -->
 
 ---
@@ -1547,47 +1547,25 @@ Comments в struct cred дословно повторяют терминолог
 <div class="grid grid-cols-2 gap-4">
 <div>
 
-```c
-/* include/linux/cred.h, строки 352–366 */
-#define current_cred_xxx(xxx)	\
-({				\
-	current_cred()->xxx;	\
-})
-
-#define current_uid()	(current_cred_xxx(uid))
-#define current_euid()	(current_cred_xxx(euid))
-/* … */
-#define current_fsuid()	(current_cred_xxx(fsuid))
-```
+<CodeSnippet src="snippets/cred-current.h" title="include/linux/cred.h" tag="Linux v6.18">
+  <TCallout :line="3" :col="9" :span="20" :n="1" />
+</CodeSnippet>
 
 </div>
 <div>
 
-```c
-/* kernel/sys.c, строки 1027–1038 */
-SYSCALL_DEFINE0(getuid)
-{
-	/* Only we change this so SMP safe */
-	return from_kuid_munged(
-		current_user_ns(), current_uid());
-}
-
-SYSCALL_DEFINE0(geteuid)
-{
-	/* Only we change this so SMP safe */
-	return from_kuid_munged(
-		current_user_ns(), current_euid());
-}
-```
+<CodeSnippet src="snippets/sys-getuid.c" title="kernel/sys.c">
+  <TCallout :line="10" :col="52" :span="14" :n="2" />
+</CodeSnippet>
 
 </div>
 </div>
 
 <div class="mt-3">
 
-`current_uid()`/`current_euid()` выбирает поле `uid`/`euid` из `cred` **текущего** процесса; 
-так реализованы системные вызовы <Man p="getuid(2)" />/<Man p="geteuid(2)" /> используют. 
-Проверки привилегий (`capable()`) используют euid-набор, проверки доступа к файлам — `current_fsuid()`.
+<span class="co-ball">1</span> Макросы `current_uid()`/`current_euid()` выбирают поле `uid`/`euid` из `cred` **текущего**
+процесса — <span class="co-ball">2</span> так реализованы системные вызовы <Man p="getuid(2)" /> и <Man p="geteuid(2)" />.
+Проверки привилегий (`capable()`) используют euid, а проверки доступа к файлам — `current_fsuid()` (следующий слайд).
 
 </div>
 
@@ -1607,56 +1585,80 @@ user namespace — поэтому в контейнере вы можете ви
 
 ---
 
+# Исходный код ядра: DAC-проверка по fsuid
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4">
+<div>
+
+<CodeSnippet src="snippets/namei-acl_permission_check.c" title="fs/namei.c" tag="Linux v6.18">
+  <TCallout :line="9" :col="43" :span="15" :n="1" />
+  <TCallout :line="20" :col="21" :span="25" :n="2" />
+</CodeSnippet>
+
+<div class="text-xs opacity-70 mt-1">
+Linux v6.18:
+<a href="https://github.com/torvalds/linux/blob/v6.18/fs/namei.c#L381">fs/namei.c#L381</a>
+(сравнение с fsuid — строка 411).
+</div>
+
+</div>
+<div>
+
+Классическая DAC-проверка прав доступа — `acl_permission_check()`;
+она выполняется почти при каждом обращении к файлу.
+
+<div class="text-xs mt-2">
+<div><span class="co-ball">1</span> «владелец ли я?» — UID владельца файла сравнивается с <b>fsuid</b> процесса, а не с реальным UID</div>
+<div class="mt-1"><span class="co-ball">2</span> членство в группе — по fsgid и вторичным группам процесса (<code>group_info</code>)</div>
+</div>
+
+<div class="mt-2">
+
+fsuid следует за euid: каждое изменение euid выравнивает fsuid, а развести их может
+только <Man p="setfsuid(2)" /> — исторически он нужен файловым серверам (NFS).
+Отсюда правило раздела 2.4: **доступ к файлам определяет эффективный UID**.
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+Полный алгоритм — порядок «владелец → группа → остальные», ACL,
+привилегия <code>CAP_DAC_OVERRIDE</code> — в лекции о разграничении доступа.
+</div>
+
+</div>
+</div>
+
+<Refs ids="linux-kernel man-credentials" />
+
+<!--
+Замыкаем линию euid/fsuid: в разделе 2.4 мы говорили «эффективный UID используется при
+проверке прав доступа» — вот место, где это буквально происходит. Строго говоря, ядро
+сравнивает с fsuid, но fsuid принудительно следует за euid (credentials(7)), так что для
+обычных процессов это одно и то же; комментарий к generic_permission() прямо объясняет
+замысел: "We use 'fsuid' for this, letting us set arbitrary permissions for filesystem
+access without changing the 'normal' uids which are used for other things" (fs/namei.c,
+строки 450–452). Детали алгоритма (быстрый путь mask*0111, сдвиги mode >>= 6 / >>= 3,
+ACL) здесь сознательно не разбираем — это материал лекции 4.
+-->
+
+---
+
 # Исходный код ядра: наследование при `fork`
 
 <div class="grid grid-cols-2 gap-4">
 <div>
 
-```c
-/* kernel/fork.c, строка 2046:
- * copy_process() — создание процесса */
-retval = copy_creds(p, clone_flags);
-```
+<CodeSnippet src="snippets/fork-copy_process.c" title="kernel/fork.c" tag="Linux v6.18">
+  <TCallout :line="8" :col="18" :span="26" :n="1" />
+</CodeSnippet>
 
-```c
-/* kernel/cred.c, строки 206–219:
- * prepare_creds() — копия cred вызывающего */
-	old = task->cred;
-	memcpy(new, old, sizeof(struct cred));
-```
+<CodeSnippet src="snippets/cred-prepare_creds.c" title="kernel/cred.c">
+  <TCallout :line="8" :col="9" :span="38" :n="4" />
+</CodeSnippet>
 
-</div>
-<div>
-
-```c
-/* kernel/cred.c, строки 290–344 (сокращено) */
-int copy_creds(struct task_struct *p,
-	       u64 clone_flags)
-{
-	struct cred *new;
-	/* поток (CLONE_THREAD):
-	 * разделяет cred с родителем */
-	if (clone_flags & CLONE_THREAD) {
-		p->real_cred =
-			get_cred_many(p->cred, 2);
-		return 0;
-	}
-	new = prepare_creds(); /* копия */
-	/* … user namespace, keyrings … */
-	p->cred = p->real_cred = get_cred(new);
-	return 0;
-}
-```
-
-</div>
-</div>
-
-<div class="mt-2">
-
-Наследование из <Man p="credentials(7)" /> — это один `memcpy`: новый процесс получает
-**побайтовую копию** `struct cred` родителя (все UID/GID, capabilities, группы). Потоки
-процесса используют экземпляр `struct cred` процесса.
-
+<div class="text-xs mt-1">
+<div><span class="co-ball">1</span> создание процесса (<code>copy_process</code>) наследует учётные данные вызовом <code>copy_creds</code></div>
+<div class="mt-1"><span class="co-ball">4</span> наследование из <Man p="credentials(7)" /> — это один <code>memcpy</code>: <b>побайтовая копия</b> всех UID/GID, capabilities и групп</div>
 </div>
 
 <div class="text-xs opacity-70 mt-1">
@@ -1664,6 +1666,24 @@ Linux v6.18:
 <a href="https://github.com/torvalds/linux/blob/v6.18/kernel/fork.c#L2046">fork.c#L2046</a> ·
 <a href="https://github.com/torvalds/linux/blob/v6.18/kernel/cred.c#L290">cred.c#L290</a> ·
 <a href="https://github.com/torvalds/linux/blob/v6.18/kernel/cred.c#L219">cred.c#L219</a>.
+</div>
+
+</div>
+<div>
+
+<CodeSnippet src="snippets/cred-copy_creds.c" title="kernel/cred.c">
+  <TCallout :line="10" :col="17" :span="26" :n="2" />
+  <TCallout :line="17" :col="15" :span="16" :n="3" />
+  <TCallout :line="21" :col="9" :span="39" :n="5" />
+</CodeSnippet>
+
+<div class="text-xs mt-1">
+<div><span class="co-ball">2</span> поток (<code>CLONE_THREAD</code>) копии не получает — он разделяет <code>cred</code> своего процесса</div>
+<div class="mt-1"><span class="co-ball">3</span> для нового процесса готовится копия <code>cred</code> родителя (слева внизу)</div>
+<div class="mt-1"><span class="co-ball">5</span> копия фиксируется в <code>task_struct</code> потомка</div>
+</div>
+
+</div>
 </div>
 
 <Refs ids="linux-kernel man-credentials" />
@@ -1678,50 +1698,47 @@ Linux v6.18:
 
 # Исходный код ядра: setuid-бит при `execve`
 
-```c
-/* fs/exec.c, строки 1534–1584 (сокращено): вызывается из execve(2) */
-static void bprm_fill_uid(struct linux_binprm *bprm, struct file *file)
-{
-	/* Handle suid and sgid on files */
-	if (!mnt_may_suid(file->f_path.mnt))	/* nosuid-монтирование */
-		return;
-	if (task_no_new_privs(current))		/* prctl NO_NEW_PRIVS */
-		return;
-	if (mode & S_ISUID) {
-		bprm->per_clear |= PER_CLEAR_ON_SETID;
-		bprm->cred->euid = vfsuid_into_kuid(vfsuid); /* euid := владелец файла */
-	}
-	/* аналогично S_ISGID → egid */
-}
-```
+<div class="grid grid-cols-[1.3fr_1fr] gap-4">
+<div>
 
-```c
-/* security/commoncap.c, строки 952–953: cap_bprm_creds_from_file() */
-	new->suid = new->fsuid = new->euid;
-	new->sgid = new->fsgid = new->egid;
-```
+<CodeSnippet src="snippets/exec-bprm_fill_uid.c" title="fs/exec.c" tag="Linux v6.18">
+  <TCallout :line="6" :col="9" :span="18" :n="1" />
+  <TCallout :line="15" :col="9" :span="32" :n="2" />
+  <TCallout :line="23" :col="17" :span="44" :n="3" />
+</CodeSnippet>
+
+</div>
+<div>
+
+<CodeSnippet src="snippets/commoncap-fix-ids.c" title="commoncap.c · cap_bprm_creds_from_file()">
+  <TCallout :line="1" :col="9" :span="35" :rows="2" :n="4" />
+</CodeSnippet>
+
+<div class="text-xs mt-2">
+<div><span class="co-ball">1</span> <code>mode</code> объявлен в прологе функции — локальная копия режима файла</div>
+<div class="mt-1"><span class="co-ball">2</span> …и заполняется из inode исполняемого файла (<code>i_mode</code>) — те самые биты режима, включая setuid/setgid</div>
+<div class="mt-1"><span class="co-ball">3</span> единственное изменение при setuid-запуске: euid := владелец файла (<code>vfsuid</code> прочитан из того же inode)</div>
+<div class="mt-1"><span class="co-ball">4</span> затем сохранённый UID и fsuid выравниваются по новому euid — итог алгоритма из раздела 2.4</div>
+</div>
 
 <div class="mt-2">
 
-При <Man p="execve(2)" /> setuid-файла ядро меняет **только euid** — на владельца файла;
-затем suid и fsuid выравниваются по новому euid (алгоритм из раздела 2.4). Здесь же
-видно, когда бит игнорируется: монтирование с `nosuid` и режим `no_new_privs`.
+Здесь же видно, когда setuid-бит игнорируется: монтирование с `nosuid`
+и режим `no_new_privs` (<Man p="prctl(2)" />).
 
+</div>
+
+</div>
 </div>
 
 <div class="text-xs opacity-70 mt-1">
 Linux v6.18:
 <a href="https://github.com/torvalds/linux/blob/v6.18/fs/exec.c#L1534">exec.c#L1534</a>
-(присваивание euid — строка 1577) ·
+(вызывается из execve(2); присваивание euid — строка 1577) ·
 <a href="https://github.com/torvalds/linux/blob/v6.18/security/commoncap.c#L953">commoncap.c#L953</a>.
 </div>
 
 <Refs ids="linux-kernel man-execve" />
-
-<style>
-/* Два листинга + абзац не помещаются при базовом размере кода — ужимаем код. */
-.slidev-code { font-size: 0.64rem !important; line-height: 1.38 !important; }
-</style>
 
 <!--
 Замыкаем картину демо 03: euid=0 у passwd появился в bprm_fill_uid, а suid=fsuid=euid —
@@ -2097,7 +2114,7 @@ layout: section
     'мин. число дней между сменами пароля',
     'макс. срок действия пароля',
     'период предупреждения об истечении срока действия пароля',
-    'период неактивности после истечения срока действия до блокировки учётной записи',
+    'период неактивности после истечения срока действия до блокировки пароля',
     'дата блокировки учётной записи (кол-во дней с 01.01.1970)',
     'зарезервировано',
   ]"
@@ -2629,7 +2646,7 @@ libxcrypt (modular crypt format), у отдельных алгоритмов с�
 <v-click>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
-<b>Вывод:</b> хеш пароля — значение детерминированной хеш-функции от <code>соль||пароль</code>. Нет соли (или соль
+<b>Вывод:</b> хеш пароля — значение детерминированной хеш-функции от <code>пароль||соль</code>. Нет соли (или соль
 общая) и одинаковые пароли дают одинаковые записи: по украденной базе сразу видны
 совпадения, а один предвычисленный словарь работает против всей базы.<br/><br/>
 Однако детерминизм не недостаток — именно он делает проверку пароля возможной; случайной должна быть соль.
