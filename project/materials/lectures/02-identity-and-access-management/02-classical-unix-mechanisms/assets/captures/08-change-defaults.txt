@@ -1,0 +1,21 @@
+===== До: стандартные умолчания =====
+
+# useradd -m ossec-demo1
+# getent passwd ossec-demo1
+ossec-demo1:x:1001:1001::/home/ossec-demo1:/bin/sh
+# stat -c '%A  %n' /home/ossec-demo1
+drwxr-x---  /home/ossec-demo1
+
+===== После: изменённые умолчания =====
+
+# useradd -D -s /bin/bash -f 30
+# sed -i 's/^HOME_MODE.*/HOME_MODE 0700/' /etc/login.defs
+# grep '^HOME_MODE' /etc/login.defs
+HOME_MODE       0700
+# useradd -m ossec-demo2
+# getent passwd ossec-demo2
+ossec-demo2:x:1002:1002::/home/ossec-demo2:/bin/bash
+# stat -c '%A  %n' /home/ossec-demo2
+drwx------  /home/ossec-demo2
+# getent shadow ossec-demo2
+ossec-demo2:!:20755:0:99999:7:30::

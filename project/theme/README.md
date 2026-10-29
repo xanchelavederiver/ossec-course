@@ -50,7 +50,10 @@ For a new visual identity, begin with the CSS variables in `styles/index.css`. K
   the numbered list on the references slide. Both read the deck's `sources.json`
   (ordered `{ id, text, url? }` next to `slides.md`; order = numbering). A click
   on `[n]` jumps to the slide with `routeAlias: refs` and highlights the entry.
-  Demo slides simply omit `<Refs>`.
+  A long list may be split across slides: continuation slides carry
+  `routeAlias: refs2` (`refs3`, …) plus `refsFrom: <n>` in the frontmatter and
+  `<SourcesList :from="n" />` (`:to` on the earlier slides); a click on `[n]`
+  lands on the slide that actually shows `[n]`. Demo slides simply omit `<Refs>`.
 - **Man** — a man-page mention that links to man7.org:
   `<Man p="capabilities(7)" />`; `href` overrides the URL for pages hosted
   elsewhere (e.g. sudoers).

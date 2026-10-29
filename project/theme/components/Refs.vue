@@ -23,14 +23,26 @@ const list = computed(() => {
 })
 
 const nav = useNav()
-const refsPage = computed(() =>
-  nav.slides.value.find(s => s.meta?.slide?.frontmatter?.routeAlias === 'refs')?.no,
+// A long list may be split across slides: the first carries `routeAlias: refs`,
+// continuations use `routeAlias: refs2`, `refs3`, … plus `refsFrom: <n>` — the
+// first source number shown there. A click lands on the slide holding `[n]`.
+const refsPages = computed(() =>
+  nav.slides.value
+    .filter(s => /^refs\d*$/.test(String(s.meta?.slide?.frontmatter?.routeAlias ?? '')))
+    .map(s => ({ no: s.no, from: Number(s.meta?.slide?.frontmatter?.refsFrom ?? 1) }))
+    .sort((a, b) => a.from - b.from),
 )
 
 function goTo(id) {
   refState.active = id
-  if (refsPage.value)
-    nav.go(refsPage.value)
+  const n = sourceIndex.get(id) ?? 1
+  let target = null
+  for (const p of refsPages.value) {
+    if (n >= p.from || target === null)
+      target = p
+  }
+  if (target)
+    nav.go(target.no)
 }
 </script>
 

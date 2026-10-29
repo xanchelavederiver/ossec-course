@@ -75,5 +75,69 @@ GID 1010. Табуляция развёрнута (`expand -t 8`), иначе к
   (группа `audit` GID 1011 без членов, пароль задан `chgpasswd`;
   `newgrp` — из пакета `util-linux-extra`).
 
+- `07-user-defaults.txt` — демо 07 (раздел 4; тот же образ `ubuntu:26.04`, корневой
+  сеанс, 29.10.2026, день 20755). Секции: `useradd -D` (умолчания
+  `/etc/default/useradd`, в т. ч. `SHELL=/bin/sh`, `SKEL`, `USRSKEL=/usr/etc/skel`),
+  умолчания `login.defs` (`UID_MIN/MAX`, `HOME_MODE 0750`, `USERGROUPS_ENAB`),
+  создание `ossec-demo1` одной командой `useradd -m` (UID/GID 1001, UPG, дом `0750`,
+  skel, поле пароля `!`), создание группы `ossec-proj` (GID 1002). Сценарий —
+  `demos/07-user-defaults.sh`.
+- `08-change-defaults.txt` — демо 08 (тот же образ). Две секции: «до» — `ossec-demo1`
+  на стоковых умолчаниях (оболочка `/bin/sh`, дом `0750`); «после» —
+  `useradd -D -s /bin/bash -f 30` и `HOME_MODE 0700` в `login.defs`, затем
+  `ossec-demo2` той же командой `useradd -m` (оболочка `/bin/bash`, дом `0700`,
+  поле `inactive` в `shadow` = 30). Сценарий — `demos/08-change-defaults.sh`.
+- `09-environment-files.txt` — демо 09 (тот же образ; пользователь `ossec-demo1`
+  с оболочкой `/bin/bash`). Секции: системные файлы (`/etc/environment` читает
+  `pam_env`, `/etc/profile` перебирает `/etc/profile.d/*.sh`); «кто какой файл
+  читает» (маркеры в `~/.profile`/`~/.bashrc`/скрипте `profile.d`: `bash -l` печатает
+  profile.d и `~/.profile`→`~/.bashrc`, `bash -i` — только `~/.bashrc`); две секции
+  злоупотребления `~/.bashrc` — учебная полезная нагрузка (`touch` файла-маркера
+  выполняется от имени владельца при запуске оболочки) и перехват `PATH` (троянский
+  `id` из `~/.local/bin`, печатает баннер и вызывает настоящий `id`). Полезные
+  нагрузки намеренно безвредны. Сценарий — `demos/09-environment-files.sh`.
+
+- `10-enum-accounts.txt` — демо 10 (раздел 5; одноразовый контейнер
+  `ubuntu:26.04`, 29.10.2026, корневой сеанс; пользователи как в 15–17:
+  `bob` 1001 (+`project`), `carol` 1002, `alice` 1003 (+`adm`, `project`),
+  группа `project` GID 1010; установлены `gcc`, `libcrypt-dev`). Секции:
+  сборка и запуск `10-enum-accounts.c`; таблица пользователей (вывод
+  `getpwent`, полностью; длинный список вторичных групп `ubuntu` сокращён
+  `…`); таблица групп (вывод `getgrent`; неинтересные системные группы
+  вырезаны, пропуски отмечены строками `…`). Сценарий —
+  `demos/10-enum-accounts.sh`.
+- `11-password-auth.txt` — демо 11 (тот же контейнер). Секции: сборка
+  (`gcc … -lcrypt`, установка в `/usr/local/bin/pwcheck`); корневой сеанс —
+  верный пароль `bob` (`Lab-Demo-42!`, успех, UID из записи), неверный пароль
+  (Access denied), несуществующее имя (отказ `getpwnam`); сеанс `bob` —
+  `getspnam` возвращает `EACCES` (права `640 root:shadow`). Пароль при вводе
+  не отображается (`getpass`); что вводилось — помечено комментарием к команде.
+  Сценарий — `demos/11-password-auth.sh`.
+
+- `12-nss-hosts.txt` — демо 12 (раздел 6, NSS; одноразовый контейнер
+  `ubuntu:26.04`, 29.10.2026, дополнительно установлены `slapd`, `ldap-utils`,
+  `sssd`, `libnss-sss` — поэтому в списке модулей есть `libnss_sss.so.2`, —
+  а также `binutils` (objdump) и `strace`; локальный пользователь `bob` 1001).
+  Секции: модули NSS (`ls`, `dpkg -S`, экспортируемые `_nss_sss_*`);
+  конфигурация по умолчанию (**снята в чистом контейнере до установки sssd** —
+  совпадает с заводской Ubuntu Server 26.04); имя в `/etc/hosts`
+  (`192.0.2.80 intranet.example.test`, TEST-NET-1); имя только в DNS
+  (`example.org`, адреса из реального DNS на момент записи); имени нет нигде;
+  файловый источник недоступен (`chmod 000 /etc/hosts`, запросы от `bob`,
+  `strace` ловит EACCES). Сценарий — `demos/12-nss-hosts.sh`.
+- `13-nss-sssd.txt` — демо 13 (тот же контейнер): slapd с суффиксом
+  `dc=example,dc=test`, в каталоге posixAccount `dave` (uid/gid 5000) и
+  posixGroup `developers` (gid 5100, memberUid dave); sssd 2.12
+  (`id_provider = ldap`, без TLS — лабораторное упрощение; пакет sssd сам
+  дописал `sss` в nsswitch.conf). Секции: каталог LDAP (`ldapsearch`);
+  подключение sss (`sssd.conf` дословно + строки nsswitch); файлы или каталог
+  (`getent`/`getent -s`/`id`); ловушка `[!UNAVAIL=return]` (root/bob пропадают,
+  возвращаются после `pkill sssd`); объединение групп `[SUCCESS=merge]`
+  (локальная `developers:x:5100:bob` заведена при `group: files`, иначе
+  `groupadd` видит каталожную группу и отказывает); кеш sss в действии
+  (ответ из `/var/lib/sss/mc` при остановленном демоне; очистка файлов кеша —
+  учебный приём, штатно `sss_cache -E`). Пароль администратора LDAP —
+  публичный `LabLDAP-42!`. Сценарий — `demos/13-nss-sssd.sh`.
+
 Остальные captures переносятся из `../../02-classical-unix-mechanisms_old/assets/captures/`
 вместе со слайдами, которые на них ссылаются.

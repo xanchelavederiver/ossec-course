@@ -1,0 +1,108 @@
+===== Каталог LDAP =====
+
+# service slapd status
+ * slapd is running
+
+# ldapsearch -x -LLL -b ou=people,dc=example,dc=test '(uid=dave)'
+dn: uid=dave,ou=people,dc=example,dc=test
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: dave
+cn: Dave Directory
+sn: Directory
+uidNumber: 5000
+gidNumber: 5000
+homeDirectory: /home/dave
+loginShell: /bin/bash
+
+===== Подключение sss =====
+
+# cat /etc/sssd/sssd.conf
+[sssd]
+config_file_version = 2
+domains = example.test
+services = nss, pam
+
+[domain/example.test]
+id_provider = ldap
+ldap_uri = ldap://localhost
+ldap_search_base = dc=example,dc=test
+ldap_id_use_start_tls = false
+ldap_auth_disable_tls_never_use_in_production = true
+sudo_provider = none
+cache_credentials = true
+enumerate = true
+
+# sssd -D --logger=files
+
+# grep -E '^(passwd|group|shadow):' /etc/nsswitch.conf
+passwd:         files sss
+group:          files sss
+shadow:         files sss
+
+===== Файлы или каталог =====
+
+# grep dave /etc/passwd; echo $?
+1
+# getent passwd bob
+bob:x:1001:1001::/home/bob:/bin/bash
+# getent passwd dave
+dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
+
+# getent -s files passwd dave; echo $?
+2
+# getent -s sss passwd dave
+dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
+
+# id dave
+uid=5000(dave) gid=5000(dave) groups=5000(dave),5100(developers)
+
+===== Ловушка [!UNAVAIL=return] =====
+
+# grep '^passwd:' /etc/nsswitch.conf
+passwd:         sss [!UNAVAIL=return] files
+
+# getent passwd dave
+dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
+# getent passwd root; echo $?
+2
+# getent passwd bob; echo $?
+2
+
+# pkill sssd   <-- служба остановлена: sss возвращает UNAVAIL
+# getent passwd root
+root:x:0:0:root:/root:/bin/bash
+
+===== Объединение групп: [SUCCESS=merge] =====
+
+# grep '^developers' /etc/group
+developers:x:5100:bob
+# ldapsearch -x -LLL -b ou=groups,dc=example,dc=test '(cn=developers)' memberUid
+dn: cn=developers,ou=groups,dc=example,dc=test
+memberUid: dave
+
+# grep '^group:' /etc/nsswitch.conf
+group:          files sss
+# getent group developers
+developers:x:5100:bob
+
+# sed -i 's/^group:.*/group:  files [SUCCESS=merge] sss/' /etc/nsswitch.conf
+# getent group developers
+developers:x:5100:bob,dave
+# id bob
+uid=1001(bob) gid=1001(bob) groups=1001(bob),5100(developers)
+
+===== Кеш sss в действии =====
+
+# getent passwd dave
+dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
+# pkill sssd
+# getent passwd dave   <-- служба остановлена, но ответ получен
+dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
+
+# ls /var/lib/sss/mc
+group  initgroups  passwd  sid
+# find /var/lib/sss/mc -type f -delete
+# getent passwd dave; echo $?
+2

@@ -1,0 +1,75 @@
+===== Модули NSS =====
+
+# ls /usr/lib/x86_64-linux-gnu/ | grep '^libnss_'
+libnss_compat.so.2
+libnss_dns.so.2
+libnss_files.so.2
+libnss_hesiod.so.2
+libnss_sss.so.2
+
+# dpkg -S /usr/lib/x86_64-linux-gnu/libnss_sss.so.2
+libnss-sss:amd64: /usr/lib/x86_64-linux-gnu/libnss_sss.so.2
+
+# objdump -T /usr/lib/x86_64-linux-gnu/libnss_sss.so.2 | grep -E '_nss_sss_get(pw|gr)nam_r'
+0000000000005150 g    DF .text  00000000000003af  EXPORTED    _nss_sss_getgrnam_r
+0000000000004530 g    DF .text  00000000000001f9  EXPORTED    _nss_sss_getpwnam_r
+
+===== Конфигурация по умолчанию =====
+
+# grep -v '^#' /etc/nsswitch.conf
+
+passwd:         files
+group:          files
+shadow:         files
+gshadow:        files
+
+hosts:          files dns
+networks:       files
+
+protocols:      db files
+services:       db files
+ethers:         db files
+rpc:            db files
+
+netgroup:       nis
+
+===== Имя есть в /etc/hosts =====
+
+# grep '^hosts:' /etc/nsswitch.conf
+hosts:          files dns
+
+# printf '192.0.2.80\tintranet.example.test\n' >> /etc/hosts
+# getent hosts intranet.example.test
+192.0.2.80      intranet.example.test
+
+===== Имя только в DNS =====
+
+# getent -s files hosts example.org; echo $?
+2
+
+# getent hosts example.org
+2a06:98c1:3122:8000:: example.org
+2a06:98c1:3123:8000:: example.org
+
+===== Имени нет нигде =====
+
+# getent hosts nosuch.example.test; echo $?
+2
+
+===== Файловый источник недоступен =====
+
+# chmod 000 /etc/hosts
+
+$ getent hosts intranet.example.test; echo $?
+2
+$ getent hosts example.org
+2a06:98c1:3122:8000:: example.org
+2a06:98c1:3123:8000:: example.org
+
+$ strace -f -e trace=openat getent hosts intranet.example.test 2>&1 | grep '/etc/hosts'
+openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_CLOEXEC) = -1 EACCES (Permission denied)
+openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_CLOEXEC) = -1 EACCES (Permission denied)
+
+# chmod 644 /etc/hosts
+$ getent hosts intranet.example.test
+192.0.2.80      intranet.example.test

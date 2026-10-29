@@ -1,0 +1,43 @@
+===== Умолчания useradd =====
+
+# useradd -D
+GROUP=100
+GROUPS=
+HOME=/home
+INACTIVE=-1
+EXPIRE=
+SHELL=/bin/sh
+SKEL=/etc/skel
+USRSKEL=/usr/etc/skel
+CREATE_MAIL_SPOOL=no
+LOG_INIT=yes
+
+===== Умолчания login.defs =====
+
+# grep -E '^(UID_MIN|UID_MAX|GID_MIN|GID_MAX|HOME_MODE|USERGROUPS_ENAB)' /etc/login.defs
+HOME_MODE       0750
+UID_MIN                  1000
+UID_MAX                 60000
+GID_MIN                  1000
+GID_MAX                 60000
+USERGROUPS_ENAB yes
+
+===== Создание пользователя со значениями по умолчанию =====
+
+# useradd -m ossec-demo1
+# getent passwd ossec-demo1
+ossec-demo1:x:1001:1001::/home/ossec-demo1:/bin/sh
+# getent group ossec-demo1
+ossec-demo1:x:1001:
+# stat -c '%A  %U:%G  %n' /home/ossec-demo1
+drwxr-x---  ossec-demo1:ossec-demo1  /home/ossec-demo1
+# ls -A /home/ossec-demo1
+.bash_logout  .bashrc  .profile
+# getent shadow ossec-demo1
+ossec-demo1:!:20755:0:99999:7:::
+
+===== Создание группы =====
+
+# groupadd ossec-proj
+# getent group ossec-proj
+ossec-proj:x:1002:
