@@ -14,15 +14,26 @@ LOG_INIT=yes
 
 ===== Умолчания login.defs =====
 
-# grep -E '^(UID_MIN|UID_MAX|GID_MIN|GID_MAX|HOME_MODE|USERGROUPS_ENAB)' /etc/login.defs
+# grep -E '^(UID|GID)_|^HOME_MODE|^PASS_|^ENCRYPT_|^USERGROUPS' /etc/login.defs
 HOME_MODE       0750
+PASS_MAX_DAYS   99999
+PASS_MIN_DAYS   0
+PASS_WARN_AGE   7
 UID_MIN                  1000
 UID_MAX                 60000
 GID_MIN                  1000
 GID_MAX                 60000
+ENCRYPT_METHOD YESCRYPT
 USERGROUPS_ENAB yes
 
-===== Создание пользователя со значениями по умолчанию =====
+===== Содержимое skel =====
+
+# ls -A /etc/skel                 # локальный шаблон администратора
+.bash_logout .bashrc .profile
+# ls -A /usr/etc/skel             # шаблон дистрибутива (shadow 4.17)
+.bash_logout .ossec_profile
+
+===== Создание пользователя =====
 
 # useradd -m ossec-demo1
 # getent passwd ossec-demo1
@@ -31,8 +42,8 @@ ossec-demo1:x:1001:1001::/home/ossec-demo1:/bin/sh
 ossec-demo1:x:1001:
 # stat -c '%A  %U:%G  %n' /home/ossec-demo1
 drwxr-x---  ossec-demo1:ossec-demo1  /home/ossec-demo1
-# ls -A /home/ossec-demo1
-.bash_logout  .bashrc  .profile
+# ls -A /home/ossec-demo1         # объединение /etc/skel и /usr/etc/skel
+.bash_logout .bashrc .ossec_profile .profile
 # getent shadow ossec-demo1
 ossec-demo1:!:20755:0:99999:7:::
 

@@ -1,11 +1,11 @@
 # Демо к лекции 2 (новая версия)
 
-Эталон — одноразовые **Ubuntu Server 26.04 LTS VM**, Bash, локаль вывода C.
+Эталон – одноразовые **Ubuntu Server 26.04 LTS VM**, Bash, локаль вывода C.
 Сценарии требуют root и меняют учётные записи (создают и удаляют временных
 пользователей `ossec-demo1`/`ossec-demo2` и группу `ossec-proj`); запускайте
 их **только на одноразовой VM со снимком**.
 
-Демо 01–04 перенесены из старой версии лекции вместе со слайдами — их сценарии
+Демо 01–04 перенесены из старой версии лекции вместе со слайдами – их сценарии
 остаются в `../../02-classical-unix-mechanisms_old/assets/demos/` (там они
 пронумерованы 01, 02, 12, 13). Здесь лежат новые сценарии разделов 3 и 4.
 
@@ -15,7 +15,7 @@
 копии, демо 09 добавляет и удаляет `/etc/profile.d/99-ossec-demo.sh` и файл-маркер
 `/tmp/ossec-backdoor-marker`. Запускать только на одноразовой VM.
 
-Демо 10–11 (раздел 5) — программы на C (`10-enum-accounts.c`,
+Демо 10–11 (раздел 5) – программы на C (`10-enum-accounts.c`,
 `11-password-auth.c`); одноимённые сценарии собирают их `gcc` и запускают.
 Демо 11 интерактивно (пароль вводится с терминала), создаёт и удаляет
 пользователя `ossec-demo1` и временно устанавливает `/usr/local/bin/pwcheck`.
@@ -30,7 +30,7 @@
 уже существует), правит и восстанавливает `/etc/nsswitch.conf`, создаёт и
 удаляет локальных `ossec-demo1` и группу `developers`, по завершении
 останавливает sssd/slapd и чистит кеши `/var/lib/sss/{db,mc}`. Пароль
-администратора LDAP — публичное лабораторное значение `LabLDAP-42!`.
+администратора LDAP – публичное лабораторное значение `LabLDAP-42!`.
 Лабораторное упрощение: канал к slapd без TLS (`ldap_id_use_start_tls = false`);
 в эксплуатации так настраивать нельзя.
 
@@ -59,8 +59,8 @@ sudo env OSSEC_DEMO_VM=1 bash 05-password-hashing.sh
 | 06 | `06-password-policy.sh` | поля устаревания и `chage`; значения по умолчанию `login.defs`; блокировка `passwd -l` (`!` в `/etc/shadow`); пустое поле хеша и вход без пароля (`nullok`); пароль группы в `/etc/gshadow` и `newgrp` | `captures/06-password-policy.txt` |
 | 07 | `07-user-defaults.sh` | `useradd -D` и умолчания `login.defs`; создание пользователя одной командой (UID/GID, UPG, `HOME_MODE`, skel, заблокированное поле пароля); создание группы | `captures/07-user-defaults.txt` |
 | 08 | `08-change-defaults.sh` | изменение умолчаний (`useradd -D -s/-f`, `HOME_MODE` в `login.defs`) и разница в новой записи: оболочка, права дома, поле `inactive` | `captures/08-change-defaults.txt` |
-| 09 | `09-environment-files.sh` | файлы окружения: `/etc/environment` (pam_env), `/etc/profile.d`; login- vs интерактивная оболочка (маркеры); злоупотребление `~/.bashrc` — выполнение кода от имени владельца и перехват `PATH` | `captures/09-environment-files.txt` |
+| 09 | `09-environment-files.sh` | файлы окружения: `/etc/environment` (pam_env), `/etc/profile.d`; login- vs интерактивная оболочка (маркеры); злоупотребление `~/.bashrc` – выполнение кода от имени владельца и перехват `PATH` | `captures/09-environment-files.txt` |
 | 10 | `10-enum-accounts.sh` (+ `10-enum-accounts.c`) | перебор всех учётных записей и групп средствами libc: `setpwent`/`getpwent`/`endpwent`, `getgrent`, массив `gr_mem`; сводная таблица пользователей (UID, GID, оболочка, вторичные группы) и групп | `captures/10-enum-accounts.txt` |
 | 11 | `11-password-auth.sh` (+ `11-password-auth.c`) | парольная аутентификация по листингу 8-2 TLPI: `getpwnam` → `getspnam` (EACCES без привилегий) → `getpass` → `crypt` → `strcmp`; верный/неверный пароль, несуществующее имя, запуск без привилегий | `captures/11-password-auth.txt` |
 | 12 | `12-nss-hosts.sh` | NSS для базы `hosts`: модули на диске; имя в `/etc/hosts` / только в DNS / нигде (коды выхода `getent`, изоляция источника `-s`); недоступный источник (нечитаемый `/etc/hosts` для непривилегированного процесса → UNAVAIL → поиск продолжается; `strace` показывает EACCES) | `captures/12-nss-hosts.txt` |
-| 13 | `13-nss-sssd.sh` | NSS + SSSD: локальный slapd (`dc=example,dc=test`, posixAccount `dave`), `sssd.conf` с `id_provider = ldap`; `passwd: files sss` — одна функция, два источника (`getent -s`); ловушка `sss [!UNAVAIL=return] files` (NOTFOUND каталога скрывает `root`); `group: files [SUCCESS=merge] sss` — объединение членов; быстрый mmap-кеш `/var/lib/sss/mc` отвечает при остановленном sssd | `captures/13-nss-sssd.txt` |
+| 13 | `13-nss-sssd.sh` | NSS + SSSD: локальный slapd (`dc=example,dc=test`, posixAccount `dave`), `sssd.conf` с `id_provider = ldap`; `passwd: files sss` – одна функция, два источника (`getent -s`); ловушка `sss [!UNAVAIL=return] files` (NOTFOUND каталога скрывает `root`); `group: files [SUCCESS=merge] sss` – объединение членов; быстрый mmap-кеш `/var/lib/sss/mc` отвечает при остановленном sssd | `captures/13-nss-sssd.txt` |

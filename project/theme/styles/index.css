@@ -519,6 +519,15 @@
   cursor: pointer;
 }
 .slide-refs .sr-link:hover { color: var(--ossec-accent); }
+/* SrcRef: the demo/source pointer. Stays in the flow as the slide's closing
+ * line — aligned with the content, above the footer that carries «Источники: …»
+ * and the slide number. */
+.slide-srcref {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  opacity: 0.7;
+}
 
 /* ---------------------------------------------------------------------------
  * Man: a man-page mention that links to the page, keeping the inline-code look.

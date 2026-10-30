@@ -1,4 +1,4 @@
-/* 11-password-auth.c — парольная аутентификация по /etc/shadow.
+/* 11-password-auth.c – парольная аутентификация по /etc/shadow.
  * Основано на: Kerrisk M. The Linux Programming Interface, листинг 8-2.
  * Сборка: gcc -Wall -O2 -o pwcheck 11-password-auth.c -lcrypt
  */
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     }
 
     errno = 0;
-    spwd = getspnam(argv[1]);             /* хеш пароля — в /etc/shadow   */
+    spwd = getspnam(argv[1]);             /* хеш пароля – в /etc/shadow   */
     if (spwd == NULL && errno == EACCES) {
         fprintf(stderr, "no permission to read shadow file\n");
         return 2;

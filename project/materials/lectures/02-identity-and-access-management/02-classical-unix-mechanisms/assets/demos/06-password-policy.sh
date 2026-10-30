@@ -65,7 +65,7 @@ printf '\n### 5. Group password: "!" vs a hash in /etc/gshadow\n'
 run grep -E "^($G|$G2):" /etc/gshadow
 printf '$ newgrp %s; id -gn   # member %s: no password required\n' "$G" "$U1"
 runuser -u "$U1" -- newgrp "$G" <<< 'id -gn'
-printf '$ newgrp %s; id -gn   # non-member %s: knows the group password (%s — type it at the prompt)\n' "$G2" "$U2" "$GPASS"
+printf '$ newgrp %s; id -gn   # non-member %s: knows the group password (%s – type it at the prompt)\n' "$G2" "$U2" "$GPASS"
 runuser -u "$U2" -- newgrp "$G2" <<< 'id -gn' || true   # newgrp prompts on the terminal
 printf '$ newgrp %s   # non-member %s: wrong password is rejected\n' "$G2" "$U1"
 printf 'x\n' | runuser -u "$U1" -- newgrp "$G2" || true

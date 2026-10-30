@@ -30,7 +30,7 @@ bob:x:1001:1001::/home/bob:/bin/bash
 carol:x:1002:1002::/home/carol:/bin/bash
 alice:x:1003:1003::/home/alice:/bin/bash
 
-===== Поле 2 — признак наличия пароля =====
+===== Поле 2 – признак наличия пароля =====
 
 # grep -E '^(root|bob):' /etc/passwd
 root:x:0:0:root:/root:/bin/bash

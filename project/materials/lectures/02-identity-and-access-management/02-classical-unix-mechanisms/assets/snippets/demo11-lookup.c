@@ -6,7 +6,7 @@
     }
 
     errno = 0;
-    spwd = getspnam(argv[1]);             /* хеш пароля — в /etc/shadow   */
+    spwd = getspnam(argv[1]);             /* хеш пароля – в /etc/shadow   */
     if (spwd == NULL && errno == EACCES) {
         fprintf(stderr, "no permission to read shadow file\n");
         return 2;

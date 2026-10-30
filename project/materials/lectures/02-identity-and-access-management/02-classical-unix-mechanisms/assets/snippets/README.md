@@ -15,7 +15,7 @@ says the following lines are file lines `<n>, <n+1>, …` (at the top of the fil
 it only sets the numbering, elsewhere it also renders a `⋯` skip row); a bare
 `@@` renders a skip row without renumbering. TCallout coordinates on the slides
 are 1-based rows of the shown excerpt (skip rows count) and tab-expanded
-(8-cell) columns — recompute them if an excerpt changes.
+(8-cell) columns – recompute them if an excerpt changes.
 
 | Snippet | Source | Lines |
 |---|---|---|

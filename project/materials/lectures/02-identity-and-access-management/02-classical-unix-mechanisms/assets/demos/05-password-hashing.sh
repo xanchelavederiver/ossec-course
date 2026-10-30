@@ -26,7 +26,7 @@ printf '%s:%s\n%s:%s\n' "$U1" "$DEMO_PASS" "$U2" "$DEMO_PASS" | chpasswd
 printf '\n### 1. Verification: recomputing with the stored salt reproduces the hash\n'
 run grep "^$U1:" /etc/shadow
 hash=$(getent shadow "$U1" | cut -d: -f2)
-salt=${hash%\$*}                      # $y$j9T$<salt> — all but the last $-field
+salt=${hash%\$*}                      # $y$j9T$<salt> – all but the last $-field
 run mkpasswd -m yescrypt -S "$salt" "$DEMO_PASS"
 [[ $(mkpasswd -m yescrypt -S "$salt" "$DEMO_PASS") == "$hash" ]]
 printf 'MATCH: correct password reproduces the stored string\n'

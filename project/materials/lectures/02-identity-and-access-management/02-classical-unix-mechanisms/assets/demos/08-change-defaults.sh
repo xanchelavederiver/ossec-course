@@ -36,7 +36,7 @@ sed -i 's|^HOME_MODE.*|HOME_MODE\t0700|' "$LOGINDEFS"
 run grep -E '^HOME_MODE' "$LOGINDEFS"
 run grep -E '^(SHELL|INACTIVE)' "$DEFUSERADD"
 
-printf '\n### 3. New user — same command, different result\n'
+printf '\n### 3. New user – same command, different result\n'
 run useradd -m "$U2"
 run getent passwd "$U2"
 run stat -c '%A  %n' /home/"$U2"

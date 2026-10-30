@@ -1,4 +1,4 @@
-/* 10-enum-accounts.c — перебор всех учётных записей и групп средствами libc.
+/* 10-enum-accounts.c – перебор всех учётных записей и групп средствами libc.
  * Основано на: Kerrisk M. The Linux Programming Interface, гл. 8.
  * Сборка: gcc -Wall -O2 -o enum-accounts 10-enum-accounts.c
  */
