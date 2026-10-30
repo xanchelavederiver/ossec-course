@@ -519,11 +519,17 @@
   cursor: pointer;
 }
 .slide-refs .sr-link:hover { color: var(--ossec-accent); }
-/* SrcRef: the demo/source pointer. Stays in the flow as the slide's closing
- * line — aligned with the content, above the footer that carries «Источники: …»
- * and the slide number. */
+/* SrcRef: the demo/source pointer. Pinned to the bottom of the content area —
+ * the slide's last line, left-aligned with the content and clear of the footer
+ * that carries «Источники: …» and the slide number. `--slide-pad-x` mirrors the
+ * horizontal padding of Slidev's default layout, so the line starts exactly
+ * where the slide's own content starts. */
+.slidev-layout { --slide-pad-x: 56px; }
 .slide-srcref {
-  margin-top: 0.3rem;
+  position: absolute;
+  left: var(--slide-pad-x);
+  right: var(--slide-pad-x);
+  bottom: 2rem;
   font-size: 0.75rem;
   line-height: 1.35;
   opacity: 0.7;
