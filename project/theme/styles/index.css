@@ -467,6 +467,10 @@
    * line that follows — -0.25em sat the ball visibly too low. */
   vertical-align: -0.12em;
   user-select: none;
+  /* The ball is taller than a tight legend line; without a stacking context
+   * the background of a <code> on the next line paints over its bottom. */
+  position: relative;
+  z-index: 1;
 }
 .t-callout-num .co-ball { font-size: 0.95em; margin-top: 0.06em; }
 
@@ -541,6 +545,14 @@
 .man-link { border-bottom: none !important; }
 .man-link code { border-bottom: 1px dotted var(--ossec-muted); }
 .man-link:hover code { color: var(--ossec-accent); border-bottom-color: var(--ossec-accent); }
+
+/* ---------------------------------------------------------------------------
+ * MitreAttack: a MITRE ATT&CK technique mention that links to the technique
+ * page, keeping the bold-text look of the plain mention (cf. Man above).
+ * ------------------------------------------------------------------------- */
+.attack-link { border-bottom: none !important; color: inherit !important; }
+.attack-link b { border-bottom: 1px dotted var(--ossec-muted); }
+.attack-link:hover b { color: var(--ossec-accent); border-bottom-color: var(--ossec-accent); }
 
 /* ---------------------------------------------------------------------------
  * SectionTOC: subsection list on a section title slide; the upcoming
