@@ -1,4 +1,6 @@
-@@ 847
+@@ 845
+		failent_user = get_failent_user (username);
+
 		pwd = xgetpwnam (username);
 		if (NULL == pwd) {
 			preauth_flag = false;

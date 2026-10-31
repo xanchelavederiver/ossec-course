@@ -15,3 +15,5 @@
 		SYSLOG ((LOG_WARN, "invalid password for '%s' %s",
 		         failent_user, fromhost));
 		failed = true;
+
+	      auth_ok:

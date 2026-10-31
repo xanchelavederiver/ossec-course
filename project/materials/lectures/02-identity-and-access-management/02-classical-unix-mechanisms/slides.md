@@ -3596,12 +3596,11 @@ shell печатается от имени жертвы (значит, испо�
 layout: section
 ---
 
-# 5. Идентификация и парольная аутентификация в приложениях
-## Программный интерфейс стандартной библиотеки C
+# 5. Идентификация и аутентификация в приложениях
 
 <SectionTOC prefix="5" :current="1" :items="[
   'Чтение учётных записей: passwd и group',
-  'Чтение теневого файла shadow',
+  'Чтение теневых файлов: shadow и gshadow',
   'Запрос и проверка пароля: getpass и crypt',
   'Примеры: утилиты login и passwd',
 ]" />
@@ -3617,11 +3616,17 @@ layout: section
 
 ---
 
-# `struct passwd`: чтение `/etc/passwd`
+# Чтение базы пользователей: `struct passwd`
 
-Приложения не разбирают `/etc/passwd` самостоятельно: libc возвращает запись
-готовой структурой `struct passwd` из заголовочного файла `<pwd.h>` – поля
-следуют за полями строки файла.
+<div>
+
+Выполняющие идентификацию и аутентификацию приложения не осуществляют
+чтение файлов паролей самостоятельно: стандартная библиотека языка С
+<code>libc</code> предоставляет программный интерфейс и специальные структуры.
+В частности, записи <code>/etc/passwd</code> представляются структурой 
+<code>struct passwd</code> из заголовочного файла <code>&lt;pwd.h&gt;</code>.
+
+</div>
 
 <div class="grid grid-cols-[1.05fr_1fr] gap-4 mt-2 items-start">
 <div>
@@ -3633,13 +3638,13 @@ layout: section
 </div>
 <div>
 
-<FieldRecord size="0.72rem" legendSize="0.6rem" :cols="1"
+<FieldRecord size="0.72rem" legendSize="0.72rem" :cols="1"
   :fields="['bob', { t: 'x', hot: true }, '1001', '1001', '', '/home/bob', '/bin/bash']"
   :legend="[
-    '`pw_name` – имя входа',
+    '`pw_name` – имя пользователя',
     { t: '`pw_passwd` – признак наличия пароля `&quot;x&quot;`', hot: true },
     '`pw_uid` – идентификатор пользователя (`uid_t`)',
-    '`pw_gid` – GID первичной группы (`gid_t`)',
+    '`pw_gid` – идентификатор первичной группы (`gid_t`)',
     '`pw_gecos` – комментарий (здесь пусто)',
     '`pw_dir` – домашний каталог',
     '`pw_shell` – оболочка',
@@ -3651,8 +3656,8 @@ layout: section
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <span class="co-ball">2</span> В поле <code>pw_passwd</code> приложение увидит лишь
-признак <code>x</code>: хеш пароля вынесен в <code>/etc/shadow</code> – за ним
-придётся обращаться к <code>struct spwd</code> (раздел 5.2).
+признак <code>"x"</code>: хеш пароля вынесен в <code>/etc/shadow</code> – представлен структурой
+<code>struct spwd</code>, возвращаемой функцией <code>getspnam</code> (раздел 5.2).
 </div>
 
 <div class="text-xs opacity-70 mt-2">
@@ -3675,32 +3680,31 @@ hashed passphrase, if shadow database not in use.
 
 ---
 
-# Две операции чтения `passwd`: точечный поиск и перебор
+# Чтение базы пользователей: функции `getpw*`
 
-<div class="grid grid-cols-2 gap-4 mt-1 items-start">
+<div class="grid grid-cols-2 gap-x-4 mt-1 items-start">
 <div>
 
-**Поиск одной записи** – по имени (вход в систему) или по UID
-(например, `ls -l` подписывает владельца файла):
+**Поиск одной записи** – по имени пользователя или UID:
 
-<CodeSnippet src="snippets/pwd-lookup.h" title="pwd.h" tag="glibc 2.43" fontSize="0.5rem" />
-
-<div class="mt-2 text-xs">
-
-- <Man p="getpwnam(3)" /> – запись с заданным именем входа;
-- <Man p="getpwuid(3)" /> – запись с заданным UID;
-- результат – указатель на **статический буфер** (следующий вызов
-  перезапишет его) или `NULL`, если записи нет.
-
-</div>
+<CodeSnippet src="snippets/pwd-lookup.h" title="pwd.h" tag="glibc 2.43" />
 
 </div>
 <div>
 
 **Перебор всех записей** – последовательное чтение базы:
 
-<CodeSnippet src="snippets/pwd-enum.h" title="pwd.h" tag="glibc 2.43" fontSize="0.5rem" />
+<CodeSnippet src="snippets/pwd-enum.h" title="pwd.h" tag="glibc 2.43" />
 
+</div>
+<div class="mt-2 text-xs">
+
+- <Man p="getpwnam(3)" /> – запись с заданным именем пользователя;
+- <Man p="getpwuid(3)" /> – запись с заданным UID;
+- результат – указатель на **статический буфер** (следующий вызов
+  перезапишет его) или `NULL`, если записи нет.
+
+</div>
 <div class="mt-2 text-xs">
 
 - <Man p="getpwent(3)" /> – очередная запись; при первом вызове открывает базу, в конце возвращает `NULL`;
@@ -3708,15 +3712,19 @@ hashed passphrase, if shadow database not in use.
 - `endpwent` – закрыть базу по окончании работы.
 
 </div>
-
 </div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+Для многопоточных программ предусмотрены <b>реентерабельные варианты</b>
+<code>getpwnam_r</code>, <code>getpwuid_r</code> и др.: отличие в том, что результат
+помещается не в общий статический буфер, а в структуру и буфер строк, переданные
+вызывающим, – параллельные вызовы не затирают результаты друг друга.
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
-Функции читают не файл, а <b>базу учётных записей</b>: glibc направляет запрос через
-NSS (<code>/etc/nsswitch.conf</code>), поэтому ответ может прийти и из сетевого
-каталога (LDAP), а не только из <code>/etc/passwd</code>. Для многопоточных программ
-предусмотрены реентерабельные варианты <code>getpwnam_r</code> и др.
+На самом деле функции выполняют поиск в <b>базе учётных записей</b>: glibc направляет запрос к
+NSS (<code>/etc/nsswitch.conf</code>) – источником может быть не только файл 
+<code>/etc/passwd</code> (см. раздел 6).
 </div>
 
 <Refs ids="man-getpwnam man-getpwent glibc-source kerrisk-tlpi" />
@@ -3734,10 +3742,14 @@ NSS (<code>/etc/nsswitch.conf</code>), поэтому ответ может пр
 
 ---
 
-# `struct group`: запись о группе и массив членов
+# Чтение базы групп: `struct group`
 
-Для `/etc/group` (раздел 2.3) интерфейс симметричен: заголовочный файл
-`<grp.h>`, структура `struct group` – четыре поля, как в строке файла.
+<div>
+
+Заданные в файле `/etc/group` (раздел 2.3) группы представляются экземплярами структуры 
+`struct group` из заголовочного файла `<grp.h>`.
+
+</div>
 
 <div class="grid grid-cols-[1.05fr_1fr] gap-4 mt-2 items-start">
 <div>
@@ -3750,29 +3762,25 @@ NSS (<code>/etc/nsswitch.conf</code>), поэтому ответ может пр
 </div>
 <div>
 
-<FieldRecord size="0.72rem" legendSize="0.6rem" :cols="1"
+<FieldRecord size="0.72rem" legendSize="0.72rem" :cols="1"
   :fields="['project', { t: 'x', hot: true }, '1010', 'bob,alice']"
   :legend="[
-    'gr_name – имя группы',
-    { t: 'gr_passwd – признак пароля группы', hot: true },
-    'gr_gid – идентификатор группы (gid_t)',
-    'gr_mem – члены группы (вторичное членство)',
+    '`gr_name` – название группы',
+    { t: '`gr_passwd` – признак наличия пароля группы `&quot;x&quot;`', hot: true },
+    '`gr_gid` – идентификатор группы (`gid_t`)',
+    '`gr_mem` – имена членов группы (вторичное членство)',
   ]"
 />
 
+</div>
+</div>
+
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-<span class="co-ball">4</span> Список членов <code>bob,alice</code> становится
-<b>массивом строк</b> <code>gr_mem</code>, завершённым элементом <code>NULL</code> –
-готовым для обхода циклом.
-</div>
-
-</div>
-</div>
-
-<div class="mt-2 text-xs">
-<span class="co-ball">2</span> <code>gr_passwd</code> – как и в <code>passwd</code>, признак
-<code>x</code>: пароль группы, если задан, лежит в <code>/etc/gshadow</code> (раздел 3.4).
-Первичное членство здесь не видно – оно задано полем <code>pw_gid</code> записи пользователя.
+<div><span class="co-ball">2</span> <code>gr_passwd</code> – как и в <code>passwd</code>, признак
+<code>"x"</code>: пароль группы хранится в <code>/etc/gshadow</code> (раздел 3.4);
+первичное членство здесь не отображается – оно задано полем <code>pw_gid</code> записи пользователя</div>
+<div><span class="co-ball">4</span> список членов <code>bob,alice</code> становится
+<b>массивом строк</b> <code>gr_mem</code>, завершённым указателем <code>NULL</code></div>
 </div>
 
 <div class="text-xs opacity-70 mt-2">
@@ -3793,47 +3801,49 @@ glibc 2.43: <a href="https://sourceware.org/git/?p=glibc.git;a=blob;f=nss/grp.h;
 
 ---
 
-# Чтение групп повторяет интерфейс `passwd`
+# Чтение базы групп: функции `getgr*`
 
-<div class="grid grid-cols-2 gap-4 mt-1 items-start">
+<div class="grid grid-cols-2 gap-x-4 mt-1 items-start">
 <div>
 
-**Поиск одной записи** – по имени или по GID:
+**Поиск одной записи** – по названию или по GID:
 
-<CodeSnippet src="snippets/grp-lookup.h" title="grp.h" tag="glibc 2.43" fontSize="0.5rem" />
-
-<div class="mt-2 text-xs">
-
-- <Man p="getgrnam(3)" /> – запись группы по имени;
-- <Man p="getgrgid(3)" /> – по идентификатору GID (так `ls -l`
-  подписывает группу-владельца файла);
-- те же соглашения: статический буфер, `NULL` – записи нет.
-
-</div>
+<CodeSnippet src="snippets/grp-lookup.h" title="grp.h" tag="glibc 2.43" />
 
 </div>
 <div>
 
 **Перебор всех групп:**
 
-<CodeSnippet src="snippets/grp-enum.h" title="grp.h" tag="glibc 2.43" fontSize="0.5rem" />
+<CodeSnippet src="snippets/grp-enum.h" title="grp.h" tag="glibc 2.43" />
 
+</div>
+<div class="mt-2 text-xs">
+
+- <Man p="getgrnam(3)" /> – запись группы по названию;
+- <Man p="getgrgid(3)" /> – по идентификатору GID;
+- те же соглашения: статический буфер, `NULL` – записи нет.
+
+</div>
 <div class="mt-2 text-xs">
 
 - <Man p="getgrent(3)" /> – очередная запись `struct group`, `NULL` в конце;
 - `setgrent` / `endgrent` – перемотка и закрытие базы;
-- потоки `passwd` и `group` независимы: вложенный перебор групп внутри
+- вызовы `passwd` и `group` независимы: вложенный перебор групп внутри
   перебора пользователей допустим (демо 10).
 
 </div>
-
 </div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+Для многопоточных программ также предусмотрены <b>реентерабельные варианты</b>
+<code>getgrnam_r</code>, <code>getgrgid_r</code> и др.
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
-<b>Единообразие интерфейса</b> – приём проектирования libc: пары
-<code>get*nam</code>/<code>get*id</code> и триады <code>set*ent</code>/<code>get*ent</code>/<code>end*ent</code>
-одинаково устроены для <code>passwd</code>, <code>group</code> и, как увидим далее, <code>shadow</code>.
+<b>Единообразие интерфейса</b> – приём проектирования libc: интерфейсы пары
+<code>get*nam</code>/<code>get*id</code> и тройки <code>set*ent</code>/<code>get*ent</code>/<code>end*ent</code>
+одинаковы для <code>passwd</code>, <code>group</code> и, как увидим далее, <code>shadow</code>.
 </div>
 
 <Refs ids="man-getgrnam man-getgrent glibc-source kerrisk-tlpi" />
@@ -3857,7 +3867,7 @@ set/get/endgrent – перебор. Стоит проговорить сист�
 
 <CodeSnippet src="snippets/demo10-main.c" title="10-enum-accounts.c" tag="демо 10" fontSize="0.48rem">
   <TCallout :line="8" :col="5" :span="11" :n="1" />
-  <TCallout :line="9" :col="11" :span="25" :n="2" />
+  <TCallout :line="9" :col="11" :span="27" :n="2" />
   <TCallout :line="15" :col="5" :span="11" :n="3" />
 </CodeSnippet>
 
@@ -3865,7 +3875,7 @@ set/get/endgrent – перебор. Стоит проговорить сист�
 <div>
 
 <CodeSnippet src="snippets/demo10-supp.c" title="10-enum-accounts.c" tag="демо 10" fontSize="0.48rem">
-  <TCallout :line="8" :col="11" :span="25" :n="4" />
+  <TCallout :line="8" :col="11" :span="27" :n="4" />
   <TCallout :line="9" :col="27" :span="10" :n="5" />
 </CodeSnippet>
 
@@ -3875,16 +3885,16 @@ set/get/endgrent – перебор. Стоит проговорить сист�
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем программу:</b>
 <div class="grid grid-cols-2 gap-x-6 gap-y-1 mt-1">
-<div><span class="co-ball">1</span> открыть базу учётных записей</div>
+<div><span class="co-ball">1</span> открытие базы учётных записей</div>
 <div><span class="co-ball">4</span> для каждого пользователя – полный проход по группам</div>
-<div><span class="co-ball">2</span> цикл до <code>NULL</code>: поля берём из <code>struct passwd</code></div>
+<div><span class="co-ball">2</span> цикл до <code>NULL</code>: чтение записей из <code>struct passwd</code></div>
 <div><span class="co-ball">5</span> поиск имени в массиве членов <code>gr_mem</code></div>
-<div><span class="co-ball">3</span> закрыть базу по завершении</div>
+<div><span class="co-ball">3</span> закрытие базы по завершении</div>
 </div>
 </div>
 
 <div class="w-1/2 mt-2">
-<TerminalCapture src="captures/10-enum-accounts.txt" section="Сборка и запуск" title="demo 10 · сборка" fontSize="0.5rem" />
+<TerminalCapture src="captures/10-enum-accounts.txt" section="Сборка" title="demo 10 · сборка" fontSize="0.5rem" />
 </div>
 
 <SrcRef>
@@ -3905,24 +3915,27 @@ set/get/endgrent – перебор. Стоит проговорить сист�
 
 ---
 
-# Демо 10: сводная таблица пользователей и групп
+# Демо 10: список пользователей и групп
 
 <div class="grid grid-cols-[1.18fr_1fr] gap-4 mt-1 items-start">
 <div>
 
 <TerminalCapture src="captures/10-enum-accounts.txt" section="Пользователи" title="demo 10 · вывод, часть 1: пользователи" fontSize="0.44rem">
-  <TCallout :line="1" :col="20" :span="9" :n="1" />
-  <TCallout :line="21" :col="49" :span="7" :n="2" />
+  <TCallout :line="2" :col="20" :span="9" :n="1" />
+  <TCallout :line="22" :col="49" :span="7" :n="2" />
 </TerminalCapture>
 
 </div>
 <div>
 
-<TerminalCapture src="captures/10-enum-accounts.txt" section="Группы" title="demo 10 · вывод, часть 2: группы" fontSize="0.44rem">
+<TerminalCapture src="captures/10-enum-accounts.txt" section="Группы" title="demo 10 · вывод, часть 2: группы" fontSize="0.44rem" padBottom="7.5em">
   <TCallout :line="16" :col="25" :span="9" :n="3" />
 </TerminalCapture>
 
-<div class="mt-1 px-2 py-1 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+</div>
+</div>
+
+<div class="mt-2 px-2 py-1 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем демонстрацию:</b>
 <div class="mt-0.5 space-y-0.5">
 <div><span class="co-ball">1</span> UID и GID – числовые поля <code>pw_uid</code>/<code>pw_gid</code></div>
@@ -3934,18 +3947,13 @@ set/get/endgrent – перебор. Стоит проговорить сист�
 <v-click>
 
 <div class="mt-1 px-2 py-1 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
-<b>Вывод:</b> «пользователь → группы» и «группа → члены» – один набор данных,
-прочитанный двумя семействами функций.
+<b>Вывод:</b> отношения «пользователь → группы» и «группа → члены» задаются одним и тем же набором данных.
 </div>
 
 </v-click>
 
-</div>
-</div>
-
 <SrcRef>
-См. <code>demos/10-enum-accounts.sh</code>; срез системных групп сокращён до
-показательных строк.
+См. <code>demos/10-enum-accounts.sh</code>; показаны не все системные группы.
 </SrcRef>
 
 <!--
@@ -3963,27 +3971,30 @@ SUPPLEMENTARY – результат перебора групп: у bob – pro
 layout: section
 ---
 
-# 5. Идентификация и парольная аутентификация в приложениях
-## Программный интерфейс стандартной библиотеки C
+# 5. Идентификация и аутентификация в приложениях
 
 <SectionTOC prefix="5" :current="2" :items="[
   'Чтение учётных записей: passwd и group',
-  'Чтение теневого файла shadow',
+  'Чтение теневых файлов: shadow и gshadow',
   'Запрос и проверка пароля: getpass и crypt',
   'Примеры: утилиты login и passwd',
 ]" />
 
 ---
 
-# `struct spwd`: теневая запись с политикой устаревания
+# Чтение хешей паролей: `struct spwd`
 
-Для `/etc/shadow` (раздел 3.2) есть своя структура – `struct spwd` из
-`<shadow.h>`: девять полей строки, включая весь блок устаревания пароля.
+<div>
+
+Хеш пароля пользователя и информация об устаревании пароля (строки `/etc/shadow`, раздел 3.2) 
+представлены полями структуры `struct spwd` из заголовочного файла `<shadow.h>`.
+
+</div>
 
 <div class="grid grid-cols-[1.08fr_1fr] gap-4 mt-2 items-start">
 <div>
 
-<CodeSnippet src="snippets/spwd-struct.h" title="shadow.h" tag="glibc 2.43" fontSize="0.5rem">
+<CodeSnippet src="snippets/spwd-struct.h" title="shadow.h" tag="glibc 2.43">
   <TCallout :line="5" :col="5" :span="14" :n="2" />
   <TCallout :line="6" :col="5" :span="19" :rows="4" :n="3" />
 </CodeSnippet>
@@ -3991,18 +4002,18 @@ layout: section
 </div>
 <div>
 
-<FieldRecord size="0.6rem" legendSize="0.55rem" :cols="1"
+<FieldRecord size="0.72rem" legendSize="0.72rem" :cols="1"
   :fields="['bob', { t: '$y$j9T$Vm…', hot: true }, '20755', '0', '99999', '7', '', '', '']"
   :legend="[
-    'sp_namp – имя входа',
-    { t: 'sp_pwdp – хеш пароля (целиком)', hot: true },
-    'sp_lstchg – последняя смена, дней от 01.01.1970',
-    'sp_min – минимум дней между сменами',
-    'sp_max – максимальный срок действия',
-    'sp_warn – за сколько дней предупреждать',
-    'sp_inact – дней неактивности (пусто → −1)',
-    'sp_expire – день истечения записи (пусто → −1)',
-    'sp_flag – зарезервировано',
+    '`sp_namp` – имя пользователя',
+    { t: '`sp_pwdp` – хеш пароля (`&quot;!&quot;`/`&quot;*&quot;` – пароль не задан)', hot: true },
+    '`sp_lstchg` – последняя смена, дней от 01.01.1970',
+    '`sp_min` – минимум дней между сменами',
+    '`sp_max` – максимальный срок действия',
+    '`sp_warn` – за сколько дней предупреждать',
+    '`sp_inact` – дней неактивности (пусто → −1)',
+    '`sp_expire` – день истечения записи (пусто → −1)',
+    '`sp_flag` – зарезервировано',
   ]"
 />
 
@@ -4010,9 +4021,9 @@ layout: section
 </div>
 
 <div class="mt-2 text-xs">
-<span class="co-ball">2</span> Здесь – настоящий хеш в формате <code>$префикс$соль$хеш</code> (раздел 3.3).
-<span class="co-ball">3</span> Поля политики устаревания (раздел 3.4) приходят числами
-<code>long int</code>; пустые поля строки libc возвращает как <code>−1</code>.
+<div><span class="co-ball">2</span> хранится полная запись в формате <code>$алгоритм$параметры$соль$хеш</code> (раздел 3.3)</div>
+<div><span class="co-ball">3</span> поля политики устаревания (раздел 3.4) заданы типом
+<code>long int</code>; пустые поля строки теневого файла libc возвращает как <code>−1</code></div>
 </div>
 
 <div class="text-xs opacity-70 mt-2">
@@ -4036,56 +4047,52 @@ setting. Второй: вся политика устаревания из chage
 
 # `getspnam`: чтение `shadow` требует привилегий
 
-<div class="grid grid-cols-2 gap-4 mt-1 items-start">
+<div class="grid grid-cols-2 gap-x-4 mt-1 items-start">
 <div>
 
 **Поиск одной записи** – только по имени (UID в `shadow` нет):
 
 <CodeSnippet src="snippets/spwd-lookup.h" title="shadow.h" tag="glibc 2.43" fontSize="0.5rem" />
 
-<div class="mt-2 text-xs">
-
-- <Man p="getspnam(3)" /> – теневая запись по имени входа;
-- `NULL` означает и «записи нет», и «нет доступа»: различать
-  следует по `errno == EACCES`.
-
 </div>
+<div>
 
 **Перебор всех записей:**
 
 <CodeSnippet src="snippets/spwd-enum.h" title="shadow.h" tag="glibc 2.43" fontSize="0.5rem" />
 
+</div>
 <div class="mt-2 text-xs">
 
-- <Man p="getspent(3)" /> / `setspent` / `endspent` – та же триада курсора.
+- <Man p="getspnam(3)" /> – теневая запись по имени пользователя;
+- поиск по UID – двухшаговый: имя даёт <Man p="getpwuid(3)" /> (раздел 5.1),
+  затем по нему вызывается `getspnam`;
+- `NULL` означает и «записи нет», и «нет доступа»: различать
+  следует по `errno == EACCES`.
 
 </div>
+<div class="mt-2 text-xs">
+
+- <Man p="getspent(3)" /> / `setspent` / `endspent` – также переборная тройка;
+- для многопоточных программ – реентерабельные варианты
+  `getspnam_r`, `getspent_r` и др. (аналогично функциям чтения пользователей и групп).
 
 </div>
-<div>
+</div>
 
-<div class="p-2 border-l-4 border-red-500 bg-red-500/10 text-xs">
+<div class="mt-2 p-2 border-l-4 border-red-500 bg-red-500/10 text-xs">
 <b>Главное отличие от <code>passwd</code> и <code>group</code>:</b> файл
-<code>/etc/shadow</code> читается только root и группой <code>shadow</code>
-(раздел 3.2), поэтому обычному процессу <code>getspnam</code> вернёт
+<code>/etc/shadow</code> доступен для чтения только root и группе <code>shadow</code>
+(раздел 3.2), обычному процессу <code>getspnam</code> возвращается
 <code>NULL</code> с <code>errno = EACCES</code>. Программа проверки пароля
-обязана быть привилегированной – отсюда setuid-бит у <code>passwd(1)</code>
-и <code>su(1)</code> (раздел 2.4).
+обязана быть привилегированной – отсюда setuid-бит у <Man p="passwd(1)" />
+и <Man p="su(1)" /> (раздел 2.4).
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 Семейство <code>getsp*</code> – <b>не POSIX</b>: это расширение, восходящее к
-SVR4 и закреплённое в glibc; переносимый код ограждают условной компиляцией.
-</div>
-
-<div class="mt-2 text-xs">
-
-Структуру и функции остальных теневых файлов повторяет `<gshadow.h>`
-(`struct sgrp`, `getsgnam`) – для `/etc/gshadow`.
-
-</div>
-
-</div>
+System V R4 и закреплённое в glibc; в случае написания переносимого кода места 
+их использования необходимо обрамлять директивами условной компиляции.
 </div>
 
 <Refs ids="man-getspnam glibc-source kerrisk-tlpi" />
@@ -4095,53 +4102,174 @@ SVR4 и закреплённое в glibc; переносимый код огр�
 shadow нет числовых идентификаторов), но меняет условия доступа. Права 640
 root:shadow на файле (раздел 3.2) превращаются для программы в EACCES из getspnam;
 важно, что NULL здесь двузначен – «нет записи» и «нет прав» различаются только по
-errno, его нужно обнулять перед вызовом. Прямое следствие для архитектуры: любая
+errno, его нужно обнулять перед вызовом. Поиск по UID двухшаговый, потому что в
+самом shadow числовых идентификаторов нет: сначала getpwuid даёт имя, затем getspnam –
+теневую запись. Прямое следствие для архитектуры: любая
 программа, проверяющая пароли сама, должна работать с привилегиями – вот зачем
 setuid-бит на passwd(1) (демо 03) и почему пароль у su спрашивает привилегированный
 код. Семейство нестандартное – POSIX его не описывает, но в Linux оно есть со времён
-внедрения shadow. Для gshadow есть зеркальный <gshadow.h>.
+внедрения shadow. Для gshadow есть зеркальный <gshadow.h> – следующий слайд.
+-->
+
+---
+
+# Чтение `gshadow`: `struct sgrp` и функции `getsg*`
+
+<div>
+
+Аутентифицирующая информация о группах хранится в `/etc/gshadow` (раздел 3.2): 
+его записи представляет структура `struct sgrp` из заголовочного файла `<gshadow.h>`, 
+а функции доступа повторяют интерфейс `shadow`.
+
+</div>
+
+<div class="grid grid-cols-[1.05fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<CodeSnippet src="snippets/sgrp-struct.h" title="gshadow.h" tag="glibc 2.43">
+  <TCallout :line="5" :col="5" :span="16" :n="2" />
+  <TCallout :line="6" :col="5" :span="14" :rows="2" :n="3" />
+</CodeSnippet>
+
+<CodeSnippet class="mt-2" src="snippets/sgrp-funcs.h" title="gshadow.h" tag="glibc 2.43" fontSize="0.5rem" />
+
+</div>
+<div>
+
+<FieldRecord size="0.72rem" legendSize="0.72rem" :cols="1"
+  :fields="['project', { t: '!', hot: true }, '', 'bob,alice']"
+  :legend="[
+    '`sg_namp` – название группы',
+    { t: '`sg_passwd` – хеш пароля группы (`&quot;!&quot;`/`&quot;*&quot;` – пароль не задан)', hot: true },
+    '`sg_adm` – администраторы группы (массив строк)',
+    '`sg_mem` – члены группы (массив строк, аналогично `gr_mem`)',
+  ]"
+/>
+
+<div class="mt-2 text-xs">
+<div><span class="co-ball">2</span> хранится полная запись в формате <code>$алгоритм$параметры$соль$хеш</code> (раздел 3.3)</div>
+<div><span class="co-ball">3</span> списки администраторов и членов – массивы строк,
+завершённы указателем <code>NULL</code></div>
+</div>
+
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+Интерфейс аналогичен <code>shadow</code>: <code>getsgnam</code> – чтение записи по названию
+группы, тройка <code>setsgent</code>/<code>getsgent</code>/<code>endsgent</code> –
+перебор групп, для многопоточных приложений определены реентерабельные варианты <code>getsgnam_r</code> и др.; функции – не часть стандарта POSIX.<br/>
+Права доступа аналогичны (<code>640 root:shadow</code> на файле), чтение без достаточных привилегий завершается с <code>error = EACCES</code>.
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+glibc 2.43: <a href="https://sourceware.org/git/?p=glibc.git;a=blob;f=nss/gshadow.h;hb=glibc-2.43#l36">nss/gshadow.h#l36</a>.
+</div>
+
+<Refs ids="man-gshadow man-gpasswd glibc-source" />
+
+<!--
+Четвёртая и последняя пара «структура + функции» – gshadow. Четыре поля строки
+/etc/gshadow (раздел 3.2) один к одному ложатся в struct sgrp: название, пароль
+группы, администраторы, члены. Акценты. Первый: sg_passwd – не признак «x», а само
+поле пароля; в типовой системе там «!» – пароль группы не задан, и newgrp пускает
+только членов. Второй: sg_adm и sg_mem – такие же NULL-терминированные массивы строк,
+как gr_mem. Функции предсказуемы по общей схеме именования: getsgnam – точечный поиск
+(по названию; числовых идентификаторов в gshadow, как и в shadow, нет), тройка
+set/get/endsgent – перебор. Ограничения тоже наследуются от shadow: файл 640
+root:shadow, поэтому без привилегий – EACCES; в POSIX семейства нет, это расширение
+glibc. Отдельных man-страниц у getsg* нет – поведение описано в gshadow(5).
 -->
 
 ---
 layout: section
 ---
 
-# 5. Идентификация и парольная аутентификация в приложениях
-## Программный интерфейс стандартной библиотеки C
+# 5. Идентификация и аутентификация в приложениях
 
 <SectionTOC prefix="5" :current="3" :items="[
   'Чтение учётных записей: passwd и group',
-  'Чтение теневого файла shadow',
+  'Чтение теневых файлов: shadow и gshadow',
   'Запрос и проверка пароля: getpass и crypt',
   'Примеры: утилиты login и passwd',
 ]" />
 
 ---
 
-# `getpass` и `crypt`: пароль запрашивают и сравнивают хешами
+# Запрос пароля: `getpass` и `readpassphrase`
 
-<div class="grid grid-cols-[1fr_1.15fr] gap-4 mt-1 items-start">
+<div class="grid grid-cols-2 gap-x-4 mt-1 items-start">
 <div>
 
-**Запрос пароля** – с терминала, без отображения ввода:
+**Классика** – чтение с терминала без отображения ввода:
 
 <CodeSnippet src="snippets/unistd-getpass.h" title="unistd.h" tag="glibc 2.43" fontSize="0.5rem" />
 
+</div>
+<div>
+
+**Современная замена** из OpenBSD (в Linux – **libbsd**):
+
+<CodeSnippet src="snippets/readpassphrase.h" title="bsd/readpassphrase.h" tag="libbsd 0.12.2" fontSize="0.5rem" />
+
+</div>
 <div class="mt-2 text-xs">
 
-- печатает приглашение и читает строку с <code>/dev/tty</code>,
+- <Man p="getpass(3)" /> печатает приглашение и читает строку с <code>/dev/tty</code>,
   **отключив эхо** терминала;
-- возвращает статический буфер – после проверки открытый пароль
+- возвращает указатель на статический буфер – после проверки открытый пароль
   следует стереть (<code>explicit_bzero</code>);
 - формально объявлена устаревшей (исключена из POSIX), но в glibc
   сохраняется и остаётся наглядной для учебного кода.
 
 </div>
+<div class="mt-2 text-xs">
+
+- <DebianMan p="readpassphrase(3bsd)" pkg="libbsd-dev" /> устраняет главные недостатки
+  `getpass`: **буфер и его размер задаёт вызывающий** – нет общего статического
+  буфера фиксированной контролируемой длины;
+- поведением управляют флаги: `RPP_ECHO_OFF` – без эха (умолчание),
+  `RPP_REQUIRE_TTY` – отказ без терминала, `RPP_STDIN` – чтение из `stdin`;
+- при сигналах корректно восстанавливает состояние терминала;
+- подключение – заголовок `<bsd/readpassphrase.h>` и `-lbsd`.
 
 </div>
+</div>
+
+<div class="text-xs opacity-70 mt-2">
+glibc 2.43: <a href="https://sourceware.org/git/?p=glibc.git;a=blob;f=posix/unistd.h;hb=glibc-2.43#l981">posix/unistd.h#l981</a> ·
+libbsd 0.12.2: <a href="https://gitlab.freedesktop.org/libbsd/libbsd/-/blob/0.12.2/include/bsd/readpassphrase.h#L42">include/bsd/readpassphrase.h#L42</a>.
+</div>
+
+<Refs ids="man-getpass man-readpassphrase libbsd-source kerrisk-tlpi" />
+
+<!--
+Первый кирпичик аутентификации – запрос пароля так, чтобы он не появился на экране.
+getpass решает задачу прямолинейно: открывает /dev/tty, выключает эхо через termios,
+читает строку, возвращает эхо назад. Из POSIX функцию исключили за два врождённых
+дефекта – статический буфер и отсутствие контроля длины, – но для понимания механизма
+она идеальна, поэтому в учебном коде мы пользуемся ею. Промышленная замена –
+readpassphrase из OpenBSD, на Linux доступная из libbsd (в Ubuntu 26.04 – 0.12.2):
+вызывающий передаёт собственный буфер и его размер, флаги задают режим (RPP_ECHO_OFF
+по умолчанию; RPP_REQUIRE_TTY – отказаться работать без терминала, защита от запуска
+с перенаправленным вводом; RPP_STDIN – наоборот, читать из stdin для скриптов), а при
+получении сигнала функция аккуратно восстанавливает состояние терминала, чтобы эхо не
+осталось выключенным. Прототип без имён параметров – дословный заголовок libbsd:
+prompt, buf, bufsiz, flags.
+-->
+
+---
+
+# Проверка пароля: функция `crypt`
+
 <div>
 
-**Проверка** – повторное хеширование, как в демо 05:
+Проверка пароля выполняется путём повторного хеширования (как показано в демо 05).
+
+</div>
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-1 items-start">
+<div>
 
 <CodeSnippet src="snippets/crypt-proto.h" title="crypt.h" tag="libxcrypt 4.5.1" fontSize="0.5rem">
   <TCallout :line="5" :col="4" :span="40" :n="2" />
@@ -4149,14 +4277,15 @@ layout: section
 </CodeSnippet>
 
 </div>
-</div>
+<div>
 
 <div class="mt-2 text-xs">
-<span class="co-ball">1</span> <code>crypt(фраза, setting)</code>: в качестве
+<div><span class="co-ball">1</span> <code>crypt(фраза, setting)</code>: в качестве
 <em>setting</em> передают <b>хранимый хеш целиком</b> – из него берутся алгоритм,
-параметры и соль (раздел 3.3). <span class="co-ball">2</span> Контракт функции:
-результат равен <em>setting</em> ⇔ фраза совпала с исходным паролем – проверка
-сводится к <code>strcmp</code>.
+параметры и соль (раздел 3.3)</div>
+<div class="mt-1"><span class="co-ball">2</span> по соглашению результат хеширования 
+полностью совпадает с <em>setting</em> ⇔ фраза совпала с исходным паролем – проверка
+сводится к <code>strcmp</code></div>
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
@@ -4165,38 +4294,36 @@ layout: section
 подключение – <code>-lcrypt</code>, потокобезопасный вариант – <code>crypt_r</code>.
 </div>
 
+</div>
+</div>
+
 <div class="text-xs opacity-70 mt-2">
-glibc 2.43: <a href="https://sourceware.org/git/?p=glibc.git;a=blob;f=posix/unistd.h;hb=glibc-2.43#l981">posix/unistd.h#l981</a> ·
 libxcrypt v4.5.1: <a href="https://github.com/besser82/libxcrypt/blob/v4.5.1/lib/crypt.h.in#L61">lib/crypt.h.in#L61</a>.
 </div>
 
-<Refs ids="man-getpass man-crypt3 libxcrypt-source kerrisk-tlpi" />
+<Refs ids="man-crypt3 libxcrypt-source kerrisk-tlpi" />
 
 <!--
-Последние два кирпичика аутентификации. getpass решает житейскую, но важную задачу –
-прочитать пароль, не показывая его на экране: открывает /dev/tty, выключает эхо через
-termios, читает строку, возвращает эхо назад. Из POSIX функцию исключили (статический
-буфер, нет контроля длины), но для понимания механизма она идеальна; в промышленном
-коде её заменяют readpassphrase или прямая работа с termios. crypt – та самая
-односторонняя функция из раздела 3.3, теперь со стороны программы: передаём открытую
-фразу и хранимый хеш как setting; библиотека сама извлекает из него префикс алгоритма,
-параметры и соль и повторяет вычисление. Дословный комментарий libxcrypt формулирует
-контракт: результат равен setting тогда и только тогда, когда фраза та же – значит,
-аутентификация сводится к строковому сравнению. Исторически crypt жила в glibc; ныне
-это libxcrypt (-lcrypt), один интерфейс от DES до yescrypt.
+Второй кирпичик – собственно проверка. crypt – та самая односторонняя функция из
+раздела 3.3, теперь со стороны программы: передаём открытую фразу и хранимый хеш как
+setting; библиотека сама извлекает из него префикс алгоритма, параметры и соль и
+повторяет вычисление. Дословный комментарий libxcrypt формулирует контракт: результат
+равен setting тогда и только тогда, когда фраза та же – значит, аутентификация
+сводится к строковому сравнению. Исторически crypt жила в glibc; ныне это libxcrypt
+(-lcrypt), один интерфейс от DES до yescrypt.
 -->
 
 ---
 
-# Демо 11: программа-аутентификатор на 60 строк
+# Демо 11: программа-аутентификатор `pwcheck`
 
 <div class="grid grid-cols-[1fr_1.02fr] gap-4 mt-1 items-start">
 <div>
 
 <CodeSnippet src="snippets/demo11-lookup.c" title="11-password-auth.c" tag="демо 11" fontSize="0.45rem">
-  <TCallout :line="1" :col="11" :span="17" :n="1" />
-  <TCallout :line="8" :col="12" :span="17" :n="2" />
-  <TCallout :line="14" :col="9" :span="31" :n="3" />
+  <TCallout :line="4" :col="11" :span="17" :n="1" />
+  <TCallout :line="11" :col="12" :span="17" :n="2" />
+  <TCallout :line="17" :col="9" :span="31" :n="3" />
 </CodeSnippet>
 
 </div>
@@ -4205,7 +4332,8 @@ termios, читает строку, возвращает эхо назад. Из
 <CodeSnippet src="snippets/demo11-verify.c" title="11-password-auth.c" tag="демо 11" fontSize="0.45rem">
   <TCallout :line="1" :col="16" :span="21" :n="4" />
   <TCallout :line="5" :col="17" :span="31" :n="5" />
-  <TCallout :line="12" :col="9" :span="33" :n="6" />
+  <TCallout :line="6" :col="5" :span="42" :n="6" />
+  <TCallout :line="12" :col="9" :span="33" :n="7" />
 </CodeSnippet>
 
 </div>
@@ -4213,13 +4341,14 @@ termios, читает строку, возвращает эхо назад. Из
 
 <div class="mt-1 px-2 py-0.5 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем программу:</b>
-<div class="grid grid-cols-2 gap-x-6 gap-y-0.5">
-<div><span class="co-ball">1</span> идентификация: имя → запись <code>passwd</code></div>
-<div><span class="co-ball">4</span> запрос пароля без эха</div>
-<div><span class="co-ball">2</span> теневая запись; <code>EACCES</code> – нет привилегий</div>
-<div><span class="co-ball">5</span> хеш ввода по хранимому <em>setting</em></div>
-<div><span class="co-ball">3</span> дальше работаем с хешем из <code>shadow</code></div>
-<div><span class="co-ball">6</span> аутентификация = сравнение строк</div>
+<div class="grid grid-cols-2 gap-x-7 gap-y-0.5">
+<div><span class="co-ball">1</span> идентификация: имя пользователя → запись <code>passwd</code></div>
+<div><span class="co-ball">4</span> запрос пароля пользователя без эхо</div>
+<div><span class="co-ball">2</span> чтение записи из теневого файла паролей; <code>EACCES</code> – нет привилегий</div>
+<div><span class="co-ball">5</span> вычисление хеша введённого пользователем пароля, алгоритмы и соль передаются вторым аргументом <em>setting</em></div>
+<div><span class="co-ball">3</span> сохранение хеша из <code>shadow</code> в <code>pwd</code> </div>
+<div><span class="co-ball">6</span> уничтожение введённого пароля – сразу как только возможно</div>
+<div style="grid-column: 2"><span class="co-ball">7</span> аутентификация = сравнение строк</div>
 </div>
 </div>
 
@@ -4228,8 +4357,8 @@ termios, читает строку, возвращает эхо назад. Из
 </div>
 
 <SrcRef>
-Полный текст – <code>demos/11-password-auth.c</code> (по листингу 8-2 Керриска);
-<code>-lcrypt</code> подключает libxcrypt. После сравнения открытый пароль
+Полный текст – <code>demos/11-password-auth.c</code> (см. также листинг 8-2 у Керриска);
+<code>-lcrypt</code> подключает libxcrypt. Сразу после вычисленяи хеша открытый пароль
 стирается из памяти (<code>explicit_bzero</code>).
 </SrcRef>
 
@@ -4246,7 +4375,7 @@ sp_pwdp. Справа аутентификация: getpass запрашивае
 
 ---
 
-# Демо 11: проверка пароля в действии
+# Демо 11: программа-аутентификатор `pwcheck`
 
 <div class="grid grid-cols-[1.05fr_1fr] gap-4 mt-1 items-start">
 <div>
@@ -4257,21 +4386,21 @@ sp_pwdp. Справа аутентификация: getpass запрашивае
   <TCallout :line="10" :col="1" :span="21" :n="3" />
 </TerminalCapture>
 
-</div>
-<div>
-
-<TerminalCapture src="captures/11-password-auth.txt" section="Без привилегий" title="demo 11 · сеанс bob" fontSize="0.52rem">
+<TerminalCapture class="mt-2" src="captures/11-password-auth.txt" section="Без привилегий" title="demo 11 · сеанс bob" fontSize="0.52rem">
   <TCallout :line="4" :col="1" :span="33" :n="4" />
   <TCallout :line="6" :col="1" :span="10" :n="5" />
 </TerminalCapture>
 
-<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+</div>
+<div>
+
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем демонстрацию:</b>
 <div class="mt-1 space-y-1">
-<div><span class="co-ball">1</span> хеши совпали – подлинность подтверждена</div>
-<div><span class="co-ball">2</span> неверный пароль: тот же код, другой хеш</div>
-<div><span class="co-ball">3</span> отказ ещё на этапе идентификации</div>
-<div><span class="co-ball">4</span> <code>getspnam</code> → <code>EACCES</code>: bob не прочтёт хеши</div>
+<div><span class="co-ball">1</span> верный пароль: хеш введённого пароля пользователя совпадает с хранимым</div>
+<div><span class="co-ball">2</span> неверный пароль: вычисленный хеш не совпал с хранимым</div>
+<div><span class="co-ball">3</span> пользователь mallory не найден (отказ на этапе идентификации)</div>
+<div><span class="co-ball">4</span> <code>getspnam</code> → <code>EACCES</code>: пользователь bob не имеет доступ к <code>/etc/shadow</code></div>
 <div><span class="co-ball">5</span> причина – права <code>640 root:shadow</code></div>
 </div>
 </div>
@@ -4282,16 +4411,16 @@ sp_pwdp. Справа аутентификация: getpass запрашивае
 <v-click>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
-<b>Вывод:</b> проверка пароля – привилегированная операция: она требует чтения
-<code>/etc/shadow</code>. Непривилегированным программам тот же результат даёт
-только setuid-посредник (<code>su</code>, <code>passwd</code>) – или сервис
+<b>Вывод:</b> проверка пароля – привилегированная операция, т.к. она требует чтения
+<code>/etc/shadow</code>. Непривилегированным программам требуются 
+либо setuid-посредники (<code>su</code>, <code>passwd</code>), либо сервис
 аутентификации, к которому мы придём в лекции 3.
 </div>
 
 </v-click>
 
 <SrcRef>
-См. <code>demos/11-password-auth.sh</code>. Пароль примера публичный: <code>Lab-Demo-42!</code>.
+См. <code>demos/11-password-auth.sh</code>. Пароль примера: <code>Lab-Demo-42!</code>.
 </SrcRef>
 
 <!--
@@ -4310,12 +4439,11 @@ sp_pwdp. Справа аутентификация: getpass запрашивае
 layout: section
 ---
 
-# 5. Идентификация и парольная аутентификация в приложениях
-## Программный интерфейс стандартной библиотеки C
+# 5. Идентификация и аутентификация в приложениях
 
 <SectionTOC prefix="5" :current="4" :items="[
   'Чтение учётных записей: passwd и group',
-  'Чтение теневого файла shadow',
+  'Чтение теневых файлов: shadow и gshadow',
   'Запрос и проверка пароля: getpass и crypt',
   'Примеры: утилиты login и passwd',
 ]" />
@@ -4324,50 +4452,60 @@ layout: section
 
 # `login`: поиск учётной записи пользователя
 
-Классическая реализация входа – `login` из пакета **shadow** (сборка без PAM):
-тот же API, что в демо 11, плюс обработка особых значений поля пароля.
+<div>
+
+Вход в систему выполняет утилита `login`: в Ubuntu 26.04 штатный `/usr/bin/login` собран
+из пакета **util-linux** (v2.41), где идентификация и аутентификация целиком делегированы
+подсистеме PAM (лекция 3) <br/>
+Классическую реализацию рассмотрим по  версии `login` из пакета **shadow** 4.17.4.
+
+</div>
 
 <div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-2 items-start">
 <div>
 
 <CodeSnippet src="snippets/login-user-lookup.c" title="src/login.c" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="1" :col="17" :span="27" :n="1" />
-  <TCallout :line="6" :col="25" :span="29" :n="2" />
-  <TCallout :line="13" :col="25" :rows="2" :span="33" :n="3" />
+  <TCallout :line="3" :col="17" :span="27" :n="1" />
+  <TCallout :line="5" :col="25" :rows="2" :span="21" :n="2" />
+  <TCallout :line="8" :col="25" :span="29" :n="3" />
+  <TCallout :line="15" :col="25" :rows="2" :span="33" :n="4" />
 </CodeSnippet>
 
 </div>
 <div>
 
 <div class="text-xs space-y-2">
-<div><span class="co-ball">1</span> Введённое имя превращается в запись
-<code>struct passwd</code>; <code>xgetpwnam</code> – обёртка shadow над
-<Man p="getpwnam(3)" />, копирующая запись из статического буфера. Нет записи –
-вход провален (но диалог продолжается, чтобы не раскрывать существование имён).</div>
-<div><span class="co-ball">2</span> Из записи берётся поле пароля – пока это
-«x» из <code>/etc/passwd</code>.</div>
-<div><span class="co-ball">3</span> Особые значения до всякой криптографии:
+<div><span class="co-ball">1</span> ищется соответствующая введённому имени пользователя запись 
+<code>struct passwd</code>; <code>xgetpwnam</code> – обёртка пакета shadow над
+<Man p="getpwnam(3)" />, копирующая структуру из статического буфера</div>
+<div><span class="co-ball">2</span> если запись отсутствует, в качестве результата аутентификации 
+будет возвращена ошибка, одноко <b>диалог продолжается и проверка пароля выполняется</b> – для 
+противодействия атакам типа перебора пользователей (<i>user enumeration</i> / <i>account discovery</i>, 
+<b>MITRE ATT&CK T1087</b>)</div>
+<div><span class="co-ball">3</span> поле пароля сохраняется (сейчас оно <i>дожно быть</i> равно 
+<code>&quot;x&quot;</code>)</div>
+<div><span class="co-ball">4</span> выполняется проверка особых значений:
 <code>!</code> – запись заблокирована (<code>passwd -l</code>, раздел 3.4),
-<code>*</code> – вход по паролю невозможен; сравнение хешей даже не начнётся.</div>
-</div>
-
-<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-Флаг <code>failed</code> выставляется молча: решение «пускать или нет» принимается
-<b>после</b> диалога, единообразно для всех причин отказа.
+<code>*</code> – вход по паролю невозможен; сравнение хешей даже не начнётся</div>
 </div>
 
 </div>
 </div>
 
 <div class="text-xs opacity-70 mt-2">
-shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/login.c#L847">src/login.c#L847</a>
+shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/login.c#L845">src/login.c#L845</a>
 (ветвь сборки без PAM).
 </div>
 
 <Refs ids="shadow-maint kerrisk-tlpi" />
 
 <!--
-От учебной программы – к настоящей. Показана ветвь login без PAM из shadow 4.17.4:
+От учебной программы – к настоящей. Сначала о выборе источника: штатный login Ubuntu
+26.04 собирается из util-linux, и там весь диалог аутентификации – вызовы PAM
+(login-utils/login.c включает security/pam_appl.h безусловно, ветви с crypt в коде
+нет), поэтому классическую последовательность разбираем по пакету shadow – его версия
+4.17.4 совпадает с установленной в Ubuntu (из него собран passwd). Показана ветвь
+login без PAM из shadow 4.17.4:
 исторически именно так входили в Unix-системы, и эта ветвь жива для систем без PAM.
 Последовательность в точности как в демо 11: имя → xgetpwnam (внутренняя обёртка
 getpwnam, копирующая запись – у библиотек статический буфер, а login обращается к базе
@@ -4380,7 +4518,7 @@ getpwnam, копирующая запись – у библиотек стати
 
 ---
 
-# `login`: от признака «x» к хешу из `shadow`
+# `login`: проверка введённого пароля
 
 <div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-1 items-start">
 <div>
@@ -4389,31 +4527,32 @@ getpwnam, копирующая запись – у библиотек стати
   <TCallout :line="1" :col="17" :span="47" :n="1" />
   <TCallout :line="2" :col="25" :span="28" :n="2" />
   <TCallout :line="4" :col="33" :span="28" :n="3" />
-  <TCallout :line="10" :col="17" :span="42" :n="4" />
+  <TCallout :line="10" :col="17" :span="40" :n="4" />
+  <TCallout :line="14" :col="17" :rows="2" :span="49" :n="5" />
 </CodeSnippet>
 
 </div>
 <div>
 
 <div class="text-xs space-y-2">
-<div><span class="co-ball">1</span> <code>SHADOW_PASSWD_STRING</code> – то самое
-<code>"x"</code>: хеш вынесен в теневой файл.</div>
+<div><span class="co-ball">1</span> если хеш пароля не хранится непосредственно 
+в <code>/etc/passwd</code>, выполняется чтение теневого файла паролей 
+(<code>SHADOW_PASSWD_STRING</code> – макроподстановка значения <code>"x"</code>)</div>
 <div><span class="co-ball">2</span> <code>xgetspnam</code> читает запись
 <code>struct spwd</code> – <code>login</code> работает с привилегиями root,
-доступ к <code>/etc/shadow</code> у него есть.</div>
-<div><span class="co-ball">3</span> Дальше сверяться будем с настоящим хешем
-<code>sp_pwdp</code> – ровно как подмена <code>pw_passwd</code> в демо 11.</div>
-<div><span class="co-ball">4</span> Вся криптография спрятана в одном вызове
-<code>pw_auth</code>: вернул 0 – подлинность подтверждена; иначе – журнал
-и общий флаг отказа.</div>
+<code>/etc/shadow</code> доступен на чтение</div>
+<div><span class="co-ball">3</span> сохраняется хеш из <code>sp_pwdp</code></div>
+<div><span class="co-ball">4</span> процедура проверки пароля вынесена в функцию
+<code>pw_auth</code></div>
+<div><span class="co-ball">5</span> неуспешная попытка входа в систему фиксируется в системном журнале</div>
+</div>
+
+</div>
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
 Неудача фиксируется в системном журнале (<code>SYSLOG</code>) – попытки подбора
 пароля оставляют след; к журналированию мы вернёмся в лекции об аудите.
-</div>
-
-</div>
 </div>
 
 <div class="text-xs opacity-70 mt-2">
@@ -4435,7 +4574,7 @@ shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/l
 
 ---
 
-# `pw_auth`: `getpass` → `crypt` → сравнение
+# `login`: функция `pw_auth`
 
 <div class="grid grid-cols-[1.12fr_1fr] gap-4 mt-1 items-start">
 <div>
@@ -4456,12 +4595,12 @@ shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/l
 </CodeSnippet>
 
 <div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">1</span> на вход – хеш (<code>cipher</code>) и имя</div>
-<div><span class="co-ball">2</span> запрос пароля (<code>agetpass</code> –
+<div><span class="co-ball">1</span> функция принимает на вход хеш (<code>cipher</code>) и имя пользователя</div>
+<div><span class="co-ball">2</span> запрашивается ввод пароля (<code>agetpass</code> –
 безопасная версия <Man p="getpass(3)" />)</div>
-<div><span class="co-ball">3</span> хеширование ввода по хранимому хешу…</div>
-<div><span class="co-ball">6</span> …внутри – тот самый <Man p="crypt(3)" /></div>
-<div><span class="co-ball">4</span> аутентификация – <code>strcmp</code></div>
+<div><span class="co-ball">3</span> введённый пароль хешируется…</div>
+<div><span class="co-ball">6</span> …с помощью той же функции <Man p="crypt(3)" /></div>
+<div><span class="co-ball">4</span> аутентификация – хеши сравниваются с помощью <code>strcmp</code></div>
 <div><span class="co-ball">5</span> открытый пароль стирается из памяти</div>
 </div>
 
@@ -4471,10 +4610,10 @@ shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/l
 <v-click>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
-<b>Вывод:</b> от демо на 60 строк до системного <code>login</code> –
-один алгоритм: <code>getpwnam → getspnam → getpass → crypt → strcmp</code>.
-В Ubuntu 26.04 штатный <code>/usr/bin/login</code> (util-linux) и сборка shadow
-с PAM делегируют этот шаг модулям PAM – устройство этого механизма разбирается в лекции 3.
+<b>Вывод:</b> реализуемый системной утилитой <code>login</code> алгоритм аналогичен демо 11: 
+<code>getpwnam → getspnam → getpass → crypt → strcmp</code>.
+В Ubuntu 26.04 штатный <code>/usr/bin/login</code> (пакет <b>util-linux</b>) и сборка из пакета <b>shadow</b>
+с PAM делегируют этот шаг модулям подсистемы PAM.
 </div>
 
 </v-click>
@@ -4504,8 +4643,15 @@ USE_PAM делает то же – классический путь, котор
 
 # `passwd`: полномочия задаёт реальный UID
 
-Второй пример – setuid-утилита `passwd` (пакет **shadow**): euid = 0 открывает ей
-`/etc/shadow` (раздел 2.4), а «кто вызвал и что ему можно» решает **реальный UID**.
+<div>
+
+setuid-утилита `passwd` (пакет **shadow** – из него собран `/usr/bin/passwd` в
+Ubuntu 26.04) используется для управления паролем. Так как эти
+операции подразумевают редактирование `/etc/shadow`,
+euid процесса должен быть 0, реальные же проверки доступа (кто запустил, 
+разрешена ли операция) выполняются на основе UID пользователя – **ruid** процесса.
+
+</div>
 
 <div class="grid grid-cols-[1.12fr_1fr] gap-4 mt-2 items-start">
 <div>
@@ -4520,17 +4666,19 @@ USE_PAM делает то же – классический путь, котор
 <div>
 
 <CodeSnippet src="snippets/myname-get_my_pwent.c" title="lib/myname.c" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="5" :col="9" :span="23" :n="4" />
+  <TCallout :line="4" :col="9" :rows="2" :span="29" :n="4" />
+  <TCallout :line="10" :col="25" :span="10" :n="4" />
   <TCallout :line="13" :col="9" :span="24" :n="5" />
 </CodeSnippet>
 
 <div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">1</span> «я root» – это <b>реальный</b> UID 0:
-euid из-за setuid-бита всегда 0</div>
-<div><span class="co-ball">2</span> своя запись – через <code>get_my_pwent</code>;
-имя из аргумента берётся лишь как явная цель</div>
-<div><span class="co-ball">4</span> имя от <code>getlogin()</code> принимается,
-только если его запись сверилась с ruid; <span class="co-ball">5</span> иначе –
+<div><span class="co-ball">1</span> флаг <code>amroot</code> выставляется только если <b>реальный</b> UID = 0 – 
+утилиту запустил root (euid из-за setuid-бита всегда 0)</div>
+<div><span class="co-ball">2</span> функция <code>get_my_pwent</code> используется для 
+чтения <code>struct spwd</code> <b>реального пользователя</b></div>
+<div><span class="co-ball">4</span> имя пользователя от <code>getlogin()</code> (введённое в качестве аргумента 
+командной строки при запуске утилиты) используется,
+только если его запись совпала с ruid; <span class="co-ball">5</span> иначе –
 прямо <code>getpwuid(getuid())</code></div>
 <div><span class="co-ball">3</span> не-root может работать <b>только со своей</b>
 записью: <code>pw_uid</code> цели сравнивается с реальным UID</div>
@@ -4547,7 +4695,9 @@ shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/p
 <Refs ids="shadow-maint man-passwd1" />
 
 <!--
-Второй пример построен на другой стороне той же механики. login запускается от root и
+Второй пример построен на другой стороне той же механики. Показанный код полномочий –
+общая часть обеих сборок passwd (с PAM и без неё), то есть он выполняется и в штатном
+passwd Ubuntu 26.04. login запускается от root и
 понижает привилегии; passwd – наоборот, запускается обычным пользователем, а привилегии
 получает через setuid-бит (демо 03). Отсюда главный вопрос утилиты – не «есть ли у меня
 права» (есть: euid = 0), а «кто меня запустил и на что он уполномочен». Ответ даёт
@@ -4567,39 +4717,38 @@ setuid-программы: полномочия выводятся из ruid, а
 <div class="grid grid-cols-[1.08fr_1fr] gap-4 mt-1 items-start">
 <div>
 
+<CodeSnippet src="snippets/passwd-pw_status.c" title="src/passwd.c · pw_status" tag="shadow 4.17.4" fontSize="0.5rem">
+  <TCallout :line="3" :col="9" :span="35" :n="3" />
+</CodeSnippet>
+
 <CodeSnippet src="snippets/passwd-print_status.c" title="src/passwd.c · print_status" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="7" :col="9" :span="35" :n="1" />
+  <TCallout :line="7" :col="9" :span="17" :n="1" />
   <TCallout :line="11" :col="32" :span="23" :n="2" />
 </CodeSnippet>
+
+</div>
+<div>
 
 <CodeSnippet class="mt-2" src="snippets/passwd-lock.c" title="src/passwd.c · update_crypt_pw" tag="shadow 4.17.4" fontSize="0.5rem">
   <TCallout :line="3" :col="9" :span="25" :n="4" />
   <TCallout :line="6" :col="17" :span="29" :n="5" />
 </CodeSnippet>
 
-</div>
-<div>
-
-<CodeSnippet src="snippets/passwd-pw_status.c" title="src/passwd.c · pw_status" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="3" :col="9" :span="35" :n="3" />
-</CodeSnippet>
-
 <div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">1</span> <code>-S</code> – это просто чтение
-<code>struct spwd</code> (раздел 5.2) и печать его полей: статус, дата смены,
-min/max/warn/inact – формат из демо 06;</div>
-<div><span class="co-ball">2</span> <span class="co-ball">3</span> буква статуса
-выводится из первого символа хеша: <code>!</code>/<code>*</code> → <code>L</code>,
+<div><span class="co-ball">1</span> команда просмотра статуса <code>-S</code>: выполняется чтение
+<code>struct spwd</code> (раздел 5.2) и печать его полей (статус, дата смены,
+<code>min</code>/<code>max</code>/<code>warn</code>/<code>inact</code>)</div>
+<div><span class="co-ball">2</span> <span class="co-ball">3</span> маркер статуса
+выводится из первого символа хеша: <br/><code>!</code>/<code>*</code> → <code>L</code>,
 пустое поле → <code>NP</code>, иначе <code>P</code>;</div>
-<div><span class="co-ball">4</span> <span class="co-ball">5</span> блокировка
-<code>-l</code> – <b>не криптография</b>: к хешу спереди дописывается
-<code>!</code>, и он перестаёт быть корректным хешем.</div>
+<div><span class="co-ball">4</span> <span class="co-ball">5</span> команда блокировки
+<code>-l</code>: к строке спереди дописывается
+<code>!</code>, и она перестаёт быть корректным хешем</div>
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-Круг замкнулся: именно этот <code>!</code> проверяет <code>login</code>
-(<code>'!' == user_passwd[0]</code>) и показывало демо 06 (раздел 3.4);
-разблокировка <code>-u</code> просто убирает первый символ.
+Именно наличие символа <code>!</code> проверяет утилита <code>login</code> <br/>
+(<code>'!' == user_passwd[0]</code>); разблокировка <code>-u</code> просто убирает первый символ.
 </div>
 
 </div>
@@ -4635,17 +4784,16 @@ pw_status от одного-единственного аргумента, ст�
 <div>
 
 <CodeSnippet src="snippets/passwd-old-verify.c" title="src/passwd.c · new_password" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="3" :col="9" :span="43" :n="1" />
+  <TCallout :line="3" :col="9" :span="42" :n="1" />
   <TCallout :line="4" :col="17" :span="39" :n="2" />
-  <TCallout :line="6" :col="17" :span="42" :n="3" />
-  <TCallout :line="10" :col="25" :span="17" :n="4" />
+  <TCallout :line="9" :col="17" :span="42" :n="3" />
+  <TCallout :line="14" :col="25" :span="17" :n="4" />
 </CodeSnippet>
 
 <div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">1</span> старый пароль спрашивают только у <b>не-root</b>:
-администратору достаточно полномочий ruid = 0</div>
+<div><span class="co-ball">1</span> старый пароль запрашивается только для <b>не-root</b></div>
 <div><span class="co-ball">2</span> <span class="co-ball">3</span> проверка старого
-пароля – знакомое повторное хеширование по хранимому хешу</div>
+пароля – повторное хеширование по хранимому хешу</div>
 <div><span class="co-ball">4</span> <code>sleep(1)</code> при неверном пароле –
 торможение перебора</div>
 </div>
@@ -4664,11 +4812,12 @@ pw_status от одного-единственного аргумента, ст�
 </CodeSnippet>
 
 <div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">5</span> <span class="co-ball">6</span> соль – <b>заново</b>,
-по <code>ENCRYPT_METHOD</code> из <code>login.defs</code> (раздел 3.3)</div>
+<div><span class="co-ball">5</span> <span class="co-ball">6</span> хеширование нового пароля с заново 
+сгенерированной солью</div>
 <div><span class="co-ball">7</span> новый хеш записывается в поле
-<code>sp_pwdp</code> копии теневой записи; <span class="co-ball">8</span> дата смены
-<code>sp_lstchg</code> – «сегодня» в днях от эпохи (раздел 3.4)</div>
+<code>sp_pwdp</code> копии теневой записи</div>
+<div><span class="co-ball">8</span> дата смены
+<code>sp_lstchg</code> – «сегодня» в днях от эпохи</div>
 </div>
 
 </div>
@@ -4680,6 +4829,7 @@ pw_status от одного-единственного аргумента, ст�
 <b>Итог раздела:</b> демо 11, <code>login</code> и <code>passwd</code> собраны из одних
 вызовов <code>getpw*</code>/<code>getsp*</code>, <code>getpass</code>, <code>crypt</code>:
 чтение – сравнение хешей, запись – новая соль и отметка времени, полномочия – реальный UID.
+В сборке с PAM (пакет Ubuntu) эту фазу выполняет <code>pam_chauthtok</code> (лекция 3).
 </div>
 
 </v-click>
@@ -4703,9 +4853,12 @@ shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/p
 sp_pwdp (через тот же update_crypt_pw, что обслуживает -l/-u/-d) и ставит sp_lstchg =
 сегодня (gettime()/DAY) – от этой отметки отсчитывается вся политика устаревания
 chage. Поучительно, что смена пароля не «обновляет» старый хеш, а строит независимый
-новый: прежняя соль нужна только для проверки старого пароля. Итоговый слайд раздела:
-один API – три программы; чтение = сравнение хешей, запись = новая соль + отметка
-времени, полномочия = реальный UID.
+новый: прежняя соль нужна только для проверки старого пароля. Важная оговорка про
+Ubuntu: его passwd собран с USE_PAM, и интерактивную смену там выполняет
+pam_chauthtok (в итоге – модуль pam_unix); new_password остаётся в ветви без PAM,
+а проверки полномочий и операции -S/-l/-u общие для обеих сборок. Итоговый слайд
+раздела: один API – три программы; чтение = сравнение хешей, запись = новая соль +
+отметка времени, полномочия = реальный UID.
 -->
 
 ---

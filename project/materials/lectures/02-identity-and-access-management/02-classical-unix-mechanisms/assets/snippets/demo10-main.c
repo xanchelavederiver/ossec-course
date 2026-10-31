@@ -14,3 +14,5 @@ int main(void)
         putchar('\n');
     }
     endpwent();                           /* закрыть /etc/passwd          */
+
+    printf("\n%-16s %5s  %s\n", "GROUP", "GID", "MEMBERS");

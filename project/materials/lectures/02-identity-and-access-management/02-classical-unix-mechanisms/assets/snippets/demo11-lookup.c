@@ -1,4 +1,7 @@
-@@ 25
+@@ 22
+        return 2;
+    }
+
     pwd = getpwnam(argv[1]);              /* идентификация: запись passwd */
     if (pwd == NULL) {
         fprintf(stderr, "no such user: %s\n", argv[1]);

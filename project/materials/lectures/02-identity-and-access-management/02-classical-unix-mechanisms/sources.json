@@ -57,7 +57,7 @@
   { "id": "man-getspnam", "text": "getspnam(3), getspent(3) и семейство функций доступа к /etc/shadow – Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/getspnam.3.html" },
   { "id": "man-getpass", "text": "getpass(3) – Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/getpass.3.html" },
   { "id": "man-crypt3", "text": "crypt(3), crypt_r(3) – библиотека libxcrypt, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/crypt.3.html" },
-  { "id": "glibc-source", "text": "The GNU C Library (glibc), версия 2.43: исходный код (nss/pwd.h, nss/grp.h, nss/shadow.h, posix/unistd.h).", "url": "https://sourceware.org/git/?p=glibc.git;a=tree;hb=glibc-2.43" },
+  { "id": "glibc-source", "text": "The GNU C Library (glibc), версия 2.43: исходный код (nss/pwd.h, nss/grp.h, nss/shadow.h, nss/gshadow.h, posix/unistd.h).", "url": "https://sourceware.org/git/?p=glibc.git;a=tree;hb=glibc-2.43" },
   { "id": "libxcrypt-source", "text": "libxcrypt v4.5.1: реализация crypt(3) в современных дистрибутивах Linux (lib/crypt.h.in).", "url": "https://github.com/besser82/libxcrypt/tree/v4.5.1" },
   { "id": "util-linux-login", "text": "util-linux v2.41.3: login-utils/login.c – источник /usr/bin/login в Ubuntu 26.04 (аутентификация через PAM).", "url": "https://github.com/util-linux/util-linux/blob/v2.41.3/login-utils/login.c" },
   { "id": "man-nsswitch", "text": "nsswitch.conf(5) – Name Service Switch: базы данных, источники, коды состояния и действия. Linux man-pages.", "url": "https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html" },
@@ -74,5 +74,7 @@
   { "id": "freeipa", "text": "FreeIPA: открытая система управления идентификацией (389 Directory Server + MIT Kerberos + DNS + CA). Документация проекта.", "url": "https://www.freeipa.org/" },
   { "id": "ms-adds", "text": "Active Directory Domain Services Overview. – Microsoft Learn.", "url": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview" },
   { "id": "qualys-ghost", "text": "Qualys Security Advisory. GHOST: glibc gethostbyname buffer overflow (CVE-2015-0235), 27.01.2015.", "url": "https://www.qualys.com/2015/01/27/cve-2015-0235/GHOST-CVE-2015-0235.txt" },
-  { "id": "google-cve-2015-7547", "text": "Serna F. J., Stadmeyer K. CVE-2015-7547: glibc getaddrinfo stack-based buffer overflow. – Google Security Blog, 16.02.2016.", "url": "https://security.googleblog.com/2016/02/cve-2015-7547-glibc-getaddrinfo-stack.html" }
+  { "id": "google-cve-2015-7547", "text": "Serna F. J., Stadmeyer K. CVE-2015-7547: glibc getaddrinfo stack-based buffer overflow. – Google Security Blog, 16.02.2016.", "url": "https://security.googleblog.com/2016/02/cve-2015-7547-glibc-getaddrinfo-stack.html" },
+  { "id": "man-readpassphrase", "text": "readpassphrase(3bsd) – libbsd, Debian manpages.", "url": "https://manpages.debian.org/stable/libbsd-dev/readpassphrase.3bsd.en.html" },
+  { "id": "libbsd-source", "text": "libbsd 0.12.2: переносимые функции BSD для Linux (include/bsd/readpassphrase.h).", "url": "https://gitlab.freedesktop.org/libbsd/libbsd" }
 ]
