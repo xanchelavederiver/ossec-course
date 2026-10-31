@@ -4523,53 +4523,68 @@ getpwnam, копирующая запись – у библиотек стати
 <div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<CodeSnippet src="snippets/login-shadow-auth.c" title="src/login.c" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="1" :col="17" :span="47" :n="1" />
-  <TCallout :line="2" :col="25" :span="28" :n="2" />
-  <TCallout :line="4" :col="33" :span="28" :n="3" />
-  <TCallout :line="10" :col="17" :span="40" :n="4" />
-  <TCallout :line="14" :col="17" :rows="2" :span="49" :n="5" />
+<CodeSnippet src="snippets/login-shadow-auth.c" title="src/login.c" tag="shadow 4.17.4" fontSize="0.42rem">
+  <TCallout :line="6" :col="25" :span="68" :rows="10" :n="1" />
+  <TCallout :line="18" :col="17" :span="47" :n="2" />
+  <TCallout :line="19" :col="25" :span="28" :n="3" />
+  <TCallout :line="21" :col="33" :span="28" :n="4" />
+  <TCallout :line="27" :col="17" :span="40" :n="5" />
+  <TCallout :line="31" :col="17" :rows="2" :span="49" :n="6" />
 </CodeSnippet>
 
 </div>
 <div>
 
 <div class="text-xs space-y-2">
-<div><span class="co-ball">1</span> если хеш пароля не хранится непосредственно 
-в <code>/etc/passwd</code>, выполняется чтение теневого файла паролей 
-(<code>SHADOW_PASSWD_STRING</code> – макроподстановка значения <code>"x"</code>)</div>
-<div><span class="co-ball">2</span> <code>xgetspnam</code> читает запись
-<code>struct spwd</code> – <code>login</code> работает с привилегиями root,
-<code>/etc/shadow</code> доступен на чтение</div>
-<div><span class="co-ball">3</span> сохраняется хеш из <code>sp_pwdp</code></div>
-<div><span class="co-ball">4</span> процедура проверки пароля вынесена в функцию
+<div><span class="co-ball">1</span> пустая строка в поле пароля означает вход
+<b>без проверки</b>: <code>pw_auth</code> при пустом хеше сразу возвращает успех,
+не запрашивая пароль, – введённая пользователем строка роли не играет. Такой вход
+ограничивается заранее: при <code>PREVENT_NO_AUTH</code> = <code>yes</code>
+он запрещён всем, при значении по умолчанию <code>superuser</code> – только root</div>
+<div><span class="co-ball">2</span> если хеш пароля не хранится в <code>/etc/passwd</code>
+(в поле – значение <code>&quot;x&quot;</code>, макрос <code>SHADOW_PASSWD_STRING</code>),
+читается теневой файл паролей</div>
+<div><span class="co-ball">3</span> <code>xgetspnam</code> читает запись
+<code>struct spwd</code>: <code>login</code> работает с привилегиями root,
+<code>/etc/shadow</code> доступен ему на чтение</div>
+<div><span class="co-ball">4</span> сохраняется хеш из <code>sp_pwdp</code></div>
+<div><span class="co-ball">5</span> процедура проверки пароля вынесена в функцию
 <code>pw_auth</code></div>
-<div><span class="co-ball">5</span> неуспешная попытка входа в систему фиксируется в системном журнале</div>
+<div><span class="co-ball">6</span> неуспешная попытка входа в систему фиксируется в системном журнале</div>
 </div>
 
 </div>
 </div>
 
-<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+<div class="mt-1 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
 Неудача фиксируется в системном журнале (<code>SYSLOG</code>) – попытки подбора
 пароля оставляют след; к журналированию мы вернёмся в лекции об аудите.
 </div>
 
-<div class="text-xs opacity-70 mt-2">
-shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/login.c#L879">src/login.c#L879</a>.
+<div class="text-xs opacity-70 mt-1">
+shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/login.c#L859">src/login.c#L859</a> ·
+<a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/login.c#L902">#L902</a>.
 </div>
 
 <Refs ids="shadow-maint" />
 
 <!--
-Второй фрагмент login.c: переход от passwd к shadow, дословно повторяющий демо 11,
-но с production-деталями. Если в поле пароля «x» (константа SHADOW_PASSWD_STRING) –
-читаем теневую запись xgetspnam и далее работаем с sp_pwdp; login запущен с
-привилегиями root, так что EACCES ему не грозит – ещё одна иллюстрация тезиса
-«проверка пароля привилегированна». Отсутствие теневой записи при «x» в passwd – само
-по себе аномалия, и она уходит в журнал. Сам акт проверки инкапсулирован в pw_auth:
-нулевой результат – успех; ненулевой – запись в syslog о неверном пароле (след для
-аудита и fail2ban-подобных средств) и установка общего флага failed.
+Фрагмент начинается с повторения строк 859–862 (проверка «!»/«*» с предыдущего
+слайда) – так видно, что ветвь else продолжается: дальше в ней обрабатывается пустое
+поле пароля. Пустой хеш для pw_auth – немедленный успех без запроса пароля
+(комментарий в pwauth.c честно замечает: пользователь всё равно мог бы просто нажать
+Enter, так что введённая строка ни на что не влияет), поэтому login ограничивает
+беспарольный вход заранее – параметром PREVENT_NO_AUTH из login.defs: yes – запрещён
+всем, superuser (значение по умолчанию, подставляется при отсутствии параметра) –
+запрещён только для root; запрет реализуется установкой failed = true, диалог при этом
+продолжается. Далее переход от passwd к shadow, дословно повторяющий демо 11, но с
+production-деталями. Если в поле пароля «x» (константа SHADOW_PASSWD_STRING) – читаем
+теневую запись xgetspnam и далее работаем с sp_pwdp; login запущен с привилегиями
+root, так что EACCES ему не грозит – ещё одна иллюстрация тезиса «проверка пароля
+привилегированна». Отсутствие теневой записи при «x» в passwd – само по себе аномалия,
+и она уходит в журнал. Сам акт проверки инкапсулирован в pw_auth: нулевой результат –
+успех; ненулевой – запись в syslog о неверном пароле (след для аудита и
+fail2ban-подобных средств) и установка общего флага failed.
 -->
 
 ---
@@ -4659,8 +4674,17 @@ euid процесса должен быть 0, реальные же прове�
 <CodeSnippet src="snippets/passwd-target.c" title="src/passwd.c · main" tag="shadow 4.17.4" fontSize="0.5rem">
   <TCallout :line="1" :col="9" :span="26" :n="1" />
   <TCallout :line="3" :col="9" :span="21" :n="2" />
-  <TCallout :line="17" :col="9" :span="44" :n="3" />
+  <TCallout :line="11" :col="9" :span="44" :n="3" />
 </CodeSnippet>
+
+<div class="mt-2 text-xs space-y-1">
+<div><span class="co-ball">1</span> флаг <code>amroot</code> выставляется только если <b>реальный</b> UID = 0 – 
+утилиту запустил root (euid из-за setuid-бита всегда 0)</div>
+<div><span class="co-ball">2</span> функция <code>get_my_pwent</code> используется для 
+чтения записи <code>struct passwd</code> <b>реального пользователя</b></div>
+<div><span class="co-ball">3</span> не-root может работать <b>только со своей</b>
+записью: <code>pw_uid</code> цели сравнивается с реальным UID</div>
+</div>
 
 </div>
 <div>
@@ -4672,16 +4696,9 @@ euid процесса должен быть 0, реальные же прове�
 </CodeSnippet>
 
 <div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">1</span> флаг <code>amroot</code> выставляется только если <b>реальный</b> UID = 0 – 
-утилиту запустил root (euid из-за setuid-бита всегда 0)</div>
-<div><span class="co-ball">2</span> функция <code>get_my_pwent</code> используется для 
-чтения <code>struct spwd</code> <b>реального пользователя</b></div>
-<div><span class="co-ball">4</span> имя пользователя от <code>getlogin()</code> (введённое в качестве аргумента 
-командной строки при запуске утилиты) используется,
-только если его запись совпала с ruid; <span class="co-ball">5</span> иначе –
-прямо <code>getpwuid(getuid())</code></div>
-<div><span class="co-ball">3</span> не-root может работать <b>только со своей</b>
-записью: <code>pw_uid</code> цели сравнивается с реальным UID</div>
+<div><span class="co-ball">4</span> полученное от <code>getlogin()</code> имя пользователя
+используется, только если его запись совпала с ruid</div>
+<div><span class="co-ball">5</span> иначе – напрямую с помощью <code>getpwuid(getuid())</code></div>
 </div>
 
 </div>
@@ -4704,7 +4721,9 @@ passwd Ubuntu 26.04. login запускается от root и
 реальный UID, который setuid-бит не меняет (раздел 2.4): amroot – это getuid() == 0,
 а не geteuid(); собственная запись ищется get_my_pwent – getlogin() с контрольной
 сверкой pw_uid == ruid (одно имя может делить UID), иначе прямое getpwuid(getuid()).
-Финальная проверка полномочий симметрична: если цель – чужая запись (pw_uid != getuid())
+Имя целевой записи (name) при этом берётся из аргумента командной строки, а при его
+отсутствии – из собственной записи (этот фрагмент опущен на слайде). Финальная
+проверка полномочий симметрична: если цель – чужая запись (pw_uid != getuid())
 и вызвавший не root, утилита завершается. Это образцовая дисциплина для любой
 setuid-программы: полномочия выводятся из ruid, а euid используется лишь как ключ к
 файлам.
@@ -4780,59 +4799,52 @@ pw_status от одного-единственного аргумента, ст�
 
 # `passwd`: смена пароля и новый хеш
 
-<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-1 items-start">
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-1">
 <div>
 
 <CodeSnippet src="snippets/passwd-old-verify.c" title="src/passwd.c · new_password" tag="shadow 4.17.4" fontSize="0.5rem">
   <TCallout :line="3" :col="9" :span="42" :n="1" />
   <TCallout :line="4" :col="17" :span="39" :n="2" />
-  <TCallout :line="9" :col="17" :span="42" :n="3" />
-  <TCallout :line="14" :col="25" :span="17" :n="4" />
+  <TCallout :line="9" :col="17" :span="42" :n="2" />
+  <TCallout :line="14" :col="25" :span="17" :n="3" />
 </CodeSnippet>
 
-<div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">1</span> старый пароль запрашивается только для <b>не-root</b></div>
-<div><span class="co-ball">2</span> <span class="co-ball">3</span> проверка старого
-пароля – повторное хеширование по хранимому хешу</div>
-<div><span class="co-ball">4</span> <code>sleep(1)</code> при неверном пароле –
-торможение перебора</div>
 </div>
-
-</div>
-<div>
+<div class="flex flex-col justify-between">
 
 <CodeSnippet src="snippets/passwd-new-hash.c" title="src/passwd.c · new_password" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="4" :col="9" :span="36" :n="5" />
-  <TCallout :line="5" :col="9" :span="29" :n="6" />
+  <TCallout :line="4" :col="9" :rows="2" :span="36" :n="4" />
 </CodeSnippet>
 
-<CodeSnippet class="mt-2" src="snippets/passwd-update_shadow.c" title="src/passwd.c · update_shadow" tag="shadow 4.17.4" fontSize="0.5rem">
-  <TCallout :line="7" :col="9" :span="46" :n="7" />
-  <TCallout :line="10" :col="25" :span="34" :n="8" />
+<CodeSnippet src="snippets/passwd-update_shadow.c" title="src/passwd.c · update_shadow" tag="shadow 4.17.4" fontSize="0.5rem">
+  <TCallout :line="3" :col="9" :span="46" :n="5" />
+  <TCallout :line="6" :col="25" :span="34" :n="6" />
 </CodeSnippet>
 
-<div class="mt-2 text-xs space-y-1">
-<div><span class="co-ball">5</span> <span class="co-ball">6</span> хеширование нового пароля с заново 
+</div>
+</div>
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-1 text-xs">
+<div class="space-y-1">
+<div><span class="co-ball">1</span> старый пароль запрашивается только для <b>не-root</b></div>
+<div><span class="co-ball">2</span> проверка старого
+пароля – повторное хеширование по хранимому хешу</div>
+<div><span class="co-ball">3</span> <code>sleep(1)</code> при неверном пароле –
+торможение перебора</div>
+</div>
+<div class="space-y-1">
+<div><span class="co-ball">4</span> хеширование нового пароля с заново 
 сгенерированной солью</div>
-<div><span class="co-ball">7</span> новый хеш записывается в поле
+<div><span class="co-ball">5</span> новый хеш записывается в поле
 <code>sp_pwdp</code> копии теневой записи</div>
-<div><span class="co-ball">8</span> дата смены
+<div><span class="co-ball">6</span> дата смены
 <code>sp_lstchg</code> – «сегодня» в днях от эпохи</div>
 </div>
-
-</div>
 </div>
 
-<v-click>
-
-<div class="mt-1 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
-<b>Итог раздела:</b> демо 11, <code>login</code> и <code>passwd</code> собраны из одних
-вызовов <code>getpw*</code>/<code>getsp*</code>, <code>getpass</code>, <code>crypt</code>:
-чтение – сравнение хешей, запись – новая соль и отметка времени, полномочия – реальный UID.
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
 В сборке с PAM (пакет Ubuntu) эту фазу выполняет <code>pam_chauthtok</code> (лекция 3).
 </div>
-
-</v-click>
 
 <div class="text-xs opacity-70 mt-1">
 shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/passwd.c#L197">src/passwd.c#L197</a> ·
@@ -4849,16 +4861,17 @@ shadow 4.17.4: <a href="https://github.com/shadow-maint/shadow/blob/4.17.4/src/p
 установлены по ruid. Деталь обороны: при несовпадении – sleep(1), секунда задержки
 обесценивает онлайн-перебор. Фаза записи: для нового пароля соль генерируется заново
 (crypt_make_salt читает ENCRYPT_METHOD и параметры из login.defs – раздел 3.3), новый
-хеш кладётся в crypt_passwd, затем update_shadow дублирует теневую запись, подменяет
-sp_pwdp (через тот же update_crypt_pw, что обслуживает -l/-u/-d) и ставит sp_lstchg =
-сегодня (gettime()/DAY) – от этой отметки отсчитывается вся политика устаревания
-chage. Поучительно, что смена пароля не «обновляет» старый хеш, а строит независимый
-новый: прежняя соль нужна только для проверки старого пароля. Важная оговорка про
-Ubuntu: его passwd собран с USE_PAM, и интерактивную смену там выполняет
-pam_chauthtok (в итоге – модуль pam_unix); new_password остаётся в ветви без PAM,
-а проверки полномочий и операции -S/-l/-u общие для обеих сборок. Итоговый слайд
-раздела: один API – три программы; чтение = сравнение хешей, запись = новая соль +
-отметка времени, полномочия = реальный UID.
+хеш кладётся в crypt_passwd, затем update_shadow дублирует теневую запись (__spw_dup –
+на слайде строка опущена), подменяет sp_pwdp (через тот же update_crypt_pw, что
+обслуживает -l/-u/-d) и ставит sp_lstchg = сегодня (gettime()/DAY) – от этой отметки
+отсчитывается вся политика устаревания chage. Поучительно, что смена пароля не
+«обновляет» старый хеш, а строит независимый новый: прежняя соль нужна только для
+проверки старого пароля. Важная оговорка про Ubuntu (заметка внизу слайда): его passwd
+собран с USE_PAM, и интерактивную смену там выполняет pam_chauthtok (в итоге – модуль
+pam_unix); new_password остаётся в ветви без PAM, а проверки полномочий и операции
+-S/-l/-u общие для обеих сборок. Устно подытожить раздел: один API – три программы;
+чтение = сравнение хешей, запись = новая соль + отметка времени, полномочия = реальный
+UID.
 -->
 
 ---

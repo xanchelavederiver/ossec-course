@@ -4,12 +4,6 @@
 	pw = get_my_pwent ();
 @@ 913
 	myname = xstrdup (pw->pw_name);
-	if (optind < argc) {
-@@ 919
-		name = argv[optind];
-	} else {
-		name = myname;
-	}
 @@ 1007
 	/*
 	 * If the UID of the user does not match the current real UID,
