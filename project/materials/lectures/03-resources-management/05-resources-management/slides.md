@@ -1213,9 +1213,9 @@ resource busy» при наличии процесса и успех после 
 </div>
 
 <div class="mt-3 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-Запись `PID` любого потока в `cgroup.procs` переносит <b>все</b> потоки
+Запись <code>PID</code> любого потока в <code>cgroup.procs</code> переносит <b>все</b> потоки
 процесса; распределение отдельных потоков выполняется через
-`cgroup.threads` в потоковом поддереве.
+<code>cgroup.threads</code> в потоковом поддереве.
 </div>
 
 <Refs ids="kernel-cgroup-v2 kerrisk-cgroup-deep" />
