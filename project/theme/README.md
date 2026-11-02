@@ -76,8 +76,12 @@ on the wrapper).
 
 `global-bottom.vue` prints the slide number in the lower right corner of every
 slide. The references footer sits bottom-left (as in the dpo decks); Slidev's
-invisible hover nav controls, which would swallow clicks there, are lifted just
-above the footer line by a rule in `styles/index.css` — they still appear on
-hover, a touch higher.
+invisible hover nav controls, which would swallow clicks there, are moved to
+the upper right corner by a rule in `styles/index.css` — they still appear on
+hover only.
+
+`setup/shortcuts.ts` adds ЙЦУКЕН mirrors of Slidev's letter shortcuts, so they
+keep working when the Russian keyboard layout is active: `в` = `d` (dark),
+`щ` = `o` and `ё` = `` ` `` (overview), `п` = `g` (goto dialog).
 
 Each component's props are documented in its header comment in `components/`.

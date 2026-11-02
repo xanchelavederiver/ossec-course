@@ -512,9 +512,15 @@
   color: var(--ossec-muted);
 }
 /* Slidev's invisible hover nav controls own the bottom-left corner and would
- * swallow clicks on the [n] links; lift them just above the footer line
- * (they still appear on hover, a touch higher). */
-#app .absolute.bottom-0.left-0[class~='hover:opacity-100'] { bottom: 1.9rem; }
+ * swallow clicks on the [n] links; move the floating menu to the upper right
+ * corner, clear of the refs footer (bottom-left) and the slide number
+ * (bottom-right). It still appears on hover only. */
+#app .absolute.bottom-0.left-0[class~='hover:opacity-100'] {
+  bottom: auto;
+  top: 0;
+  left: auto;
+  right: 0;
+}
 .slide-refs .sr-label { margin-right: 0.2em; }
 .slide-refs .sr-link {
   margin-left: 0.3em;
