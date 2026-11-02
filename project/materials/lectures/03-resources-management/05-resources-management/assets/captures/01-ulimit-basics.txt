@@ -28,8 +28,8 @@ $ ulimit -Hn          # потолок (жёсткий) лимит
 $ ulimit -Sn 512      # понизить мягкий лимит разрешено
 $ ulimit -Sn
 512
-$ ulimit -Sn 1048576  # поднять мягкий выше жёсткого — отказ
+$ ulimit -Sn 1048576  # поднять мягкий выше жёсткого – отказ
 bash: ulimit: open files: cannot modify limit: Invalid argument
 $ ulimit -Hn 4096     # понизить жёсткий лимит разрешено
-$ ulimit -Hn 1048576  # поднять жёсткий — только привилегированному процессу
+$ ulimit -Hn 1048576  # поднять жёсткий – только привилегированному процессу
 bash: ulimit: open files: cannot modify limit: Operation not permitted

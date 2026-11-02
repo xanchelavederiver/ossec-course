@@ -555,6 +555,19 @@
 .attack-link:hover b { color: var(--ossec-accent); border-bottom-color: var(--ossec-accent); }
 
 /* ---------------------------------------------------------------------------
+ * Rfc / Cve: RFC and CVE mentions that link to the RFC Editor / CVE Program
+ * record, keeping the plain-text look of the mention (cf. Man above).
+ * ------------------------------------------------------------------------- */
+.rfc-link, .cve-link {
+  color: inherit !important;
+  border-bottom: 1px dotted var(--ossec-muted) !important;
+}
+.rfc-link:hover, .cve-link:hover {
+  color: var(--ossec-accent) !important;
+  border-bottom-color: var(--ossec-accent) !important;
+}
+
+/* ---------------------------------------------------------------------------
  * SectionTOC: subsection list on a section title slide; the upcoming
  * subsection is highlighted, the rest are greyed out.
  * ------------------------------------------------------------------------- */
@@ -656,3 +669,5 @@
 .t-table td { padding: 0.35em 0.7em; border: 1px solid var(--ossec-line); }
 .t-table tbody tr:nth-child(even) { background: var(--ossec-tint); }
 .t-table code { white-space: nowrap; }
+/* Inline code in the dark header row: the default light chip hid the text. */
+.t-table th code { background: rgba(255, 255, 255, 0.16); color: #fff; }

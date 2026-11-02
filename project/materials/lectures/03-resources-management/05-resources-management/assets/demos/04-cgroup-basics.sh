@@ -21,7 +21,7 @@ run cat "$CG/cgroup.procs"
 run cat "$CG/pids.current"
 run cat "/proc/$$/cgroup"
 
-# Лимит числа процессов в группе: четыре запускаются, пятый — отказ.
+# Лимит числа процессов в группе: четыре запускаются, пятый – отказ.
 echo 5 > "$CG/pids.max"
 run cat "$CG/pids.max"
 printf '\n$ for a in $(seq 1 5); do sleep 10 & done\n'

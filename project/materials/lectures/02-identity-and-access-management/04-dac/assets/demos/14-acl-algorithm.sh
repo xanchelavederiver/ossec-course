@@ -21,7 +21,7 @@ echo; echo '===== 1. Привилегированному процессу ну�
 as "$U1" 'cd demo14 && gcc -o 3 hello.c && ./3 && chmod ugo-x 3 && ls -l 3'
 tryrun "$D/3"
 as "$U1" 'cd demo14 && setfacl -m g:users:--x 3 && getfacl --omit-header 3 && ./3'
-tryrun "$D/3"   # root: исполнение возможно — x есть в одном из правил
+tryrun "$D/3"   # root: исполнение возможно – x есть в одном из правил
 
 echo; echo '===== 2. Владелец: ACL_USER_OBJ, маска не применяется ====='
 as "$U1" "cd demo14 && echo Hello > 4.txt && setfacl -m u:$U2:r 4.txt && chmod u-r 4.txt && ls -l 4.txt && getfacl --omit-header 4.txt && cat 4.txt"

@@ -8,7 +8,7 @@ need chattr lsattr
 cleanup() {
   chattr -a /var/log/auth.log 2>/dev/null
   sed -i '/^hehehe$/d' /var/log/auth.log 2>/dev/null
-  pkill -HUP rsyslogd 2>/dev/null   # журнал пересоздавался sed — переоткрыть
+  pkill -HUP rsyslogd 2>/dev/null   # журнал пересоздавался sed – переоткрыть
   rm -f /tmp/auth.log
 }
 

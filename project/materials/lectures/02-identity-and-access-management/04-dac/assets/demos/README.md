@@ -1,7 +1,7 @@
 # Демонстрации лекции 4
 
 Нумерованные сценарии повторяют демонстрации слайдов (номера совпадают с
-файлами в `../captures/`). Запуск — **только в одноразовой ВМ**
+файлами в `../captures/`). Запуск – **только в одноразовой ВМ**
 Ubuntu Server 26.04:
 
 ```console
@@ -9,16 +9,16 @@ sudo env OSSEC_DEMO_VM=1 bash 01-file-perms.sh
 ```
 
 Каждый сценарий сам создаёт одноразовых пользователей (`ossec-bob`,
-`ossec-alice`, `ossec-carol`, `ossec-dave`, в демо 14 — `ossec-johnny`) и
+`ossec-alice`, `ossec-carol`, `ossec-dave`, в демо 14 – `ossec-johnny`) и
 удаляет их при завершении; изменяемые системные файлы резервируются
 (`backup_file`/`restore_files` в `lib/common.sh`) и восстанавливаются даже
 при ошибке посередине. Ожидаемые отказы (`Permission denied`,
-`Operation not permitted`) — часть демонстраций: сценарий продолжает работу.
+`Operation not permitted`) – часть демонстраций: сценарий продолжает работу.
 
 Требования: базовая система + `gcc`, `acl`, `attr`, `libcap2-bin`,
-`e2fsprogs`, `xxd`; для 09 — работающие `rsyslog` и `openssh-server`;
-для 11 — возможность создавать loop-устройства. Исходные тексты программ
-(`userinfo.c`, `groupinfo.c`, `hello.c`, `file_reader.c`) — в `../src/`.
+`e2fsprogs`, `xxd`; для 09 – работающие `rsyslog` и `openssh-server`;
+для 11 – возможность создавать loop-устройства. Исходные тексты программ
+(`userinfo.c`, `groupinfo.c`, `hello.c`, `file_reader.c`) – в `../src/`.
 
 | Сценарий | Слайды | Что показывает |
 |---|---|---|
@@ -39,5 +39,5 @@ sudo env OSSEC_DEMO_VM=1 bash 01-file-perms.sh
 | `16-acl-default.sh` | раздел 7.4 | default ACL |
 
 Демонстрации 8–11 предполагают, что соответствующие пути лежат на ext4
-(в контейнере поверх overlayfs `chattr` и loop-устройства не работают —
+(в контейнере поверх overlayfs `chattr` и loop-устройства не работают –
 см. `../captures/README.md`).

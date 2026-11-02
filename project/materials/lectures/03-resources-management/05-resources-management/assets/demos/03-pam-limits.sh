@@ -28,7 +28,7 @@ mkdir -p /run/sshd
 SSHD_PID=$!
 sleep 1
 
-# Вход и проверка: файл 32 КБ создаётся, файл 2 МБ — нет.
+# Вход и проверка: файл 32 КБ создаётся, файл 2 МБ – нет.
 expect <<EOF
 set timeout 25
 spawn ssh -p 2222 -o StrictHostKeyChecking=no ${U2}@127.0.0.1

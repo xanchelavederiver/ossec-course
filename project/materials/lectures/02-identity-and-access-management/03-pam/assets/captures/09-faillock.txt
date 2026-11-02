@@ -13,7 +13,7 @@ auth    optional                        pam_faillock.so authsucc
 
 ===== Блокировка после пяти неудач =====
 
-$ su - bob -c id      # 5 попыток с неверным паролем — ответ одинаковый
+$ su - bob -c id      # 5 попыток с неверным паролем – ответ одинаковый
 Password:
 su: Permission denied
 $ su - bob -c id      # теперь с ВЕРНЫМ паролем

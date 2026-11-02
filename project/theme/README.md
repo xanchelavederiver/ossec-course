@@ -57,6 +57,11 @@ For a new visual identity, begin with the CSS variables in `styles/index.css`. K
 - **Man** — a man-page mention that links to man7.org:
   `<Man p="capabilities(7)" />`; `href` overrides the URL for pages hosted
   elsewhere (e.g. sudoers).
+- **Rfc** — an RFC mention that links to the RFC Editor:
+  `<Rfc n="4511" />`; `href` overrides the URL (e.g. OSF RFC 86.0).
+- **Cve** — a CVE identifier that links to the CVE Program record:
+  `<Cve c="CVE-2015-0235" />`; `href` overrides the URL (e.g. a vendor
+  advisory).
 - **SectionTOC** — subsection list on a section title slide; `current` is
   highlighted, the rest are greyed out. Repeat the slide before each
   subsection with `current` advanced.

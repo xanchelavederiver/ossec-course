@@ -1,5 +1,5 @@
 /*
- * pam_math — учебный PAM-модуль (лекция 3, раздел 8).
+ * pam_math – учебный PAM-модуль (лекция 3, раздел 8).
  *
  * «Аутентифицирует» пользователя арифметической задачей: модуль задаёт
  * пример a + b и сравнивает ответ. Реализует стек auth: обязательную
@@ -9,7 +9,7 @@
  * Установка: install -m 644 pam_math.so /usr/lib/x86_64-linux-gnu/security/
  * Пример правила:  auth  required  pam_math.so max=20
  *
- * ВНИМАНИЕ: модуль учебный; знание арифметики — не секрет, поэтому
+ * ВНИМАНИЕ: модуль учебный; знание арифметики – не секрет, поэтому
  * в реальных системах он может быть лишь ДОПОЛНИТЕЛЬНЫМ фактором.
  */
 #include <security/pam_modules.h>
@@ -50,7 +50,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
     b = (int) (random() % max);
 
     /* Вопрос пользователю через функцию диалога приложения:
-     * PAM_PROMPT_ECHO_ON — ввод отображается (это не пароль). */
+     * PAM_PROMPT_ECHO_ON – ввод отображается (это не пароль). */
     rc = pam_prompt(pamh, PAM_PROMPT_ECHO_ON, &resp,
                     "math for %s: %d + %d = ", user, a, b);
     if (rc != PAM_SUCCESS)
@@ -70,7 +70,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
 }
 
 /* Стек auth, вторая функция: установка «удостоверений» (групп и т. п.).
- * Модулю нечего устанавливать — сообщаем PAM_IGNORE. */
+ * Модулю нечего устанавливать – сообщаем PAM_IGNORE. */
 int pam_sm_setcred(pam_handle_t *pamh, int flags,
                    int argc, const char **argv)
 {

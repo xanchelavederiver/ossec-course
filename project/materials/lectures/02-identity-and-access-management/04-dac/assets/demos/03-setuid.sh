@@ -27,7 +27,7 @@ echo; echo '===== Бит s без права x владельца (S) ====='
 run chmod u-x "/home/$U1/userinfo"
 as "$U1" 'ls -l userinfo'
 as "$U2" "/home/$U1/userinfo"   # владелец запустить не может
-as "$U1" './userinfo'           # прочие — могут, euid = владелец
+as "$U1" './userinfo'           # прочие – могут, euid = владелец
 
 echo; echo '===== setuid на скрипте игнорируется ====='
 as "$U1" 'printf "#!/bin/bash\n\nid\n" > id.sh && chmod a+x id.sh && ./id.sh'

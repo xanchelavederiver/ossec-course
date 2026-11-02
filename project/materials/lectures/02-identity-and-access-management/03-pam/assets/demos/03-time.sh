@@ -12,7 +12,7 @@ new_user
 echo "$DEMO_USER:Winter#2026x" | chpasswd
 backup_file /etc/security/time.conf /etc/pam.d/sshd
 
-# services;ttys;users;times — "!Al0000-2400" means "never".
+# services;ttys;users;times – "!Al0000-2400" means "never".
 printf 'sshd;*;%s;!Al0000-2400\n' "$DEMO_USER" >> /etc/security/time.conf
 run tail -1 /etc/security/time.conf
 sed -i '/^@include common-account/i account  requisite    pam_time.so' /etc/pam.d/sshd

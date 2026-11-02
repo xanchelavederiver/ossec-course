@@ -1,7 +1,7 @@
 # Демонстрации лекции 5
 
 Нумерованные сценарии воспроизводят демонстрации слайдов (номера совпадают с
-файлами в `../captures/`). Запуск — **только в одноразовой ВМ** Ubuntu Server
+файлами в `../captures/`). Запуск – **только в одноразовой ВМ** Ubuntu Server
 26.04 или в привилегированном контейнере `ubuntu:26.04` с делегированным
 `cgroup2`:
 
@@ -14,7 +14,7 @@ sudo env OSSEC_DEMO_VM=1 bash 04-cgroup-basics.sh
 резервируются (`backup_file`/`restore_files` в `lib/common.sh`) и
 восстанавливаются даже при ошибке посередине. Группы управления создаются
 под `/sys/fs/cgroup/ossec-demo` и удаляются на выходе (`cg_cleanup`).
-Ожидаемые отказы (`EPERM`, `EMFILE`, `SIGXFSZ`, `Device or resource busy`) —
+Ожидаемые отказы (`EPERM`, `EMFILE`, `SIGXFSZ`, `Device or resource busy`) –
 часть демонстраций: сценарий продолжает работу.
 
 Требования: базовая система + `python3`, `stress-ng`, `sysstat` (`pidstat`),

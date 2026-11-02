@@ -15,7 +15,7 @@ mkdir -p "$B"; chown "$U1" "$B"
 echo; echo '===== Список по умолчанию создаётся вместе с обычным ====='
 as "$U1" "mkdir $B/d && setfacl -d -m u::rwx,g::wx,o::x $B/d && getfacl --omit-header $B/d"
 
-echo; echo '===== Создание файла: вместо umask — default-список ====='
+echo; echo '===== Создание файла: вместо umask – default-список ====='
 as "$U1" "umask 022; mkdir $B/no-acl $B/acl && umask && touch $B/no-acl/file && ls -l $B/no-acl/file"
 as "$U1" "setfacl -d -m u::rwx,g::wx,o::x $B/acl && getfacl -d --omit-header $B/acl"
 as "$U1" "umask 022; touch $B/acl/file && ls -l $B/acl/file && getfacl --omit-header $B/acl/file"

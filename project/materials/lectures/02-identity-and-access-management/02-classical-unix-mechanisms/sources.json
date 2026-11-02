@@ -76,5 +76,7 @@
   { "id": "qualys-ghost", "text": "Qualys Security Advisory. GHOST: glibc gethostbyname buffer overflow (CVE-2015-0235), 27.01.2015.", "url": "https://www.qualys.com/2015/01/27/cve-2015-0235/GHOST-CVE-2015-0235.txt" },
   { "id": "google-cve-2015-7547", "text": "Serna F. J., Stadmeyer K. CVE-2015-7547: glibc getaddrinfo stack-based buffer overflow. – Google Security Blog, 16.02.2016.", "url": "https://security.googleblog.com/2016/02/cve-2015-7547-glibc-getaddrinfo-stack.html" },
   { "id": "man-readpassphrase", "text": "readpassphrase(3bsd) – libbsd, Debian manpages.", "url": "https://manpages.debian.org/stable/libbsd-dev/readpassphrase.3bsd.en.html" },
-  { "id": "libbsd-source", "text": "libbsd 0.12.2: переносимые функции BSD для Linux (include/bsd/readpassphrase.h).", "url": "https://gitlab.freedesktop.org/libbsd/libbsd" }
+  { "id": "libbsd-source", "text": "libbsd 0.12.2: переносимые функции BSD для Linux (include/bsd/readpassphrase.h).", "url": "https://gitlab.freedesktop.org/libbsd/libbsd" },
+  { "id": "sudo-chroot", "text": "Sudo chroot Escape Vulnerability (CVE-2025-32463). Официальный бюллетень проекта sudo, 30.06.2025.", "url": "https://www.sudo.ws/security/advisories/chroot_bug/" },
+  { "id": "cert-kaminsky", "text": "CERT/CC Vulnerability Note VU#800113: Multiple DNS implementations vulnerable to cache poisoning (CVE-2008-1447), 08.07.2008.", "url": "https://www.kb.cert.org/vuls/id/800113" }
 ]
