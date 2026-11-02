@@ -43,13 +43,19 @@ shadow:         files sss
 
 ===== Файлы или каталог =====
 
+# grep -E '^(passwd|group):' /etc/nsswitch.conf
+passwd:         files sss
+group:          files sss
+
 # grep dave /etc/passwd; echo $?
 1
+# grep -E 'dave|developers' /etc/group; echo $?
+1
+
 # getent passwd bob
 bob:x:1001:1001::/home/bob:/bin/bash
 # getent passwd dave
 dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
-
 # getent -s files passwd dave; echo $?
 2
 # getent -s sss passwd dave

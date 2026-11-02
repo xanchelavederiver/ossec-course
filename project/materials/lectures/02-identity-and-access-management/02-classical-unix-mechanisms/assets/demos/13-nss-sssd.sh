@@ -108,7 +108,9 @@ set_db passwd 'files sss'; set_db group 'files sss'; set_db shadow 'files sss'
 run grep -E '^(passwd|group|shadow):' /etc/nsswitch.conf
 
 printf '\n### 2. One getpwnam interface, two sources\n'
+run grep -E '^(passwd|group):' /etc/nsswitch.conf
 run grep dave /etc/passwd || printf 'exit status: %s\n' "$?"
+run grep -E "dave|$G" /etc/group || printf 'exit status: %s\n' "$?"
 run getent passwd "$U1"
 run getent passwd dave
 run getent -s files passwd dave || printf 'exit status: %s\n' "$?"

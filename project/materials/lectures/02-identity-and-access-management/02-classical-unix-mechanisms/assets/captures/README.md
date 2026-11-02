@@ -130,7 +130,7 @@ GID 1010. Табуляция развёрнута (`expand -t 8`), иначе к
   конфигурация по умолчанию (**снята в чистом контейнере до установки sssd** –
   совпадает с заводской Ubuntu Server 26.04); имя в `/etc/hosts`
   (`192.0.2.80 intranet.example.test`, TEST-NET-1); имя только в DNS
-  (`example.org`, адреса из реального DNS на момент записи); имени нет нигде;
+  (`google.com`, адреса из реального DNS на момент записи); имени нет нигде;
   файловый источник недоступен (`chmod 000 /etc/hosts`, запросы от `bob`,
   `strace` ловит EACCES). Сценарий – `demos/12-nss-hosts.sh`.
 - `13-nss-sssd.txt` – демо 13 (тот же контейнер): slapd с суффиксом
@@ -139,7 +139,8 @@ GID 1010. Табуляция развёрнута (`expand -t 8`), иначе к
   (`id_provider = ldap`, без TLS – лабораторное упрощение; пакет sssd сам
   дописал `sss` в nsswitch.conf). Секции: каталог LDAP (`ldapsearch`);
   подключение sss (`sssd.conf` дословно + строки nsswitch); файлы или каталог
-  (`getent`/`getent -s`/`id`); ловушка `[!UNAVAIL=return]` (root/bob пропадают,
+  (политика `files sss` из nsswitch, `grep` подтверждает отсутствие `dave`
+  в локальных `/etc/passwd` и `/etc/group`, затем `getent`/`getent -s`/`id`); ловушка `[!UNAVAIL=return]` (root/bob пропадают,
   возвращаются после `pkill sssd`); объединение групп `[SUCCESS=merge]`
   (локальная `developers:x:5100:bob` заведена при `group: files`, иначе
   `groupadd` видит каталожную группу и отказывает); кеш sss в действии

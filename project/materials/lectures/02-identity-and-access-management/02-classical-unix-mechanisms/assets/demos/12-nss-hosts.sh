@@ -8,7 +8,7 @@ need getent runuser strace grep chmod stat useradd userdel
 # A host entry that exists only locally and a public name that exists only in DNS.
 LOCAL_NAME=intranet.example.test
 LOCAL_ADDR=192.0.2.80          # TEST-NET-1, documentation address (RFC 5737)
-DNS_NAME=example.org
+DNS_NAME=google.com
 MISSING_NAME=nosuch.example.test
 U1=ossec-demo1
 

@@ -44,12 +44,12 @@ hosts:          files dns
 
 ===== Имя только в DNS =====
 
-# getent -s files hosts example.org; echo $?
+# getent -s files hosts google.com; echo $?
 2
 
-# getent hosts example.org
-2a06:98c1:3122:8000:: example.org
-2a06:98c1:3123:8000:: example.org
+# getent hosts google.com
+2a00:1450:4010:c0e::71 google.com
+2a00:1450:4010:c0e::64 google.com
 
 ===== Имени нет нигде =====
 
@@ -62,9 +62,9 @@ hosts:          files dns
 
 $ getent hosts intranet.example.test; echo $?
 2
-$ getent hosts example.org
-2a06:98c1:3122:8000:: example.org
-2a06:98c1:3123:8000:: example.org
+$ getent hosts google.com
+2a00:1450:4010:c0e::71 google.com
+2a00:1450:4010:c0e::64 google.com
 
 $ strace -f -e trace=openat getent hosts intranet.example.test 2>&1 | grep '/etc/hosts'
 openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_CLOEXEC) = -1 EACCES (Permission denied)
