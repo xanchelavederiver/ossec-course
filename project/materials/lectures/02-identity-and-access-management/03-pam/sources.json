@@ -283,5 +283,10 @@
     "id": "sssd",
     "text": "SSSD – System Security Services Daemon: документация проекта (pam_sss(8)).",
     "url": "https://sssd.io/"
+  },
+  {
+    "id": "opensuse-pam",
+    "text": "openSUSE: PAM configuration – порядок каталогов /etc/pam.d, /usr/lib/pam.d, /usr/etc/pam.d (vendordir) в openSUSE.",
+    "url": "https://en.opensuse.org/openSUSE:PAM_configuration"
   }
 ]

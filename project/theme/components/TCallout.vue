@@ -103,7 +103,9 @@ const boxStyle = computed(() => ({
   </div>
   <div v-else class="t-callout" :class="[`t-callout-${side}`, `t-callout-${kind}`]" :style="rootStyle">
     <div class="t-callout-box" :style="boxStyle" />
-    <div class="t-callout-label">
+    <!-- No label element at all when there is nothing to say: an empty one
+         would still carry its border and connector. -->
+    <div v-if="label || $slots.default" class="t-callout-label">
       <slot>{{ label }}</slot>
     </div>
   </div>
