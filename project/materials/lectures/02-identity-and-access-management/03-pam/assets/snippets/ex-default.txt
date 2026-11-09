@@ -1,0 +1,4 @@
+auth  [success=ok auth_err=die default=ignore]                    pam_unix.so  # прочие коды → ignore
+auth  [success=ok auth_err=ignore]                                pam_unix.so  # default опущен: прочие коды → bad
+auth  [success=ok default=bad]                                    pam_unix.so  # НЕ эквивалент required
+auth  [success=ok new_authtok_reqd=ok ignore=ignore default=bad]  pam_unix.so  # точный эквивалент required

@@ -1,0 +1,79 @@
+===== Пример A: два required =====
+
+# cat /etc/pam.d/demo-a
+auth    required        pam_unix.so
+auth    required        pam_nologin.so
+# echo 'System closed for maintenance' > /etc/nologin
+# pamtester demo-a bob authenticate
+Password:                          # верный пароль bob
+System closed for maintenance
+
+pamtester: Authentication failure
+
+# pamtester demo-a bob authenticate
+Password:                          # неверный пароль
+System closed for maintenance
+
+pamtester: Authentication failure
+
+===== Пример B: requisite останавливает стек =====
+
+# cat /etc/pam.d/demo-b
+auth    requisite       pam_nologin.so
+auth    required        pam_unix.so
+# ls /etc/nologin
+/etc/nologin
+# pamtester demo-b bob authenticate
+System closed for maintenance
+
+pamtester: Authentication failure
+
+# rm /etc/nologin
+# pamtester demo-b bob authenticate
+Password:                          # верный пароль bob
+pamtester: successfully authenticated
+
+===== Пример C: sufficient после неудачи =====
+
+# cat /etc/pam.d/demo-c
+auth    required        pam_succeed_if.so quiet user ingroup operators
+auth    sufficient      pam_unix.so
+auth    required        pam_deny.so
+# id bob carol | cut -d' ' -f1,3
+uid=1001(bob) groups=1001(bob),1004(operators)
+uid=1002(carol) groups=1002(carol)
+# pamtester demo-c bob authenticate
+Password:                          # верный пароль bob
+pamtester: successfully authenticated
+
+# pamtester demo-c carol authenticate
+Password:                          # верный пароль carol
+pamtester: Authentication failure
+
+===== Пример D: числовой прыжок (схема Debian) =====
+
+# cat /etc/pam.d/demo-d
+auth    [success=1 default=ignore]      pam_unix.so
+auth    requisite                       pam_deny.so
+auth    required                        pam_permit.so
+# pamtester demo-d bob authenticate
+Password:                          # верный пароль bob
+pamtester: successfully authenticated
+
+# pamtester demo-d bob authenticate
+Password:                          # неверный пароль
+pamtester: Authentication failure
+
+===== Пример E: прыжок через два модуля =====
+
+# cat /etc/pam.d/demo-e
+auth    [success=2 default=ignore]      pam_succeed_if.so quiet user ingroup operators
+auth    required                        pam_unix.so
+auth    required                        pam_nologin.so
+auth    required                        pam_permit.so
+# pamtester demo-e carol authenticate
+Password:                          # неверный пароль
+pamtester: Authentication failure
+
+# pamtester demo-e bob authenticate
+pamtester: successfully authenticated

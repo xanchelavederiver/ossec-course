@@ -39,6 +39,7 @@ count) and tab-expanded columns – recompute them if an excerpt changes.
 | `pam_dispatch-ok.c` | `libpam/pam_dispatch.c` | 201, 208–229 |
 | `pam_dispatch-bad.c` | `libpam/pam_dispatch.c` | 231–232, 240–254, 259–260 |
 | `pam_dispatch-sanity.c` | `libpam/pam_dispatch.c` | 309–318 |
+| `pam_get_authtok-first.c` | `libpam/pam_get_authtok.c` | 82–84, 119–137 (section 4.3: a cached PAM_AUTHTOK is reused, `use_first_pass` forbids prompting) |
 
 Text snippets (rendered with `lang="text"`, no line numbers):
 
@@ -47,3 +48,18 @@ Text snippets (rendered with `lang="text"`, no line numbers):
 | `auth-log-listfile.txt` | syslog record of demo 08 (`assets/captures/11-authprint.txt`), wrapped for the slide |
 | `pam-conf-controls.txt` | `doc/man/pam.conf-syntax.xml`, lines 349–377: short control flags and their bracket forms |
 | `sag-other.conf` | `doc/sag/Linux-PAM_SAG.xml`, lines 359–369: conservative `/etc/pam.d/other` |
+
+Illustrative configuration fragments for section 2 (not copied from a system;
+written for the slides after pam.conf(5)/pam.d(5) and the Linux-PAM SAG):
+
+| Snippet | Shown on |
+|---|---|
+| `ex-pamconf.txt`, `ex-pamd-files.txt` | rule format: `/etc/pam.conf` line vs. per-service files |
+| `ex-syntax.txt` | syntax details: comments, continuation, `[...]` argument grouping, leading hyphen |
+| `ex-types.txt` | one example per management type |
+| `ex-stack.txt` | a four-rule auth stack |
+| `ex-flags.txt` | required / requisite / sufficient / optional examples |
+| `ex-ext-syntax.txt`, `ex-ext-actions.txt`, `ex-default.txt` | extended control syntax: namespaces, actions, default matching, exact equivalents |
+| `ex-include-parent.txt`, `ex-include-child.txt`, `ex-include-effective.txt` | `include` expansion |
+| `ex-substack-include.txt`, `ex-substack-substack.txt` | `include` vs `substack` boundary |
+| `ex-two-layers.txt` | PAM rule vs. module file (`faillock.conf`) |

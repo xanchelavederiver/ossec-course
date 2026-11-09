@@ -1,0 +1,6 @@
+auth  [success=ignore default=ignore]  pam_unix.so        # результат отброшен; побочные эффекты – нет
+auth  [success=ok default=bad]         pam_unix.so        # bad: запомнить неудачу, продолжить
+auth  [success=ok default=die]         pam_unix.so        # die: запомнить неудачу, остановить стек
+auth  [success=done default=ignore]    pam_unix.so        # done: принять; завершить, если не было неудач
+auth  [success=2 default=ignore]       pam_succeed_if.so quiet uid >= 1000       # N: через 2 правила
+auth  [success=reset default=ignore]   pam_succeed_if.so quiet user ingroup ops  # reset: забыть итог

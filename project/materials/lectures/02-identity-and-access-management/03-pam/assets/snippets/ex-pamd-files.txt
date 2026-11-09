@@ -1,0 +1,8 @@
+# /etc/pam.d/login
+auth  required  pam_unix.so
+
+# /etc/pam.d/sshd
+auth  required  pam_unix.so
+
+# /etc/pam.d/sudo
+auth  required  pam_unix.so

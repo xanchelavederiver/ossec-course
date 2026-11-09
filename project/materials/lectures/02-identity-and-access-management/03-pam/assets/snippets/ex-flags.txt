@@ -1,0 +1,15 @@
+# required: обе проверки выполняются; первая неудача решает исход
+auth     required    pam_unix.so
+auth     required    pam_nologin.so
+
+# requisite: при отказе pam_nologin пароль уже не запрашивается
+auth     requisite   pam_nologin.so
+auth     required    pam_unix.so
+
+# sufficient: альтернативные механизмы – любой подтвердивший достаточен
+auth     sufficient  pam_unix.so
+auth     sufficient  pam_sss.so
+auth     required    pam_deny.so
+
+# optional: модуль выполняется, его результат учитывается, лишь если он единственный
+session  optional    pam_systemd.so

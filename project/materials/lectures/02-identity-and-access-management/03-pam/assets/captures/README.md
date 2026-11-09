@@ -3,7 +3,7 @@
 Курируемые транскрипты терминальных сессий для слайдов лекции 3 (PAM); показываются
 компонентом `TerminalCapture` (секции разделены строками `===== Заголовок =====`).
 
-Все транскрипты сняты 25.10.2026 в одноразовом контейнере `ubuntu:26.04`
+Транскрипты 01–12 сняты 25.10.2026 в одноразовом контейнере `ubuntu:26.04`
 (Ubuntu 26.04.1 LTS, Linux-PAM 1.7.0-5ubuntu3.2, hostname `srv`). Пользователи:
 `bob` (UID 1001), `carol` (1002), `alice` (1003). Дополнительно установлены:
 `openssh-server` (PermitRootLogin yes, KbdInteractiveAuthentication yes – для
@@ -43,3 +43,27 @@
   syslog (timestamp сокращён).
 - `12-pam-math.txt` – демо 09: сборка/установка `src/pam_math.c`, служба
   mathtest (клиент – authprint), подключение модуля вторым фактором в sshd.
+- `13-login-paths.txt` – `sshd -V` и `sshd -T` (UsePAM и методы аутентификации
+  OpenSSH 10.2p1 по умолчанию); снято 09.11.2026 в свежем контейнере ubuntu:26.04
+  (openssh-server 1:10.2p1-2ubuntu3.8, libpam0g 1.7.0-5ubuntu3.2).
+- `14-stack-examples.txt` – раздел 2.5: учебные службы `/etc/pam.d/demo-a…demo-e`
+  (примеры A–E исполнения стека) и проверки `pamtester <служба> <пользователь>
+  authenticate` (пакет pamtester); bob – член группы `operators` (GID 1004),
+  carol – нет; пароли в ремарках `# …`; снято 09.11.2026 тем же контейнером
+  (expect-driven ввод пароля).
+- `15-distro-stacks.txt` – раздел 3.3–3.5: файлы PAM других дистрибутивов, сняты
+  09.11.2026 в одноразовых контейнерах: `rockylinux/rockylinux:10` (Rocky Linux 10.2,
+  pam 1.6.1-9.el10, authselect 1.5.2; доустановлены authselect, openssh-server;
+  вывод `system-auth` показан через `tr -s ' '`, из `list-features` оставлены пять
+  строк), `archlinux:latest` (pam 1.7.3-1, доустановлены openssh 10.6p1 и sudo),
+  `registry.astralinux.ru/astra/ubi18` (Astra Linux SE 1.8.7, libpam 1.5.2 astra.se39;
+  доустановлены parsec-mac/-aud/-cap 3.11, openssh-server, astra-safepolicy – после
+  этого в `common-*` появились профили faillock и pwquality, а в файлах служб –
+  строки pam_parsec_*). Файлы показаны без комментариев (`grep -Ev '^#|^$'`),
+  табуляция развёрнута.
+- `16-module-args.txt` – раздел 4.2–4.3: экспортируемые функции `pam_sm_*` (`nm -D`,
+  пакет binutils), учебные службы `/etc/pam.d/demo-f…demo-k` (неподдерживаемый тип,
+  `module_unknown=ignore`, `use_first_pass`/`try_first_pass`, незнакомый аргумент,
+  `debug`, `nullok`) и проверки `pamtester`; снято 09.11.2026 в свежем контейнере
+  ubuntu:26.04 (libpam 1.7.0-5ubuntu3.2; rsyslog для `/var/log/auth.log`, метки
+  времени сокращены до часов; alice создана без пароля – `passwd -d`).

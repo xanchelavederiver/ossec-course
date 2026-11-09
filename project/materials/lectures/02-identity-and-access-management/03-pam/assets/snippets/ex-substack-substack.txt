@@ -1,0 +1,6 @@
+# /etc/pam.d/<служба>
+auth  substack  primary-auth
+auth  required  pam_nologin.so
+
+# /etc/pam.d/primary-auth
+auth  sufficient  pam_unix.so

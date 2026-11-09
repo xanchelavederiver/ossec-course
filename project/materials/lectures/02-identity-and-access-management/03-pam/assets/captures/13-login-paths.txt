@@ -1,0 +1,11 @@
+===== sshd: PAM включён =====
+
+# sshd -V
+OpenSSH_10.2p1 Ubuntu-2ubuntu3.8, OpenSSL 3.5.5 27 Jan 2026
+# sshd -T | grep -Ei '^(usepam|passwordauth|permitrootlogin|pubkeyauthentication|kbdinteractive|permitempty)'
+usepam yes
+permitrootlogin prohibit-password
+pubkeyauthentication yes
+passwordauthentication yes
+kbdinteractiveauthentication no
+permitemptypasswords no

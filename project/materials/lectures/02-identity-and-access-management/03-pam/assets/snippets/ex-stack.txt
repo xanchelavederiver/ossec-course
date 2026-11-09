@@ -1,0 +1,4 @@
+auth  required    pam_env.so
+auth  requisite   pam_nologin.so
+auth  sufficient  pam_unix.so
+auth  required    pam_deny.so

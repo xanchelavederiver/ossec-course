@@ -1,0 +1,100 @@
+===== Символы pam_sm_* модуля =====
+
+# nm -D --defined-only /usr/lib/x86_64-linux-gnu/security/pam_securetty.so | grep pam_sm_
+0000000000001aa0 T pam_sm_acct_mgmt
+0000000000001a60 T pam_sm_authenticate
+0000000000001a90 T pam_sm_setcred
+
+===== Тип, которого модуль не предоставляет =====
+
+# cat /etc/pam.d/demo-f
+session required        pam_securetty.so
+# pamtester demo-f bob open_session
+pamtester: Module is unknown
+# tail -n 2 /var/log/auth.log
+13:50:49 srv pamtester: PAM unable to resolve symbol: pam_sm_open_session
+13:50:49 srv pamtester: PAM unable to resolve symbol: pam_sm_close_session
+
+===== module_unknown=ignore =====
+
+# cat /etc/pam.d/demo-f2
+session [success=ok module_unknown=ignore default=bad]  pam_securetty.so
+# pamtester demo-f2 bob open_session
+pamtester: Permission denied
+
+# cat /etc/pam.d/demo-f3
+session [success=ok module_unknown=ignore default=bad]  pam_securetty.so
+session required        pam_permit.so
+# pamtester demo-f3 bob open_session
+pamtester: successfully opened a session
+
+===== Какие типы предоставляют модули =====
+
+# D=/usr/lib/x86_64-linux-gnu/security
+# for m in pam_unix pam_securetty pam_nologin pam_faillock pam_time pam_limits pam_pwhistory pam_umask; do
+>   printf '%-16s' $m; nm -D --defined-only $D/$m.so | awk '/pam_sm_/{sub("pam_sm_","",$3); printf "%s ",$3}'; echo; done
+pam_unix        acct_mgmt authenticate chauthtok close_session open_session setcred
+pam_securetty   acct_mgmt authenticate setcred
+pam_nologin     acct_mgmt authenticate setcred
+pam_faillock    acct_mgmt authenticate setcred
+pam_time        acct_mgmt
+pam_limits      close_session open_session
+pam_pwhistory   chauthtok
+pam_umask       close_session open_session
+
+===== use_first_pass и try_first_pass =====
+
+# cat /etc/pam.d/demo-g
+auth    required        pam_unix.so
+auth    required        pam_unix.so
+# pamtester demo-g bob authenticate
+Password:                          # верный пароль bob – запрошен один раз
+pamtester: successfully authenticated
+
+# cat /etc/pam.d/demo-h
+auth    required        pam_unix.so use_first_pass
+# pamtester demo-h bob authenticate
+pamtester: Authentication failure  # пароль не запрошен
+# tail -n 1 /var/log/auth.log
+13:50:49 srv pamtester: pam_unix(demo-h:auth): auth could not identify password for [bob]
+
+# cat /etc/pam.d/demo-h3
+auth    required        pam_unix.so try_first_pass
+# pamtester demo-h3 bob authenticate
+Password:                          # верный пароль bob
+pamtester: successfully authenticated
+
+===== Неизвестный аргумент и debug =====
+
+# cat /etc/pam.d/demo-i
+auth    required        pam_unix.so foo=bar
+# pamtester demo-i bob authenticate
+Password:                          # верный пароль bob
+pamtester: successfully authenticated
+# tail -n 1 /var/log/auth.log
+13:50:49 srv pamtester: pam_unix(demo-i:auth): unrecognized option [foo=bar]
+
+# cat /etc/pam.d/demo-j
+auth    required        pam_unix.so debug
+# pamtester demo-j bob authenticate
+Password:                          # верный пароль bob
+pamtester: successfully authenticated
+# tail -n 1 /var/log/auth.log
+13:50:49 srv pamtester: pam_unix(demo-j:auth): username [bob] obtained
+
+===== nullok =====
+
+# passwd -S alice
+alice NP 2026-11-09 0 99999 7 -1
+# cat /etc/pam.d/demo-k
+auth    required        pam_unix.so
+# pamtester demo-k alice authenticate
+Password:                          # пустой пароль
+pamtester: Authentication failure
+# tail -n 1 /var/log/auth.log
+13:50:49 srv pamtester: pam_unix(demo-k:auth): authentication failure; logname= uid=0 euid=0 tty= ruser= rhost=  user=alice
+
+# cat /etc/pam.d/demo-k2
+auth    required        pam_unix.so nullok
+# pamtester demo-k2 alice authenticate
+pamtester: successfully authenticated

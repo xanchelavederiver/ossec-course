@@ -1,0 +1,7 @@
+# /etc/pam.d/common-auth – когда и как вызвать модуль
+auth  required  pam_faillock.so preauth
+
+# /etc/security/faillock.conf – что модуль делает
+deny = 5
+fail_interval = 900
+unlock_time = 600

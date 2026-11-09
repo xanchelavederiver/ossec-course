@@ -1,0 +1,2 @@
+auth  [success=done auth_err=bad default=ignore]  pam_unix.so
+auth  [ignore=ignore success=ok default=bad]      pam_unix.so

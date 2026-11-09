@@ -1,36 +1,287 @@
 [
-  { "id": "osf-rfc86", "text": "Samar V., Schemers R. Unified Login with Pluggable Authentication Modules (PAM). OSF RFC 86.0, October 1995.", "url": "http://www.opengroup.org/rfc/mirror-rfc/rfc86.0.txt" },
-  { "id": "pam-sag", "text": "Morgan A. G., Kukuk T. The Linux-PAM System Administrators' Guide. Linux-PAM 1.7.0.", "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/doc/sag/Linux-PAM_SAG.xml" },
-  { "id": "pam-adg", "text": "Morgan A. G., Kukuk T. The Linux-PAM Application Developers' Guide. Linux-PAM 1.7.0.", "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/doc/adg/Linux-PAM_ADG.xml" },
-  { "id": "pam-mwg", "text": "Morgan A. G., Kukuk T. The Linux-PAM Module Writers' Guide. Linux-PAM 1.7.0.", "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/doc/mwg/Linux-PAM_MWG.xml" },
-  { "id": "linux-pam-src", "text": "Linux-PAM: исходный код, версия 1.7.0 (в Ubuntu 26.04 – пакет 1.7.0-5ubuntu3).", "url": "https://github.com/linux-pam/linux-pam/tree/v1.7.0" },
-  { "id": "man-pam", "text": "pam(8) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam.8.html" },
-  { "id": "man-pam-conf", "text": "pam.conf(5), pam.d(5) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man5/pam.conf.5.html" },
-  { "id": "man-pam3", "text": "pam(3) – Linux-PAM Manual: application programming interface.", "url": "https://man7.org/linux/man-pages/man3/pam.3.html" },
-  { "id": "man-pam-start", "text": "pam_start(3), pam_end(3) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man3/pam_start.3.html" },
-  { "id": "man-pam-authenticate", "text": "pam_authenticate(3), pam_acct_mgmt(3) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man3/pam_authenticate.3.html" },
-  { "id": "man-pam-conv", "text": "pam_conv(3), misc_conv(3) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man3/pam_conv.3.html" },
-  { "id": "man-pam-strerror", "text": "pam_strerror(3) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man3/pam_strerror.3.html" },
-  { "id": "man-pam-sm-authenticate", "text": "pam_sm_authenticate(3), pam_sm_setcred(3) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man3/pam_sm_authenticate.3.html" },
-  { "id": "man-pam-get-user", "text": "pam_get_user(3), pam_prompt(3), pam_error(3) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man3/pam_get_user.3.html" },
-  { "id": "man-pam-unix", "text": "pam_unix(8) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_unix.8.html" },
-  { "id": "man-pam-nologin", "text": "pam_nologin(8) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_nologin.8.html" },
-  { "id": "man-pam-access", "text": "pam_access(8), access.conf(5) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_access.8.html" },
-  { "id": "man-pam-listfile", "text": "pam_listfile(8) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_listfile.8.html" },
-  { "id": "man-pam-time", "text": "pam_time(8), time.conf(5) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_time.8.html" },
-  { "id": "man-pam-limits", "text": "pam_limits(8), limits.conf(5) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_limits.8.html" },
-  { "id": "man-pam-pwquality", "text": "pam_pwquality(8), pwquality.conf(5) – libpwquality.", "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/pam_pwquality.8.html" },
-  { "id": "man-pam-pwhistory", "text": "pam_pwhistory(8) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_pwhistory.8.html" },
-  { "id": "man-pam-faillock", "text": "pam_faillock(8), faillock.conf(5) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_faillock.8.html" },
-  { "id": "man-pam-rootok", "text": "pam_rootok(8), pam_deny(8), pam_permit(8) – Linux-PAM Manual.", "url": "https://man7.org/linux/man-pages/man8/pam_rootok.8.html" },
-  { "id": "man-pam-auth-update", "text": "pam-auth-update(8) – Debian/Ubuntu, libpam-runtime.", "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/pam-auth-update.8.html" },
-  { "id": "man-sshd-config", "text": "sshd_config(5) – OpenSSH (UsePAM, KbdInteractiveAuthentication).", "url": "https://man7.org/linux/man-pages/man5/sshd_config.5.html" },
-  { "id": "google-authenticator", "text": "google-authenticator-libpam: PAM-модуль одноразовых паролей HOTP/TOTP (RFC 4226/6238).", "url": "https://github.com/google/google-authenticator-libpam" },
-  { "id": "pam-u2f", "text": "pam-u2f – Yubico: PAM-модуль аутентификации аппаратным ключом FIDO2/U2F.", "url": "https://developers.yubico.com/pam-u2f/" },
-  { "id": "rfc-6238", "text": "M'Raihi D. et al. TOTP: Time-Based One-Time Password Algorithm. RFC 6238, May 2011.", "url": "https://www.rfc-editor.org/rfc/rfc6238" },
-  { "id": "gost-58833", "text": "ГОСТ Р 58833-2020. Защита информации. Идентификация и аутентификация. Общие положения.", "url": "https://protect.gost.ru/gost/details/554a46bc-50ea-4232-ad71-e5bbe251c0f2" },
-  { "id": "fstec-md2026", "text": "Методический документ ФСТЭК России от 12.04.2026 «Состав и содержание мероприятий и мер по защите информации…» (разд. 4.1, меры ИАФ).", "url": "https://fstec.ru/dokumenty/vse-dokumenty/spetsialnye-normativnye-dokumenty/metodicheskij-dokument-ot-12-aprelya-2026-g" },
-  { "id": "redos-pam", "text": "Документация РЕД ОС. Подключаемые модули аутентификации (PAM). Общие сведения.", "url": "https://redos.red-soft.ru/base/manual/safe-redos/pam/" },
-  { "id": "rhel-pam", "text": "Red Hat Enterprise Linux. Configuring authentication and authorization: Pluggable Authentication Modules.", "url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_authentication_and_authorization_in_rhel/" },
-  { "id": "unit42-pam", "text": "Unit 42 (Palo Alto Networks). When PAM Goes Rogue: Malware Uses Authentication Modules for Mischief (26.10.2023).", "url": "https://unit42.paloaltonetworks.com/linux-pam-apis/" }
+  {
+    "id": "osf-rfc86",
+    "text": "Samar V., Schemers R. Unified Login with Pluggable Authentication Modules (PAM). OSF RFC 86.0, October 1995.",
+    "url": "http://www.opengroup.org/rfc/mirror-rfc/rfc86.0.txt"
+  },
+  {
+    "id": "pam-sag",
+    "text": "Morgan A. G., Kukuk T. The Linux-PAM System Administrators' Guide. Linux-PAM 1.7.0.",
+    "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/doc/sag/Linux-PAM_SAG.xml"
+  },
+  {
+    "id": "pam-adg",
+    "text": "Morgan A. G., Kukuk T. The Linux-PAM Application Developers' Guide. Linux-PAM 1.7.0.",
+    "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/doc/adg/Linux-PAM_ADG.xml"
+  },
+  {
+    "id": "pam-mwg",
+    "text": "Morgan A. G., Kukuk T. The Linux-PAM Module Writers' Guide. Linux-PAM 1.7.0.",
+    "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/doc/mwg/Linux-PAM_MWG.xml"
+  },
+  {
+    "id": "linux-pam-src",
+    "text": "Linux-PAM: исходный код, версия 1.7.0 (в Ubuntu 26.04 – пакет 1.7.0-5ubuntu3).",
+    "url": "https://github.com/linux-pam/linux-pam/tree/v1.7.0"
+  },
+  {
+    "id": "man-pam",
+    "text": "pam(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam.8.html"
+  },
+  {
+    "id": "man-pam-conf",
+    "text": "pam.conf(5), pam.d(5) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man5/pam.conf.5.html"
+  },
+  {
+    "id": "man-pam3",
+    "text": "pam(3) – Linux-PAM Manual: application programming interface.",
+    "url": "https://man7.org/linux/man-pages/man3/pam.3.html"
+  },
+  {
+    "id": "man-pam-start",
+    "text": "pam_start(3), pam_end(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_start.3.html"
+  },
+  {
+    "id": "man-pam-authenticate",
+    "text": "pam_authenticate(3), pam_acct_mgmt(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_authenticate.3.html"
+  },
+  {
+    "id": "man-pam-conv",
+    "text": "pam_conv(3), misc_conv(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_conv.3.html"
+  },
+  {
+    "id": "man-pam-strerror",
+    "text": "pam_strerror(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_strerror.3.html"
+  },
+  {
+    "id": "man-pam-sm-authenticate",
+    "text": "pam_sm_authenticate(3), pam_sm_setcred(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_sm_authenticate.3.html"
+  },
+  {
+    "id": "man-pam-get-user",
+    "text": "pam_get_user(3), pam_prompt(3), pam_error(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_get_user.3.html"
+  },
+  {
+    "id": "man-pam-unix",
+    "text": "pam_unix(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_unix.8.html"
+  },
+  {
+    "id": "man-pam-nologin",
+    "text": "pam_nologin(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_nologin.8.html"
+  },
+  {
+    "id": "man-pam-access",
+    "text": "pam_access(8), access.conf(5) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_access.8.html"
+  },
+  {
+    "id": "man-pam-listfile",
+    "text": "pam_listfile(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_listfile.8.html"
+  },
+  {
+    "id": "man-pam-time",
+    "text": "pam_time(8), time.conf(5) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_time.8.html"
+  },
+  {
+    "id": "man-pam-limits",
+    "text": "pam_limits(8), limits.conf(5) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_limits.8.html"
+  },
+  {
+    "id": "man-pam-pwquality",
+    "text": "pam_pwquality(8), pwquality.conf(5) – libpwquality.",
+    "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/pam_pwquality.8.html"
+  },
+  {
+    "id": "man-pam-pwhistory",
+    "text": "pam_pwhistory(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_pwhistory.8.html"
+  },
+  {
+    "id": "man-pam-faillock",
+    "text": "pam_faillock(8), faillock.conf(5) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_faillock.8.html"
+  },
+  {
+    "id": "man-pam-rootok",
+    "text": "pam_rootok(8), pam_deny(8), pam_permit(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_rootok.8.html"
+  },
+  {
+    "id": "man-pam-auth-update",
+    "text": "pam-auth-update(8) – Debian/Ubuntu, libpam-runtime.",
+    "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/pam-auth-update.8.html"
+  },
+  {
+    "id": "man-sshd-config",
+    "text": "sshd_config(5) – OpenSSH (UsePAM, KbdInteractiveAuthentication).",
+    "url": "https://man7.org/linux/man-pages/man5/sshd_config.5.html"
+  },
+  {
+    "id": "google-authenticator",
+    "text": "google-authenticator-libpam: PAM-модуль одноразовых паролей HOTP/TOTP (RFC 4226/6238).",
+    "url": "https://github.com/google/google-authenticator-libpam"
+  },
+  {
+    "id": "pam-u2f",
+    "text": "pam-u2f – Yubico: PAM-модуль аутентификации аппаратным ключом FIDO2/U2F.",
+    "url": "https://developers.yubico.com/pam-u2f/"
+  },
+  {
+    "id": "rfc-6238",
+    "text": "M'Raihi D. et al. TOTP: Time-Based One-Time Password Algorithm. RFC 6238, May 2011.",
+    "url": "https://www.rfc-editor.org/rfc/rfc6238"
+  },
+  {
+    "id": "gost-58833",
+    "text": "ГОСТ Р 58833-2020. Защита информации. Идентификация и аутентификация. Общие положения.",
+    "url": "https://protect.gost.ru/gost/details/554a46bc-50ea-4232-ad71-e5bbe251c0f2"
+  },
+  {
+    "id": "fstec-md2026",
+    "text": "Методический документ ФСТЭК России от 12.04.2026 «Состав и содержание мероприятий и мер по защите информации…» (разд. 4.1, меры ИАФ).",
+    "url": "https://fstec.ru/dokumenty/vse-dokumenty/spetsialnye-normativnye-dokumenty/metodicheskij-dokument-ot-12-aprelya-2026-g"
+  },
+  {
+    "id": "redos-pam",
+    "text": "Документация РЕД ОС. Подключаемые модули аутентификации (PAM). Общие сведения.",
+    "url": "https://redos.red-soft.ru/base/manual/safe-redos/pam/"
+  },
+  {
+    "id": "rhel-pam",
+    "text": "Red Hat Enterprise Linux. Configuring authentication and authorization: Pluggable Authentication Modules.",
+    "url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_authentication_and_authorization_in_rhel/"
+  },
+  {
+    "id": "unit42-pam",
+    "text": "Unit 42 (Palo Alto Networks). When PAM Goes Rogue: Malware Uses Authentication Modules for Mischief (26.10.2023).",
+    "url": "https://unit42.paloaltonetworks.com/linux-pam-apis/"
+  },
+  {
+    "id": "xsso",
+    "text": "X/Open Single Sign-on Service (XSSO) – Pluggable Authentication Modules. Preliminary Specification P702. The Open Group, 1997.",
+    "url": "https://pubs.opengroup.org/onlinepubs/8329799/"
+  },
+  {
+    "id": "openpam",
+    "text": "OpenPAM – независимая реализация PAM для FreeBSD, NetBSD и macOS (D.-E. Smørgrav, с 2002 г.).",
+    "url": "https://www.openpam.org/"
+  },
+  {
+    "id": "man-pam-session",
+    "text": "pam_setcred(3), pam_chauthtok(3), pam_open_session(3), pam_close_session(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_open_session.3.html"
+  },
+  {
+    "id": "man-pam-succeed-if",
+    "text": "pam_succeed_if(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_succeed_if.8.html"
+  },
+  {
+    "id": "pamtester",
+    "text": "pamtester – утилита проверки PAM-служб из командной строки (пакет pamtester в Debian/Ubuntu).",
+    "url": "https://pamtester.sourceforge.net/"
+  },
+  {
+    "id": "man-login",
+    "text": "login(1) – util-linux, Linux man-pages.",
+    "url": "https://man7.org/linux/man-pages/man1/login.1.html"
+  },
+  {
+    "id": "man-agetty",
+    "text": "agetty(8) – util-linux, Linux man-pages.",
+    "url": "https://man7.org/linux/man-pages/man8/agetty.8.html"
+  },
+  {
+    "id": "man-sshd",
+    "text": "sshd(8) – OpenSSH daemon (аутентификация по ключу хоста, методы аутентификации клиента, UsePAM).",
+    "url": "https://man.openbsd.org/sshd.8"
+  },
+  {
+    "id": "man-nsswitch",
+    "text": "nsswitch.conf(5) – Name Service Switch (лекция 2, раздел 6). Linux man-pages.",
+    "url": "https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html"
+  },
+  {
+    "id": "rhel10-authselect",
+    "text": "Red Hat Enterprise Linux 10. Configuring authentication and authorization in RHEL. Ch. «Configuring user authentication using authselect».",
+    "url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/configuring_authentication_and_authorization_in_rhel/configuring-user-authentication-using-authselect"
+  },
+  {
+    "id": "authselect",
+    "text": "authselect – select system identity and authentication sources: исходный код и документация проекта (authselect(8), authselect-profiles(5)).",
+    "url": "https://github.com/authselect/authselect"
+  },
+  {
+    "id": "rocky-pam",
+    "text": "Rocky Linux Documentation. PAM Authentication Modules.",
+    "url": "https://docs.rockylinux.org/guides/security/pam"
+  },
+  {
+    "id": "archwiki-pam",
+    "text": "PAM – ArchWiki (цепочка system-auth → system-login → system-local-login / system-remote-login).",
+    "url": "https://wiki.archlinux.org/title/PAM"
+  },
+  {
+    "id": "astra-wiki-lock",
+    "text": "Настройка механизмов защиты и блокировок. Справочный центр Astra Linux.",
+    "url": "https://wiki.astralinux.ru/pages/viewpage.action?pageId=27361838"
+  },
+  {
+    "id": "astra-wiki-ipc",
+    "text": "Особенности применения IPC в Astra Linux Special Edition (вызовы pam_parsec_mac.so в службах PAM). Справочный центр Astra Linux.",
+    "url": "https://wiki.astralinux.ru/pages/viewpage.action?pageId=149063181"
+  },
+  {
+    "id": "astra-redbook",
+    "text": "Red Book: Astra Linux Special Edition (очередное обновление x.7) – уровни защищённости, политики учётных записей. Справочный центр Astra Linux.",
+    "url": "https://wiki.astralinux.ru/pages/viewpage.action?pageId=153486034"
+  },
+  {
+    "id": "astra-repo",
+    "text": "Репозиторий пакетов Astra Linux Special Edition 1.8.7 (main, extended); образ контейнера registry.astralinux.ru/astra/ubi18.",
+    "url": "https://download.astralinux.ru/astra/frozen/1.8_x86-64/1.8.7/"
+  },
+  {
+    "id": "astra-gost-hash",
+    "text": "Astra Linux: алгоритмы хеширования паролей (gost12_512, $gost12512hash$). Справочный центр Astra Linux.",
+    "url": "https://wiki.astralinux.ru/pages/viewpage.action?pageId=216540367"
+  },
+  {
+    "id": "man-pam-get-authtok",
+    "text": "pam_get_authtok(3) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_get_authtok.3.html"
+  },
+  {
+    "id": "man-pam-securetty",
+    "text": "pam_securetty(8), pam_wheel(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_securetty.8.html"
+  },
+  {
+    "id": "man-pam-env",
+    "text": "pam_env(8), pam_exec(8), pam_mkhomedir(8), pam_keyinit(8), pam_warn(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_env.8.html"
+  },
+  {
+    "id": "man-pam-systemd",
+    "text": "pam_systemd(8) – systemd: регистрация сеансов пользователей в systemd-logind.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_systemd.8.html"
+  },
+  {
+    "id": "sssd",
+    "text": "SSSD – System Security Services Daemon: документация проекта (pam_sss(8)).",
+    "url": "https://sssd.io/"
+  }
 ]

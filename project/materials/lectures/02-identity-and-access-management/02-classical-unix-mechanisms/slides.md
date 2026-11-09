@@ -3382,7 +3382,7 @@ adduser или явный -s. Второй: SKEL и новый USRSKEL. При u
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем демонстрацию:</b>
 <div class="mt-1 space-y-1">
-<div><span class="co-ball">1</span> UID и GID – из диапазонов <code>UID_MIN</code> = <code>GID_MIN</code> = <code>1001</code></div>
+<div><span class="co-ball">1</span> UID и GID – из диапазонов <code>UID_MIN</code> = <code>GID_MIN</code> > <code>1000</code></div>
 <div><span class="co-ball">2</span> заведена одноимённая первичная группа (UPG)</div>
 <div><span class="co-ball">3</span> домашняя директория – <code>0750</code> (<code>HOME_MODE</code>)</div>
 <div><span class="co-ball">4</span> файл <code>.ossec_profile</code> – из <code>/usr/etc/skel</code>: домашняя директория есть <b>объединение</b> <code>/etc/skel</code> и <code>/usr/etc/skel</code> (остальные три файла – из <code>/etc/skel</code>)</div>

@@ -23,7 +23,8 @@ defaults:
 номера по sources.json, клик ведёт на слайд routeAlias: refs и подсвечивает
 источник); упоминания man-страниц – ссылки (<Man p="name(sec)"/>).
 Демонстрационная среда – Ubuntu Server 26.04 LTS, Linux-PAM 1.7.0;
-захваты сняты в одноразовом контейнере (assets/captures/README.md).
+захваты сняты в одноразовых контейнерах (assets/captures/README.md); раздел 3
+дополнительно показывает Rocky Linux 10, Arch Linux и Astra Linux SE 1.8.
 Фрагменты исходного кода – <CodeSnippet> по дословным выдержкам из
 assets/snippets (Linux-PAM v1.7.0 и программы демо; см. assets/snippets/README.md);
 указатель на демо-скрипт – <SrcRef> последней строкой слайда.
@@ -38,23 +39,24 @@ layout: default
 <div class="grid grid-cols-2 gap-x-8 mt-4 plan-list">
 <div>
 
-1. **Введение** – зачем нужен PAM
-2. **Устройство PAM** – библиотека, модули, конфигурация, типы, флаги, стек
-3. **Конфигурация Ubuntu Server 26.04** – файлы `common-*`; `login`, `gdm-password`, `sshd`
-4. **Административные задачи** – pam_nologin, pam_access, pam_listfile, pam_time, pam_limits
-5. **Парольная политика** – pam_pwquality, pam_pwhistory, pam_faillock
+1. **Введение** – назначение PAM
+2. **Устройство PAM** – библиотека и модули, конфигурация, типы правил и стек, флаги, примеры исполнения, include и substack
+3. **Типичные конфигурации PAM** – Debian/Ubuntu (`common-*`), семейство RHEL (`system-auth`, authselect), Arch Linux, Astra Linux
+4. **Распространённые модули** – назначение, предоставляемые типы, аргументы
+5. **Административные задачи** – pam_nologin, pam_access, pam_listfile, pam_time, pam_limits
 
 </div>
 <div>
 
-6. **Двухфакторная аутентификация** – TOTP, аппаратные ключи
-7. **PAM в собственных программах** – libpam API, программа `authprint`
-8. **Разработка модуля PAM** – интерфейс модуля, `pam_math.so`
-9. **Реализация Linux-PAM** – структуры, разбор конфигурации, исполнение стека
+6. **Парольная политика** – pam_pwquality, pam_pwhistory, pam_faillock
+7. **Двухфакторная аутентификация** – TOTP, аппаратные ключи
+8. **PAM в собственных программах** – libpam API, программа `authprint`
+9. **Разработка модуля PAM** – интерфейс модуля, `pam_math.so`
+10. **Реализация Linux-PAM** – структуры, разбор конфигурации, исполнение стека
 
 <div class="mt-4 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
 Сквозной пример: сервер Ubuntu 26.04, пользователи <code>bob</code>, <code>alice</code>,
-<code>carol</code>; разделы 4–8 сопровождаются демонстрациями
+<code>carol</code>; разделы 5–9 сопровождаются демонстрациями
 (<code>assets/demos/01–09</code>).
 </div>
 
@@ -66,11 +68,12 @@ layout: default
 </style>
 
 <!--
-Девять разделов. Сначала мотивация: какие задачи не решаются классическими
-механизмами лекции 2. Затем устройство PAM и его конфигурация на Ubuntu 26.04.
-Разделы 4–6 – администрирование: типовые задачи, парольная политика, второй
-фактор. Разделы 7–8 – программирование: использование libpam в своих программах
-и разработка собственного модуля. Раздел 9 – чтение исходного кода Linux-PAM.
+Десять разделов. Сначала мотивация: какие задачи не решаются классическими
+механизмами лекции 2. Затем устройство PAM, типичные конфигурации четырёх
+семейств дистрибутивов и словарь распространённых модулей. Разделы 5–7 –
+администрирование: типовые задачи, парольная политика, второй фактор.
+Разделы 8–9 – программирование: использование libpam в своих программах
+и разработка собственного модуля. Раздел 10 – чтение исходного кода Linux-PAM.
 -->
 
 ---
@@ -78,7 +81,7 @@ layout: section
 ---
 
 # 1. Введение
-## Зачем нужен PAM
+## Назначение PAM
 
 ---
 
@@ -87,126 +90,209 @@ layout: section
 В лекции 2 аутентификация выглядела так: программа сама читает базы учётных записей
 и сама сверяет хеш пароля.
 
-<BlockFlow class="mt-2 mb-3" :blocks="[
+<BlockFlow class="mt-1 mb-2" :blocks="[
   { head: 'login, sshd, su, passwd…', sub: 'логика проверки\nзашита в каждую программу' },
   { head: 'crypt(3)', sub: 'сверка хеша' },
   { head: '/etc/passwd, /etc/shadow', mono: true, sub: 'единственный источник\nучётных данных' },
 ]" :arrows="['вызывает', 'читает']" />
 
-<div class="grid grid-cols-3 gap-3">
-<div class="p-3 border-l-4 border-red-500 bg-red-500/10">
+<div class="grid grid-cols-3 gap-3 text-xs">
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
 <b>Проверка зашита в код</b><br/>
 новый способ аутентификации – смарт-карта, одноразовый код – требует
 <b>изменить и перекомпилировать</b> каждую программу входа
 </div>
-<div class="p-3 border-l-4 border-red-500 bg-red-500/10">
-<b>Источник данных фиксирован</b><br/>
-только локальные файлы: учётные записи из сетевого каталога
-(LDAP, Active Directory) этой схеме недоступны
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
+<b>Источник аутентифицирующих данных фиксирован</b><br/>
+только локальный <code>/etc/shadow</code>: сверить пароль с учётной записью из сетевого
+каталога (LDAP, Active Directory) эта схема не может
 </div>
-<div class="p-3 border-l-4 border-red-500 bg-red-500/10">
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
 <b>Политика не централизована</b><br/>
 правила сложности пароля, блокировки, времени входа пришлось бы
 дублировать в каждой программе
 </div>
 </div>
 
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<b>Напоминание (лекция 2, раздел 6, слайды 101–102).</b> Для <b>идентификации</b> первые две
+проблемы уже решены: NSS выбирает источник сведений об учётных записях
+конфигурацией <code>nsswitch.conf</code>, а интерфейс <Man p="getpwnam(3)" /> и код программ
+не меняются. Для <b>аутентификации</b> нужен такой же механизм.
+</div>
+
 <v-click>
 
-<div class="mt-3 p-3 border-l-4 border-teal-500 bg-teal-500/10">
-<b>Решение</b> – промежуточный слой: точка аутентификации (программа) отделяется
-от <b>службы аутентификации</b>; способы проверки становятся <b>подключаемыми
-модулями</b>, которые выбирает администратор, а не разработчик программы.
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+<b>Решение</b> – промежуточный слой:
+
+- **отделить** точку аутентификации (программу) от способов проверки: способы становятся
+  **подключаемыми модулями**, которые выбирает администратор, а не разработчик программы;
+- **источником аутентифицирующих данных** сделать не только локальные файлы: модуль может
+  обращаться к каталогу домена, аппаратному ключу или внешней службе.
+
 </div>
 
 </v-click>
 
-<Refs ids="pam-sag osf-rfc86" />
+<Refs ids="pam-sag osf-rfc86 man-nsswitch" />
+
+<style>
+.slidev-layout ul { margin-top: 0.3em; margin-bottom: 0; }
+</style>
 
 <!--
 Мост от лекции 2. Классическая схема: каждая программа входа самостоятельно
 читает /etc/passwd и /etc/shadow и сверяет хеш. Три следствия. Во-первых,
 логика проверки зашита в код: чтобы добавить второй фактор, пришлось бы править
 и перекомпилировать login, sshd, su, sudo, passwd – у администратора исходного
-кода нет. Во-вторых, источник учётных данных фиксирован: предприятию нужен
-общий каталог на тысячи машин, а не локальные файлы на каждой. В-третьих,
-политику не задать в одном месте. Решение известно из инженерии: промежуточный
-слой. Его и предложили в 1995 году под именем PAM.
+кода нет. Во-вторых, источник аутентифицирующих данных фиксирован: предприятию
+нужен общий каталог на тысячи машин, а не локальные файлы на каждой. В-третьих,
+политику не задать в одном месте. Напомнить слушателям слайды 101–102 лекции 2:
+для идентификации ровно эти проблемы – локальность файлов и привязка программ
+к ним – решил NSS, подменив источник внутри libc при неизменном интерфейсе.
+Для аутентификации нужен аналогичный слой – и он даже старше NSS в Linux:
+PAM предложили в 1995 году.
 -->
 
 ---
 
 # Назначение PAM
 
-**PAM** (Pluggable Authentication Modules, подключаемые модули аутентификации) –
-набор разделяемых библиотек, позволяющий администратору выбирать, **как приложения
-аутентифицируют пользователей**, – без изменения кода и перекомпиляции приложений.
-
-<div class="grid grid-cols-[1.25fr_1fr] gap-5 mt-3 items-start">
 <div>
 
-<div class="pam-map">
-  <div class="bf-block pm-apps"><div class="bf-head">PAM-aware приложения</div><div class="bf-sub">login · sshd · su · sudo · passwd</div></div>
-  <div class="bf-arrow"><div class="bf-arrow-line"></div><div class="bf-arrow-tip"></div></div>
-  <div class="bf-block pm-lib" :class="'bf-dark'"><div class="bf-head">libpam.so</div><div class="bf-sub">читает /etc/pam.d/&lt;служба&gt;,
-вызывает модули по порядку</div></div>
-  <div class="bf-arrow"><div class="bf-arrow-line"></div><div class="bf-arrow-tip"></div></div>
-  <div class="pm-mods">
-    <div class="bf-block"><div class="bf-head">pam_unix.so</div><div class="bf-sub">/etc/shadow</div></div>
-    <div class="bf-block"><div class="bf-head">pam_faillock.so</div><div class="bf-sub">счётчик неудач</div></div>
-    <div class="bf-block"><div class="bf-head">pam_google_<br/>authenticator.so</div><div class="bf-sub">одноразовые коды</div></div>
-    <div class="bf-block"><div class="bf-head">pam_sss.so</div><div class="bf-sub">каталог домена</div></div>
+**PAM** (Pluggable Authentication Modules, подключаемые модули аутентификации) – каркас,
+позволяющий PAM-aware приложениям **делегировать** аутентификацию, проверку учётной записи,
+смену аутентификатора и управление сеансом независимо настраиваемым **модулям**. Какие модули
+и в каком порядке вызываются, выбирает администратор – **без изменения кода и перекомпиляции**
+приложений.
+
+</div>
+
+<Timeline height="10.5em" class="mt-3" :items="[
+  { year: '1995', head: 'OSF RFC 86.0', text: 'В. Самар и Р. Шемерс (Sun): идея подключаемых модулей аутентификации', hot: true },
+  { year: '1996', head: 'Linux-PAM', text: 'реализация для Linux (Э. Морган); первый дистрибутив с PAM – Red Hat Linux 3.0.4' },
+  { year: '1997', head: 'XSSO · Solaris 2.6', text: 'The Open Group описывает API PAM в спецификации XSSO; PAM входит в Solaris' },
+  { year: '2002', head: 'OpenPAM', text: 'независимая реализация для FreeBSD, позднее macOS' },
+  { year: '2008', head: 'Linux-PAM 1.0', text: 'стабильный API; далее – pam_faillock (1.4, 2020), vendordir' },
+  { year: '2025', head: 'Linux-PAM 1.7.0', text: 'версия в Ubuntu 26.04 (пакет 1.7.0-5ubuntu3.2)' },
+]" />
+
+<div class="grid grid-cols-2 gap-3 mt-2 text-xs">
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Идея:</b> приложение вызывает функции библиотеки <code>libpam</code> (<Man p="pam_authenticate(3)" />
+и др.); библиотека по <b>имени службы</b> находит её конфигурацию, загружает перечисленные
+там модули, вызывает их по порядку и <b>сводит коды возврата</b> по правилам конфигурации
+в единый ответ приложению.
+</div>
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+<b>PAM – не метод аутентификации:</b> сами проверки реализуют модули – <code>pam_unix</code>
+(пароли из <code>/etc/shadow</code>, лекция 2), <code>pam_sss</code> (учётные записи каталога),
+модули второго фактора. Одна служба может использовать локальные пароли, другая – каталог,
+и обе – общие правила account и session.
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<b>Обратите внимание:</b> PAM не входит в POSIX. Интерфейс приложений описан в спецификации
+X/Open XSSO (1997); реализации – Linux-PAM (Linux), OpenPAM (FreeBSD, macOS), PAM в Solaris –
+совместимы по API, но различаются синтаксисом конфигурации и набором модулей. В лекции –
+Linux-PAM 1.7.0 в Ubuntu Server 26.04.
+</div>
+
+<Refs ids="osf-rfc86 pam-sag man-pam xsso openpam linux-pam-src" />
+
+<!--
+Определение расширено по сравнению с SAG: PAM – это делегирование четырёх задач
+(аутентификация, проверка учётной записи, смена аутентификатора, сеанс)
+независимо настраиваемым модулям. Хронология: 1995 – OSF RFC 86.0, Самар и
+Шемерс из Sun описывают «unified login» через подключаемые модули; 1996 –
+Эндрю Морган начинает Linux-PAM, Red Hat Linux 3.0.4 первым из дистрибутивов
+включает его; 1997 – The Open Group публикует предварительную спецификацию
+XSSO с API PAM, PAM появляется в Solaris 2.6; 2002 – Даг-Эрлинг Смёргров
+пишет OpenPAM для FreeBSD (позднее используется в macOS); 2008 – Linux-PAM
+1.0 со стабильным API; 2025 – 1.7.0, версия Ubuntu 26.04. Две карточки –
+суть: libpam выбирает конфигурацию по имени службы и сводит результаты
+модулей; сам PAM ничего не проверяет – проверяют модули, поэтому разные
+службы могут использовать разные источники и при этом разделять общие
+правила account и session. Оговорка о стандартах параллельна слайду о NSS в
+лекции 2: PAM – не POSIX, а соглашение X/Open; реализации совместимы по API,
+но не по конфигурации.
+-->
+
+---
+
+# Архитектура PAM: приложение, libpam, стеки модулей
+
+<div class="pam-arch mt-4">
+  <div class="pa-row">
+    <div class="bf-block bf-fill-tint pa-wide">
+      <div class="bf-head">PAM-aware приложения</div>
+      <div class="bf-sub"><code>login</code> · <code>sshd</code> · <code>sudo</code> · <code>su</code> · <code>passwd</code> · ваша программа – вызовы pam_start(3), pam_authenticate(3), pam_acct_mgmt(3), …</div>
+    </div>
+  </div>
+  <div class="pa-link"><div class="pa-arrow"></div><div class="pa-label">вызов функции API libpam</div><div class="pa-arrow pa-up"></div><div class="pa-label">код возврата → приложение <b>само решает</b>, что делать дальше</div></div>
+  <div class="pa-row">
+    <div class="bf-block bf-fill-dark pa-wide">
+      <div class="bf-head">libpam.so</div>
+      <div class="bf-sub">по имени службы выбирает конфигурацию /etc/pam.d/&lt;служба&gt;, загружает модули и исполняет стеки</div>
+    </div>
+  </div>
+  <div class="pa-link"><div class="pa-arrow"></div><div class="pa-label">вызов функции модуля pam_sm_&lt;операция&gt;()</div></div>
+  <div class="pa-row pa-mods">
+    <div class="bf-block bf-fill-accent"><div class="bf-head bf-mono">auth</div><div class="bf-sub">pam_unix · pam_sss · pam_google_authenticator</div></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head bf-mono">account</div><div class="bf-sub">pam_access · pam_time · pam_nologin</div></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head bf-mono">password</div><div class="bf-sub">pam_pwquality · pam_pwhistory · pam_unix</div></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head bf-mono">session</div><div class="bf-sub">pam_limits · pam_env · pam_systemd</div></div>
   </div>
 </div>
 
+<div class="grid grid-cols-[1.25fr_1fr] gap-3 mt-4 text-xs">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Критическая граница:</b> PAM делает только то, о чём просит приложение. Программа,
+не вызывающая <Man p="pam_authenticate(3)" />, не исполнит стек auth, сколько бы правил
+auth ни было в файле службы. Так, OpenSSH при входе по открытому ключу проверяет ключ
+<b>сам</b>, а к PAM обращается за стеками account и session (раздел 3.2).
 </div>
-<div>
-
-<div class="pam-why">
-
-**Что это даёт:**
-
-- **модульность** – любая служба через модули работает с любым провайдером
-  аутентификационной информации;
-- **разнесение** точки аутентификации (приложения) и службы аутентификации;
-- подключение провайдеров **без изменения кода** приложений – перекомпиляция
-  не требуется: администратор меняет строку конфигурации.
-
-</div>
-
-<v-click>
-
-<HistoryNote class="mt-2">
-Идею описали В. Самар и Р. Шемерс (Sun Microsystems) в документе
-OSF RFC 86.0 (октябрь 1995 г.); реализация Linux-PAM развивается с 1996 г.
-В Ubuntu 26.04 – Linux-PAM 1.7.0.
-</HistoryNote>
-
-</v-click>
-
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Подсистема работает <b>в пользовательском пространстве</b>: libpam – код внутри процесса
+приложения, модули – разделяемые библиотеки; ядро в выборе проверок не участвует (как и в NSS).
+Привилегии модуля = привилегии процесса: <code>pam_unix</code> читает <code>/etc/shadow</code>,
+потому что <code>login</code> работает с euid 0.
 </div>
 </div>
 
-<Refs ids="osf-rfc86 pam-sag man-pam" />
+<Refs ids="pam-sag man-pam man-pam3 pam-adg" />
 
 <style>
-.pam-map { display: flex; align-items: stretch; gap: 0; font-size: 0.72rem; text-align: center; }
-.pam-map > .bf-block { flex: 1.1; display: flex; flex-direction: column; justify-content: center; }
-.pam-map > .bf-arrow { flex: 0 0 1.6em; align-self: center; }
-.pm-mods { flex: 1.15; display: flex; flex-direction: column; gap: 0.4em; }
-.pm-mods .bf-block { padding: 0.25em 0.4em; }
-.pam-why li { line-height: 1.55; }
+.pam-arch { display: flex; flex-direction: column; font-size: 0.78rem; text-align: center; }
+.pam-arch .pa-row { display: flex; gap: 0.6em; justify-content: center; }
+.pam-arch .pa-wide { flex: 0 1 36em; }
+.pam-arch .pa-mods .bf-block { flex: 1 1 0; }
+.pam-arch .pa-link { display: flex; align-items: center; justify-content: center; gap: 0.7em; height: 2.3em; }
+.pam-arch .pa-arrow { width: 2px; height: 2em; background: #555; position: relative; }
+.pam-arch .pa-arrow::after { content: ''; position: absolute; bottom: -4px; left: -3px; border: 4px solid transparent; border-top-color: #555; }
+.pam-arch .pa-arrow.pa-up::after { bottom: auto; top: -4px; border-top-color: transparent; border-bottom-color: #555; }
+.pam-arch .pa-label { font-size: 0.68rem; color: #555; font-style: italic; }
+.pam-arch .pa-label + .pa-arrow { margin-left: 1.5em; }
 </style>
 
 <!--
-Определение по руководству администратора Linux-PAM: suite of shared libraries
-that enable the local system administrator to choose how applications
-authenticate users. Схема: программы больше не проверяют пароли сами – они
-обращаются к libpam, а та по конфигурационному файлу службы вызывает модули.
-Каждый модуль умеет работать со своим провайдером: pam_unix – классические
-файлы лекции 2, pam_faillock – счётчик неудач, pam_google_authenticator –
-одноразовые коды, pam_sss – каталог домена. Три выгоды соответствуют трём
-проблемам предыдущего слайда. История: OSF RFC 86.0, 1995; Linux-PAM – 1996.
+Архитектура в один кадр, по образцу слайда о NSS из лекции 2. Верхний уровень –
+PAM-aware приложения: они вызывают функции API libpam – pam_start, затем
+pam_authenticate, pam_acct_mgmt и т. д. (раздел 8). Средний уровень – libpam:
+по имени службы выбирает файл конфигурации, подгружает перечисленные модули и
+исполняет стеки. Нижний уровень – модули четырёх групп управления; один модуль
+(pam_unix) может участвовать в нескольких. Стрелка вверх – код возврата: libpam
+не впускает пользователя сама, она лишь сообщает приложению итог, а решение
+принимает приложение. Отсюда критическая граница (амбер): PAM исполняет только
+те стеки, о которых приложение попросило. Нет вызова pam_authenticate – нет
+стека auth; OpenSSH при входе по ключу проверяет ключ своими средствами и
+зовёт PAM только для account и session – важно для второго фактора (раздел 7).
+Второе замечание повторяет вывод лекции 2 о NSS: всё это пользовательское
+пространство внутри процесса, и модуль имеет ровно те привилегии, что и
+процесс, – поэтому pam_unix может читать /etc/shadow из login с euid 0, а из
+непривилегированной программы вынужден вызывать помощника unix_chkpwd.
 -->
 
 ---
@@ -220,13 +306,13 @@ authenticate users. Схема: программы больше не прове�
 
 | Задача администратора | Классические механизмы | PAM |
 |---|---|---|
-| Единая политика сложности и истории паролей | логику пришлось бы дублировать в программах | <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" />, <Man p="pam_pwhistory(8)" /> – **раздел 5** |
-| Блокировка учётной записи после N неудач | – | <Man p="pam_faillock(8)" /> – **раздел 5** |
-| Второй фактор: одноразовый код, аппаратный ключ | – | `pam_google_authenticator`, <DebianMan p="pam_u2f(8)" pkg="libpam-u2f" /> – **раздел 6** |
+| Единая политика сложности и истории паролей | логику пришлось бы дублировать в программах | <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" />, <Man p="pam_pwhistory(8)" /> – **раздел 6** |
+| Блокировка учётной записи после N неудач | – | <Man p="pam_faillock(8)" /> – **раздел 6** |
+| Второй фактор: одноразовый код, аппаратный ключ | – | `pam_google_authenticator`, <DebianMan p="pam_u2f(8)" pkg="libpam-u2f" /> – **раздел 7** |
 | Учётные записи из каталога домена (AD, FreeIPA) | – | `pam_sss` (служба sssd) + NSS |
-| Запрет входа: всем, по списку, по времени | частично («запрещающие» оболочки) | <Man p="pam_nologin(8)" />, <Man p="pam_access(8)" />, <Man p="pam_listfile(8)" />, <Man p="pam_time(8)" /> – **раздел 4** |
-| Лимиты ресурсов сеанса пользователя | – | <Man p="pam_limits(8)" /> – **раздел 4** |
-| Собственная проверка в своей программе | писать с нуля | libpam API – **разделы 7–8** |
+| Запрет входа: всем, по списку, по времени | частично («запрещающие» оболочки) | <Man p="pam_nologin(8)" />, <Man p="pam_access(8)" />, <Man p="pam_listfile(8)" />, <Man p="pam_time(8)" /> – **раздел 5** |
+| Лимиты ресурсов сеанса пользователя | – | <Man p="pam_limits(8)" /> – **раздел 5** |
+| Собственная проверка в своей программе | писать с нуля | libpam API – **разделы 8–9** |
 
 </div>
 
@@ -246,9 +332,86 @@ authenticate users. Схема: программы больше не прове�
 Мотивационная таблица: колонка «классические механизмы» почти пуста – эти
 задачи либо не решаются файлами passwd/shadow вообще, либо требуют дублирования
 логики в каждой программе. Каждая строка правой колонки – конкретный модуль, и
-почти каждый мы увидим в работе: разделы 4–6 – административные демонстрации,
-разделы 7–8 – программирование. Предупреждение внизу задаёт тон лекции: PAM –
+почти каждый мы увидим в работе: разделы 5–7 – административные демонстрации,
+разделы 8–9 – программирование. Предупреждение внизу задаёт тон лекции: PAM –
 критическая точка системы, через неё проходит каждый вход.
+-->
+
+---
+
+# Пример использования: вход с консоли и по SSH
+
+<div class="login-lanes mt-2">
+  <div class="ll-lane">
+    <div class="bf-block bf-fill-dark ll-label"><div class="bf-head">Консоль</div></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">agetty</div><div class="bf-sub">открывает терминал, спрашивает имя</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">login</div><div class="bf-sub">запрашивает пароль (эхо отключено)</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-amber"><div class="bf-head">PAM</div><div class="bf-sub">auth + account: пароль и учётная запись; session: окружение, лимиты</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">UID/GID</div><div class="bf-sub">из записи passwd – локальной или из каталога домена (NSS)</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">оболочка</div><div class="bf-sub">/bin/bash из 7-го поля passwd</div></div>
+  </div>
+  <div class="ll-lane mt-2">
+    <div class="bf-block bf-fill-dark ll-label"><div class="bf-head">SSH</div></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">sshd</div><div class="bf-sub">ключ хоста: сервер доказывает клиенту свою подлинность</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">sshd-session</div><div class="bf-sub">ключ или пароль клиента</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-amber"><div class="bf-head">PAM</div><div class="bf-sub">auth – только при вводе пароля; account и session – всегда</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">права</div><div class="bf-sub">переход на UID/GID пользователя</div></div>
+    <div class="ll-arrow"></div>
+    <div class="bf-block bf-fill-tint"><div class="bf-head">оболочка</div><div class="bf-sub">или команда пользователя</div></div>
+  </div>
+</div>
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/13-login-paths.txt" section="1" title="Ubuntu Server 26.04 · настройки sshd по умолчанию" fontSize="0.5rem" class="!mt-0">
+  <TCallout :line="4" :col="1" :span="10" :n="1" />
+  <TCallout :line="5" :col="1" :span="33" :n="2" />
+  <TCallout :line="8" :col="1" :span="31" :n="3" />
+</TerminalCapture>
+
+</div>
+<div class="text-xs space-y-1.5">
+<div><span class="co-ball">1</span> <code>UsePAM yes</code> – Ubuntu включает PAM в sshd (в сборке OpenSSH «из коробки» PAM выключен)</div>
+<div><span class="co-ball">2</span> root – только по ключу: пароль root по сети не принимается</div>
+<div><span class="co-ball">3</span> диалог модулей с пользователем идёт через <code>KbdInteractiveAuthentication</code> – по умолчанию выключен; для второго фактора его придётся включить (раздел 7)</div>
+<div>в OpenSSH 10 сеанс обслуживает отдельный процесс <code>sshd-session</code> – его имя встречается в журналах</div>
+</div>
+</div>
+
+<Refs ids="man-login man-agetty man-sshd man-sshd-config man-pam" />
+
+<style>
+.login-lanes { font-size: 0.72rem; text-align: center; }
+.login-lanes .ll-lane { display: flex; align-items: stretch; gap: 0; }
+.login-lanes .ll-lane .bf-block { flex: 1 1 0; display: flex; flex-direction: column; justify-content: center; padding: 0.3em 0.45em; }
+.login-lanes .ll-label { flex: 0 0 5.5em; margin-right: 0.6em; }
+.login-lanes .ll-arrow { flex: 0 0 1.4em; align-self: center; height: 2px; background: #7c8aa0; position: relative; margin: 0 0.2em; }
+.login-lanes .ll-arrow::after { content: ''; position: absolute; right: -2px; top: -4px; border: 5px solid transparent; border-left-color: #7c8aa0; }
+</style>
+
+<!--
+Пример типового использования PAM – два пути входа. Консоль: agetty открывает
+терминал и спрашивает имя, запускает login; login через PAM проверяет пароль и
+учётную запись (стеки auth и account), открывает сеанс (session), затем
+устанавливает UID и GID – по записи passwd, которая благодаря NSS может прийти
+и из каталога домена, – и запускает оболочку из седьмого поля. SSH: сначала
+сервер доказывает клиенту подлинность ключом хоста, затем клиент
+аутентифицируется ключом или паролем; при вводе пароля sshd обращается к стеку
+auth, а account и session проходятся при любом методе – ровно та критическая
+граница с предыдущего слайда. Терминал: sshd -T печатает действующую
+конфигурацию. UsePAM yes – выбор Debian/Ubuntu, а не upstream-умолчание
+OpenSSH; root по сети – только по ключу; KbdInteractiveAuthentication по
+умолчанию выключен, и это ограничивает диалог модулей с пользователем – к этому
+вернёмся при подключении второго фактора. В OpenSSH 10 за сеанс отвечает
+отдельный процесс sshd-session, который и виден в журналах.
 -->
 
 ---
@@ -260,14 +423,18 @@ layout: section
 <SectionTOC prefix="2" :current="1" :items="[
   'Библиотека и модули',
   'Файлы конфигурации',
-  'Типы правил',
+  'Типы правил и стек модулей',
   'Управляющие флаги',
-  'Стек модулей',
+  'Примеры исполнения стека',
+  'include и substack: повторное использование правил',
 ]" />
 
 ---
 
 # PAM-aware программы и библиотека libpam
+
+PAM представляет собой библиотеку `libpam.so` и систему модулей – динамически
+подгружаемых библиотек `pam_*.so`.
 
 **PAM-aware** – программа, скомпонованная с `libpam.so` и доверяющая ей
 аутентификацию. Проверить это позволяет `ldd`:
@@ -275,7 +442,7 @@ layout: section
 <div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-2 items-start">
 <div>
 
-<TerminalCapture src="captures/01-pam-locations.txt" section="1" title="Ubuntu Server 26.04 · ldd и пакет libpam" fontSize="0.5rem">
+<TerminalCapture src="captures/01-pam-locations.txt" section="1" title="Ubuntu Server 26.04 · ldd и пакет libpam" fontSize="0.5rem" class="!mt-0">
   <TCallout :line="2" :col="9" :span="11" :n="1" />
   <TCallout :line="3" :col="9" :span="16" :n="2" />
   <TCallout :line="11" :col="20" :span="16" :n="3" />
@@ -286,39 +453,36 @@ layout: section
 <b>Читаем вывод:</b>
 <div class="mt-1 space-y-1.5">
 <div><span class="co-ball">1</span> <code>libpam.so.0</code> – ядро PAM: разбор конфигурации и исполнение стека модулей</div>
-<div><span class="co-ball">2</span> <code>libpam_misc.so.0</code> – вспомогательная библиотека: готовая функция диалога <Man p="misc_conv(3)" /> (раздел 7)</div>
+<div><span class="co-ball">2</span> <code>libpam_misc.so.0</code> – вспомогательная библиотека: готовая функция диалога <Man p="misc_conv(3)" /> (раздел 8)</div>
 <div><span class="co-ball">3</span> версия: Linux-PAM <b>1.7.0</b> (пакет <code>libpam0g</code>)</div>
 </div>
 </div>
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
-Сами способы проверки реализуются <b>модулями</b> – динамически подгружаемыми
-библиотеками <code>pam_*.so</code>; libpam загружает их через <code>dlopen(3)</code>
-при первом обращении службы (механика – раздел 9).
+<code>libpam</code> загружает модули с помощью <Man p="dlopen(3)" /> при первом обращении
+службы (механика – раздел 10); сами способы проверки реализованы <b>в модулях</b>, поэтому
+новый способ аутентификации – это новый файл <code>pam_*.so</code> и строка конфигурации,
+а не пересборка программ.
 </div>
 
 <Refs ids="man-pam pam-sag linux-pam-src" />
 
 <!--
+Две составляющие PAM: библиотека libpam и модули – разделяемые объекты pam_*.so.
 Термин PAM-aware: программа доверяет аутентификацию libpam. ldd показывает две
 библиотеки: libpam – ядро (разбор конфигурации, исполнение стека), libpam_misc –
 небольшая добавка для консольных приложений с готовой функцией диалога.
-Версию см. по пакету: 1.7.0 в Ubuntu 26.04. Модули – отдельные .so, подгружаемые
-динамически; поэтому новый способ аутентификации – это новый файл на диске плюс
-строка конфигурации, а не пересборка программ.
+Версию см. по пакету: 1.7.0 в Ubuntu 26.04. Модули подгружаются динамически
+через dlopen при первом обращении службы; поэтому новый способ аутентификации –
+это новый файл на диске плюс строка конфигурации, а не пересборка программ.
 -->
 
 ---
 
 # Каталог модулей
 
-<div class="grid grid-cols-[1.4fr_1fr] gap-4 items-start">
-<div>
-
-<TerminalCapture src="captures/01-pam-locations.txt" section="2" title="Ubuntu Server 26.04 · модули PAM" fontSize="0.5rem" highlight="5,11" />
-
-</div>
+<div class="grid grid-cols-[1fr_1.4fr] gap-4 items-start">
 <div>
 
 Путь к каталогу модулей зависит от дистрибутива:
@@ -333,20 +497,28 @@ layout: section
 
 </div>
 
+</div>
+<div>
+
+<TerminalCapture src="captures/01-pam-locations.txt" section="2" title="Ubuntu Server 26.04 · модули PAM" fontSize="0.5rem" class="!mt-0">
+  <TCallout :line="5" :col="1" :span="11" />
+  <TCallout :line="11" :col="1" :span="15" />
+</TerminalCapture>
+
+</div>
+</div>
+
 <div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
 <Man p="pam.conf(5)" />: относительный путь модуля в правиле отсчитывается
 от каталога модулей по умолчанию; на практике в правилах пишут только
-имя файла – <code>pam_unix.so</code>.
-</div>
-
-</div>
+имя файла – <code>pam_unix.so</code>, а полный путь нужен лишь модулю вне этого каталога.
 </div>
 
 <div class="mt-2">
 
-Уже в базовой системе – **45 модулей**: выделены `pam_deny.so` и `pam_faillock.so`,
-с которыми мы будем работать; пакеты добавляют свои (`pam_pwquality.so`,
-`pam_google_authenticator.so` – разделы 5–6).
+В Ubuntu Server 26.04 предустановлены **45 модулей**; выделены `pam_deny.so` и `pam_faillock.so`,
+с которыми мы будем работать. Пакеты добавляют свои модули (`pam_pwquality.so`,
+`pam_google_authenticator.so` – разделы 6–7).
 
 </div>
 
@@ -357,8 +529,8 @@ layout: section
 в семействе Red Hat (и в РЕД ОС) – /usr/lib64/security, upstream-умолчание –
 /lib/security. Поэтому инструкции «положите модуль в /lib/security» из старых
 руководств на современных системах не работают – путь нужно проверять.
-45 модулей уже в базовой поставке; в правилах пишется только имя .so,
-полный путь нужен лишь для модулей вне каталога по умолчанию.
+45 модулей уже в базовой поставке Ubuntu Server 26.04; в правилах пишется
+только имя .so, полный путь нужен лишь для модулей вне каталога по умолчанию.
 -->
 
 ---
@@ -370,19 +542,20 @@ layout: section
 <SectionTOC prefix="2" :current="2" :items="[
   'Библиотека и модули',
   'Файлы конфигурации',
-  'Типы правил',
+  'Типы правил и стек модулей',
   'Управляющие флаги',
-  'Стек модулей',
+  'Примеры исполнения стека',
+  'include и substack: повторное использование правил',
 ]" />
 
 ---
 
-# Файлы конфигурации: /etc/pam.conf и /etc/pam.d
+# Где находится конфигурация PAM
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-4 items-start">
+<div class="grid grid-cols-[1.25fr_1fr] gap-4 items-start">
 <div>
 
-<TerminalCapture src="captures/01-pam-locations.txt" section="3" title="Ubuntu Server 26.04 · конфигурация PAM" fontSize="0.5rem">
+<TerminalCapture src="captures/01-pam-locations.txt" section="3" title="Ubuntu Server 26.04 · конфигурация PAM" fontSize="0.5rem" class="!mt-0">
   <TCallout :line="1" :col="6" :span="11" :n="1" />
   <TCallout :line="12" :col="41" :span="13" :n="2" />
   <TCallout :line="14" :col="20" :span="15" :n="3" />
@@ -390,359 +563,175 @@ layout: section
 </TerminalCapture>
 
 </div>
-<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-<b>Читаем вывод:</b>
-<div class="mt-1 space-y-1.5">
-<div><span class="co-ball">1</span> современная схема: каталог <code>/etc/pam.d/</code> – <b>по файлу на службу</b>; имя файла = имя службы (<code>login</code>, <code>sshd</code>, <code>su</code>…)</div>
-<div><span class="co-ball">2</span> исторический единый файл <code>/etc/pam.conf</code>: при наличии каталога <code>pam.d/</code> он <b>игнорируется</b></div>
-<div><span class="co-ball">3</span> каталог поставщика <code>/usr/lib/pam.d/</code> (здесь отсутствует): одноимённый файл в <code>/etc/pam.d/</code> имеет приоритет</div>
-<div><span class="co-ball">4</span> <code>/etc/security/</code> – собственные файлы параметров отдельных модулей</div>
-</div>
-</div>
-</div>
-
-<div class="mt-2 grid grid-cols-2 gap-3 text-xs">
-<div class="p-2 border border-slate-400/40 rounded">
-Строка <code>/etc/pam.conf</code>: <code class="font-bold">service type control module-path module-arguments</code>
-</div>
-<div class="p-2 border border-slate-400/40 rounded">
-Строка файла в <code>/etc/pam.d/</code> – та же <b>без поля service</b>: <code class="font-bold">type control module-path module-arguments</code>
-</div>
-</div>
-
-<Refs ids="man-pam-conf pam-sag" />
-
-<!--
-Изначально вся конфигурация жила в одном файле /etc/pam.conf со строками из
-пяти полей, первое – имя службы. Современные системы используют каталог
-/etc/pam.d: по файлу на службу, имя файла – имя службы, поле service из строки
-исчезает. При наличии pam.d файл pam.conf игнорируется – pam.d(5). Третье
-место – /usr/lib/pam.d, куда пакеты могут класть свои конфигурации; при
-коллизии имён побеждает /etc/pam.d (в Ubuntu 26.04 каталога поставщика нет).
-Наконец /etc/security – не правила PAM, а файлы параметров конкретных модулей:
-access.conf, faillock.conf, limits.conf и т. д.; мы будем редактировать их
-в разделах 4–5.
--->
-
----
-
-# Параметры модулей и журналирование
-
-<div class="grid grid-cols-2 gap-4 items-start">
 <div>
 
-**Файлы параметров** – каталог `/etc/security/`:
+<div class="t-table text-xs">
 
-<div class="t-table text-xs mt-2">
-
-| Файл | Модуль | Раздел |
-|---|---|---|
-| <Man p="access.conf(5)" /> | <Man p="pam_access(8)" /> | 4.2 |
-| <Man p="time.conf(5)" /> | <Man p="pam_time(8)" /> | 4.3 |
-| <Man p="limits.conf(5)" /> | <Man p="pam_limits(8)" /> | 4.4 |
-| <DebianMan p="pwquality.conf(5)" pkg="libpwquality-common" /> | <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" /> | 5 |
-| <Man p="faillock.conf(5)" /> | <Man p="pam_faillock(8)" /> | 5 |
-| `pam_env.conf` | <Man p="pam_env(8)" /> | – |
-| `opasswd` | <Man p="pam_pwhistory(8)" /> (история хешей) | 5 |
-
-</div>
-
-<div class="mt-2 text-xs opacity-80">
-Правило в <code>/etc/pam.d/</code> отвечает «<i>какой модуль и когда вызвать</i>»,
-файл в <code>/etc/security/</code> – «<i>с какими параметрами он работает</i>»;
-аргументы в строке правила имеют приоритет.
-</div>
-
-</div>
-<div>
-
-**Журналирование** – модули и libpam пишут в syslog
-(facility `auth`/`authpriv`):
-
-<CodeSnippet src="snippets/auth-log-listfile.txt" lang="text" title="/var/log/auth.log" tag="демо 08" :numbers="false">
-  <TCallout :line="2" :col="3" :span="28" :n="1" />
-</CodeSnippet>
-
-- Ubuntu: `/var/log/auth.log` (rsyslog) и `journalctl`;
-- <span class="co-ball">1</span> формат `модуль(служба:тип): сообщение` – видно,
-  **какой модуль какой службы** принял решение;
-- неудачные входы, блокировки, ошибки конфигурации
-  ищите именно здесь.
-
-</div>
-</div>
-
-<Refs ids="man-pam-conf pam-sag" />
-
-<!--
-Разделение ответственности: правило в pam.d говорит, какой модуль вызвать и как
-учесть результат; собственный файл модуля в /etc/security – его параметры.
-Многие модули настраиваются и так и так: аргументы в строке правила имеют
-приоритет над файлом (увидим на pam_pwquality). Правая колонка – где искать
-диагностику: syslog, facility auth/authpriv; в Ubuntu – auth.log и journalctl.
-Формат сообщений позволяет понять, какой модуль какой службы отказал, –
-пример из нашего же демо раздела 7.
--->
-
----
-layout: section
----
-
-# 2. Устройство PAM
-
-<SectionTOC prefix="2" :current="3" :items="[
-  'Библиотека и модули',
-  'Файлы конфигурации',
-  'Типы правил',
-  'Управляющие флаги',
-  'Стек модулей',
-]" />
-
----
-
-# Четыре типа правил (группы управления)
-
-Задачи, выполняемые модулями, разделены на **четыре независимые группы
-управления** (management groups); поле `type` правила называет группу:
-
-<div class="t-table text-xs mt-2">
-
-| Тип | Вопрос | Что делают модули | Примеры |
-|---|---|---|---|
-| **auth** | «вы – тот, за кого себя выдаёте?» | запрашивают пароль или иное подтверждение подлинности; могут выдавать «удостоверения» (credentials) | <Man p="pam_unix(8)" />, `pam_google_authenticator` |
-| **account** | «можно ли вам сейчас?» | проверки, не связанные с паролем: срок действия учётной записи, время суток, местоположение, список доступа | <Man p="pam_time(8)" />, <Man p="pam_access(8)" />, <Man p="pam_nologin(8)" /> |
-| **password** | «как обновить аутентификатор?» | смена пароля; именно здесь проверяется соответствие нового пароля политике | `pam_unix`, <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" /> |
-| **session** | «что сделать до и после сеанса?» | журналирование входа/выхода, переменные окружения, лимиты ресурсов, монтирование каталогов | <Man p="pam_limits(8)" />, <Man p="pam_env(8)" />, <Man p="pam_motd(8)" /> |
-
-</div>
-
-<v-click>
-
-<div class="mt-3 grid grid-cols-2 gap-3 text-xs">
-<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
-Аналогия с проходной (лекция 2): <b>auth</b> – «докажите, что пропуск ваш»;
-<b>account</b> – «а действует ли пропуск сегодня?»; <b>session</b> – записать
-в журнал и выдать ключ от кабинета; <b>password</b> – замена пропуска.
-</div>
-<div class="p-2 border border-slate-400/40 rounded">
-Один модуль может обслуживать несколько типов: <code>pam_unix</code> реализует
-все четыре – проверку пароля, контроль срока его действия по
-<code>/etc/shadow</code>, смену пароля и журналирование сеанса.
-</div>
-</div>
-
-</v-click>
-
-<Refs ids="man-pam man-pam-conf man-pam-unix" />
-
-<!--
-Терминология pam(7): четыре независимые группы управления. auth – собственно
-аутентификация, диалог с пользователем; account – верификация учётной записи
-без пароля: не истёк ли срок, подходит ли время суток, есть ли право доступа
-к службе; password – обновление аутентификационных данных; session – настройка
-окружения и журналирование. Вернуться к аналогии с проходной из лекции 2.
-Подчеркнуть: тип – свойство ПРАВИЛА, а не модуля; pam_unix участвует во всех
-четырёх стеках. Если перед типом стоит дефис (-auth), libpam не пишет в журнал
-об отсутствии модуля – пригодится для необязательных модулей.
--->
-
----
-layout: section
----
-
-# 2. Устройство PAM
-
-<SectionTOC prefix="2" :current="4" :items="[
-  'Библиотека и модули',
-  'Файлы конфигурации',
-  'Типы правил',
-  'Управляющие флаги',
-  'Стек модулей',
-]" />
-
----
-
-# Управляющие флаги: краткая форма
-
-Поле `control` определяет, **как результат модуля влияет на итог всего стека**:
-
-<div class="t-table text-xs mt-2">
-
-| Флаг | Неудача модуля | Успех модуля |
-|---|---|---|
-| **required** | итог – отказ, но оставшиеся модули **всё равно выполняются** | идём дальше |
-| **requisite** | итог – отказ, стек прерывается **немедленно** | идём дальше |
-| **sufficient** | игнорируется, идём дальше | если раньше не отказал ни один required – **успех немедленно**, дальнейшие модули не вызываются |
-| **optional** | результат важен, только если это **единственное** правило данного типа в стеке | – |
-| **include** | подставить все строки данного типа из указанного файла | – |
-| **substack** | как include, но `die`/`done` внутри прерывают **только** вложенный стек | – |
-
-</div>
-
-<v-click>
-
-<div class="mt-3 p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-<b>Почему required не прерывает стек?</b> Чтобы не раскрывать атакующему,
-<b>на каком шаге</b> он провалился: оставшиеся модули выполняются, время ответа
-и диалог не зависят от места отказа. <code>requisite</code> жертвует этим ради
-гарантии: ни один следующий модуль не увидит, например, пароль, введённый
-на несуществующем терминале.
-</div>
-
-</v-click>
-
-<Refs ids="man-pam-conf pam-sag" />
-
-<!--
-Семантика по pam.conf(5). required: неудача учитывается, но стек доходит до
-конца – атакующий не узнаёт, где именно провалился. requisite: немедленный
-отказ; SAG приводит мотив – не дать модулям ниже по стеку получить пароль при
-подозрительных условиях. sufficient: успех достаточен, если до этого не было
-неудач required; неудача sufficient просто игнорируется. optional учитывается,
-только когда он единственный в стеке. include и substack подставляют строки из
-другого файла; разница – в области действия управляющих действий die/done:
-substack изолирует их внутри вложенного стека.
--->
-
----
-
-# Управляющие флаги: подробная форма
-
-Краткие флаги – лишь сокращения. Полная форма задаёт **действие на каждый код
-возврата** модуля: `[значение1=действие1 значение2=действие2 …]`
-
-<div class="grid grid-cols-2 gap-4 mt-2 items-start">
-<div>
-
-**Значения** – коды возврата (<Man p="pam(3)" />): `success`,
-`auth_err`, `user_unknown`, `new_authtok_reqd`, `ignore`…
-и `default` – «все не перечисленные».
-
-**Действия:**
-
-<div class="t-table text-xs mt-1">
-
-| Действие | Смысл |
+| Расположение | Назначение |
 |---|---|
-| `ignore` | результат не влияет на итог |
-| `ok` | записать результат в итог стека |
-| `done` | `ok` + немедленно завершить стек (если не было неудач) |
-| `bad` | счесть результат неудачей стека (умолчание) |
-| `die` | `bad` + немедленно завершить стек |
-| `N` (число) | успех: перепрыгнуть следующие N правил |
-| `reset` | забыть накопленный итог, начать заново |
+| <span class="co-ball">1</span> `/etc/pam.d/` | основной каталог: политики служб под управлением администратора, **по файлу на службу** |
+| <span class="co-ball">2</span> `/etc/pam.conf` | старый единый файл конфигурации |
+| <span class="co-ball">3</span> `/usr/lib/pam.d/` | политики поставщика (пакетов), если сборка их поддерживает |
+| `<vendordir>/pam.d/` | дополнительный каталог поставщика в отдельных сборках (`--enable-vendordir`) |
+| <span class="co-ball">4</span> `/etc/security/` | файлы параметров отдельных модулей |
+| `/usr/lib/<triplet>/security/`, `/usr/lib64/security/` | модули `pam_*.so` (предыдущий слайд) |
 
-</div>
-
-</div>
-<div>
-
-**Соответствие кратких флагов** (<Man p="pam.conf(5)" />):
-
-<CodeSnippet src="snippets/pam-conf-controls.txt" lang="text" title="pam.conf(5)" tag="Linux-PAM 1.7.0" :numbers="false" fontSize="0.5rem">
-  <TCallout :line="1" :col="59" :span="11" :n="1" />
-  <TCallout :line="2" :col="59" :span="11" :n="2" />
-  <TCallout :line="3" :col="14" :span="12" :n="3" />
-</CodeSnippet>
-
-<div class="mt-1 text-xs space-y-0.5">
-<div><span class="co-ball">1</span> <span class="co-ball">2</span> required и requisite различаются только действием по умолчанию</div>
-<div><span class="co-ball">3</span> sufficient: успех завершает стек (<code>done</code>)</div>
-</div>
-
-<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
-Прыжок <code>N</code> – основной приём Debian/Ubuntu: строка
-<code>[success=1 default=ignore]</code> у <Man p="pam_unix(8)" /> означает
-«успех – перепрыгнуть <Man p="pam_deny(8)" />», – увидим в разделе 3.1.
 </div>
 
 </div>
 </div>
 
-<Refs ids="man-pam-conf pam-sag" />
+<div class="mt-3 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Linux-PAM поддерживает две формы конфигурации – единый файл и каталог с файлом на службу;
+каталожная форма предпочтительна и используется во всех современных дистрибутивах. Точная
+раскладка зависит от дистрибутива и параметров сборки: в Ubuntu 26.04 каталога поставщика нет.
+</div>
+
+<Refs ids="man-pam-conf pam-sag linux-pam-src" />
 
 <style>
-/* Таблица упирается в нижний колонтитул – ужимаем. */
 .t-table { font-size: 0.68rem !important; }
-.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+.t-table td, .t-table th { padding-top: 0.2em !important; padding-bottom: 0.2em !important; }
 </style>
 
 <!--
-Полный синтаксис: в квадратных скобках пары значение=действие. Значение –
-символическое имя кода возврата PAM; default покрывает все не перечисленные.
-Действия: ignore/ok/done/bad/die, число N – прыжок через N правил (ноль
-запрещён), reset – сброс накопленного состояния. Каждый краткий флаг – макрос
-над этим синтаксисом; соответствие приведено дословно по pam.conf(5). Ubuntu
-активно использует прыжки – конструкция [success=1 default=ignore] в common-auth
-будет разобрана в разделе 3. Как именно libpam хранит и применяет эти действия –
-массив actions – раздел 9.
+Где искать конфигурацию. Слева – реальное состояние Ubuntu 26.04, справа –
+таблица расположений. Основной каталог /etc/pam.d: по файлу на службу, имя
+файла – имя службы. /etc/pam.conf – исторический единый файл; он есть на диске,
+но при наличии каталога pam.d игнорируется. /usr/lib/pam.d – каталог политик
+поставщика: пакеты могут класть туда файлы по умолчанию, оставляя /etc/pam.d
+администратору; в Ubuntu этот каталог отсутствует. Сборочная опция vendordir
+добавляет ещё один каталог поставщика – константы PAM_CONFIG_DIST_D и
+PAM_CONFIG_DIST2_D в pam_private.h увидим в разделе 10. /etc/security – не
+правила PAM, а файлы параметров конкретных модулей. Порядок, в котором libpam
+перебирает эти места, – следующий слайд.
 -->
 
 ---
-layout: section
----
 
-# 2. Устройство PAM
+# Приоритет файлов конфигурации
 
-<SectionTOC prefix="2" :current="5" :items="[
-  'Библиотека и модули',
-  'Файлы конфигурации',
-  'Типы правил',
-  'Управляющие флаги',
-  'Стек модулей',
-]" />
+<div class="grid grid-cols-[1fr_1.15fr] gap-5 items-start">
+<div>
 
----
-
-# Стек модулей
-
-Правила одного типа в файле службы образуют **стек** (stack): выполняются
-**сверху вниз**, итог складывается из результатов по управляющим флагам.
-
-<FieldRecord class="mt-3" size="0.92rem" legendSize="0.75rem" :cols="2"
-  :fields="['auth', { t: '[success=1 default=ignore]', hot: true }, 'pam_unix.so', 'nullok']"
-  :legend="[
-    'тип – группа управления (стек), к которой относится правило',
-    { t: 'управляющий флаг – как результат модуля влияет на итог стека', hot: true },
-    'модуль: имя .so в каталоге модулей или абсолютный путь',
-    'аргументы модуля – его параметры',
-  ]"
-/>
-
-<div class="grid grid-cols-2 gap-4 mt-3 text-xs">
-<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10">
-<b>Порядок строк важен:</b> стек – не множество, а последовательность; перестановка
-строк меняет поведение (пример с <Man p="pam_faillock(8)" /> – раздел 5).
+<div class="prec-chain mt-1">
+  <div class="bf-block bf-fill-accent"><div class="bf-head bf-mono">/etc/pam.d/&lt;служба&gt;</div><div class="bf-sub">файл администратора</div></div>
+  <div class="pc-link"><div class="pc-arrow"></div><div class="pc-label">файла нет</div></div>
+  <div class="bf-block bf-fill-tint"><div class="bf-head bf-mono">/usr/lib/pam.d/&lt;служба&gt;</div><div class="bf-sub">файл поставщика</div></div>
+  <div class="pc-link"><div class="pc-arrow"></div><div class="pc-label">файла нет и сборка с vendordir</div></div>
+  <div class="bf-block bf-fill-tint"><div class="bf-head bf-mono">&lt;vendordir&gt;/pam.d/&lt;служба&gt;</div><div class="bf-sub">второй каталог поставщика</div></div>
+  <div class="pc-link"><div class="pc-arrow"></div><div class="pc-label">файла нет нигде</div></div>
+  <div class="bf-block bf-fill-amber"><div class="bf-head bf-mono">…/other</div><div class="bf-sub">служба по умолчанию (через два слайда)</div></div>
 </div>
-<div class="p-3 border-l-4 border-red-500 bg-red-500/10">
-<b>Ошибка в строке = отказ:</b> некорректно оформленное правило libpam превращает
-в правило «обязан отказать» – система ошибается в сторону запрета
-(<Man p="pam.conf(5)" />; код – раздел 9).
+
+</div>
+<div>
+
+Правила поиска конфигурации службы (<Man p="pam.d(5)" href="https://man7.org/linux/man-pages/man5/pam.d.5.html" />):
+
+1. при наличии каталога `/etc/pam.d/` файл `/etc/pam.conf` **игнорируется**;
+2. файл в `/etc/pam.d/` имеет приоритет над **одноимённым** файлом поставщика;
+3. при отсутствии файла администратора берётся файл поставщика из настроенного каталога;
+4. нужный файл определяется **именем службы**.
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Альтернативы, а не слои:</b> файлы разных каталогов не склеиваются. Локальный файл
+<b>замещает</b> одноимённый файл поставщика целиком, а не дополняет его.
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Приложение может указать libpam другой каталог конфигурации – вызов
+<code>pam_start_confdir</code> (<Man p="pam_start(3)" />); так тестируют политику,
+не трогая <code>/etc/pam.d</code>.
+</div>
+
 </div>
 </div>
 
-<v-click>
+<Refs ids="man-pam-conf man-pam-start linux-pam-src" />
 
-<div class="mt-3 p-2 border-l-4 border-teal-500 bg-teal-500/10">
-Четыре стека службы (auth, account, password, session) выполняются <b>независимо</b>
-и в разное время: auth и account – при входе, session – вокруг сеанса,
-password – при смене пароля. Приложение запускает каждый стек своим вызовом
-API (раздел 7).
-</div>
-
-</v-click>
-
-<Refs ids="man-pam-conf pam-sag" />
+<style>
+.prec-chain { display: flex; flex-direction: column; font-size: 0.76rem; text-align: center; }
+.prec-chain .pc-link { display: flex; align-items: center; justify-content: center; gap: 0.6em; height: 2.1em; }
+.prec-chain .pc-arrow { width: 2px; height: 1.8em; background: #555; position: relative; }
+.prec-chain .pc-arrow::after { content: ''; position: absolute; bottom: -4px; left: -3px; border: 4px solid transparent; border-top-color: #555; }
+.prec-chain .pc-label { font-size: 0.66rem; color: #555; font-style: italic; }
+.slidev-layout ol { margin-top: 0.3em; }
+</style>
 
 <!--
-Анатомия правила на примере настоящей строки из common-auth Ubuntu: тип,
-управляющий флаг, модуль, аргументы. Понятие стека: строки одного типа
-выполняются по порядку, сверху вниз; итог определяется флагами. Два
-предупреждения: порядок строк значим (вернёмся при разговоре о faillock), а
-синтаксически некорректная строка не игнорируется – она становится правилом
-«обязан отказать»: PAM ошибается в сторону запрета. Четыре стека службы
-независимы; auth+account исполняются при входе, session – вокруг сеанса,
-password – только при смене пароля.
+Порядок поиска: сначала файл администратора в /etc/pam.d, при его отсутствии –
+файл поставщика в /usr/lib/pam.d, затем (если сборка настроена) второй каталог
+поставщика; если файла службы нет нигде, берётся служба other. Четыре правила
+pam.d(5): pam.conf игнорируется при наличии каталога; локальный файл имеет
+приоритет над одноимённым файлом поставщика; файл поставщика – запасной
+вариант; выбор определяет имя службы. Главное предостережение: это
+альтернативы, а не слои – libpam берёт первый найденный файл целиком и не
+объединяет его с остальными; скопировав файл поставщика в /etc/pam.d и
+отредактировав одну строку, администратор берёт на себя весь файл, включая
+будущие обновления поставщика. pam_start_confdir позволяет приложению читать
+политику из произвольного каталога – удобный способ тестировать конфигурацию.
+В исходном коде всё это – массив pamd_dirs (раздел 10).
+-->
+
+---
+
+# Каталог /etc/pam.d: по файлу на службу
+
+<div class="grid grid-cols-[1fr_1.1fr] gap-4 items-start">
+<div>
+
+Имя файла – имя **службы**; содержимое – правила только для неё:
+
+<div class="t-table text-xs mt-2">
+
+| Файл службы | Назначение |
+|---|---|
+| `login` | вход с локального терминала |
+| `sshd` | сервер OpenSSH |
+| `sudo`, `su` | повышение привилегий, смена пользователя |
+| `passwd` | смена пароля |
+| `cron` | учётная запись и сеанс для заданий по расписанию |
+| `other` | запасная политика для служб без своего файла |
+| `common-*` | общие файлы Debian/Ubuntu (раздел 3.1) |
+
+</div>
+
+</div>
+<div>
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Важно:</b> имя службы задаёт <b>приложение</b> при вызове <Man p="pam_start(3)" />,
+и оно не обязано совпадать с именем исполняемого файла. OpenSSH представляется как
+<code>sshd</code> – его политика в <code>/etc/pam.d/sshd</code>, а не в
+<code>/etc/pam.d/ssh</code>; программа <code>authprint</code> из раздела 8 выберет имя службы сама.
+</div>
+
+<div class="mt-3 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Имена файлов служб – в <b>нижнем регистре</b>. Набор файлов зависит от установленных
+пакетов: в контейнере с предыдущего слайда нет <code>sudo</code> и <code>cron</code>,
+зато есть семейство <code>gdm-*</code>, появившееся вместе с GDM.
+</div>
+
+<div class="mt-3 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+Разделение ответственности: файл службы описывает <b>особенности службы</b>, общие файлы –
+<b>политику аутентификации</b> системы (раздел 3).
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-conf man-pam-start pam-sag" />
+
+<!--
+Каталог pam.d – по файлу на службу. Таблица типичных файлов: login, sshd,
+sudo и su, passwd, cron, other, плюс общие файлы Debian/Ubuntu common-*.
+Ключевой факт, который часто упускают: имя службы – параметр pam_start, его
+выбирает приложение; OpenSSH называет себя sshd, а не ssh. Поэтому при разборе
+проблемы первым делом нужно узнать, под каким именем приложение обращается к
+PAM, – в разделе 8 мы увидим это на собственной программе. Имена файлов – в
+нижнем регистре. Набор файлов зависит от установленных пакетов: пакет приносит
+свой файл службы при установке.
 -->
 
 ---
@@ -750,12 +739,12 @@ password – только при смене пароля.
 # Служба other: правила по умолчанию
 
 Имя службы **`other`** зарезервировано: его стеки применяются к службе,
-у которой **нет собственного файла** в `/etc/pam.d/`.
+у которой **нет собственного файла** ни в одном из каталогов конфигурации.
 
 <div class="grid grid-cols-[1fr_1.2fr] gap-4 mt-2 items-start">
 <div>
 
-<TerminalCapture src="captures/02-common-files.txt" section="5" title="Ubuntu Server 26.04 · /etc/pam.d/other" />
+<TerminalCapture src="captures/02-common-files.txt" section="5" title="Ubuntu Server 26.04 · /etc/pam.d/other" class="!mt-0" />
 
 <div class="mt-2 text-xs opacity-80">
 В Ubuntu <code>other</code> подключает общие файлы <code>common-*</code>
@@ -770,39 +759,1497 @@ password – только при смене пароля.
 <b>Руководство администратора Linux-PAM предупреждает:</b> слабая запись
 <code>other</code> – уязвимость всей системы, поскольку она действует на каждое
 PAM-aware приложение без своего файла. Консервативный вариант по SAG –
-запретить всё и записать событие в журнал:
+запретить всё (<Man p="pam_deny(8)" /> всегда возвращает отказ) и записать событие в журнал:
 </div>
 
 <CodeSnippet src="snippets/sag-other.conf" lang="text" title="/etc/pam.d/other" tag="пример SAG" :numbers="false" class="mt-2" />
 
 <div class="mt-2 text-xs opacity-80">
 Выбор Ubuntu – удобство: новая служба «просто работает»; выбор SAG –
-принцип «запрещено всё, что не разрешено явно».
+принцип «запрещено всё, что не разрешено явно». Всегда проверяйте <b>фактическое</b> содержимое файла.
 </div>
 
 </div>
 </div>
 
-<Refs ids="pam-sag man-pam-conf" />
+<Refs ids="pam-sag man-pam-conf man-pam-rootok" />
 
 <!--
 Служба other – правила по умолчанию для программ без собственного файла.
 Это и удобство, и риск: SAG прямо называет слабый other уязвимостью. Ubuntu
 подключает в other общие файлы common-* – неизвестное приложение получает
 обычную парольную аутентификацию; консервативная рекомендация SAG – pam_deny
-во всех четырёх стеках плюс pam_warn для журнала. Этим противопоставлением
-закрываем устройство PAM и переходим к реальной конфигурации Ubuntu.
+во всех четырёх стеках плюс pam_warn для журнала. Дистрибутивы поступают
+по-разному, поэтому содержимое other всегда нужно проверять, а не предполагать.
+-->
+
+---
+
+# Параметры модулей и журналирование
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 items-start">
+<div>
+
+**Файлы параметров** – каталог `/etc/security/`:
+
+<div class="t-table text-xs mt-2">
+
+| Модуль | Файлы параметров | Раздел |
+|---|---|---|
+| <Man p="pam_access(8)" /> | <Man p="access.conf(5)" />, `access.d/` | 4.2 |
+| <Man p="pam_time(8)" /> | <Man p="time.conf(5)" /> | 4.3 |
+| <Man p="pam_limits(8)" /> | <Man p="limits.conf(5)" />, `limits.d/` | 4.4 |
+| <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" /> | <DebianMan p="pwquality.conf(5)" pkg="libpwquality-common" />, `pwquality.conf.d/` | 5 |
+| <Man p="pam_pwhistory(8)" /> | `pwhistory.conf`, `opasswd` (история хешей) | 5 |
+| <Man p="pam_faillock(8)" /> | <Man p="faillock.conf(5)" /> | 5 |
+| <Man p="pam_env(8)" /> | `pam_env.conf` и `/etc/environment` | – |
+
+</div>
+
+<CodeSnippet src="snippets/ex-two-layers.txt" lang="text" title="два уровня конфигурации" tag="пример" :numbers="false" fontSize="0.5rem" class="mt-2" />
+
+</div>
+<div>
+
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+<b>Два уровня:</b> правило в <code>/etc/pam.d/</code> отвечает «<i>когда и как вызвать
+модуль</i>», файл в <code>/etc/security/</code> – «<i>что модуль делает, когда вызван</i>».
+Многие модули принимают те же параметры аргументами в строке правила; аргументы имеют приоритет.
+</div>
+
+<div class="mt-3 text-xs">
+
+**Журналирование** – модули и libpam пишут в syslog (facility `auth`/`authpriv`):
+
+</div>
+
+<CodeSnippet src="snippets/auth-log-listfile.txt" lang="text" title="/var/log/auth.log" tag="демо 08" :numbers="false" class="mt-1">
+  <TCallout :line="2" :col="3" :span="28" :n="1" />
+</CodeSnippet>
+
+<div class="mt-1 text-xs space-y-0.5">
+<div>Ubuntu: <code>/var/log/auth.log</code> (rsyslog) и <code>journalctl</code>;</div>
+<div><span class="co-ball">1</span> формат <code>модуль(служба:тип): сообщение</code> – видно, <b>какой модуль какой службы</b> принял решение;</div>
+<div>неудачные входы, блокировки, ошибки конфигурации ищите именно здесь.</div>
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag man-pam-faillock" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+Разделение ответственности: правило в pam.d говорит, какой модуль вызвать и как
+учесть результат; собственный файл модуля в /etc/security – его параметры.
+Таблица расширена каталогами-дополнениями (access.d, limits.d, pwquality.conf.d) –
+пакеты и администратор кладут туда отдельные файлы, не редактируя основной.
+Пример с faillock показывает оба уровня: строка preauth в стеке auth включает
+модуль, а deny/fail_interval/unlock_time в faillock.conf задают его поведение;
+те же параметры можно указать аргументами в строке правила, и они имеют
+приоритет (увидим на pam_pwquality). Правая колонка – где искать диагностику:
+syslog, facility auth/authpriv; в Ubuntu – auth.log и journalctl. Формат
+сообщений позволяет понять, какой модуль какой службы отказал, – пример из
+нашего же демо раздела 8.
+-->
+
+---
+
+# Формат правила: единый файл /etc/pam.conf
+
+Строка единого файла состоит из **пяти полей**, разделённых пробельными символами; первое
+поле – имя службы:
+
+<FieldRecord class="mt-3" sep="" size="0.95rem" legendSize="0.78rem" :cols="2"
+  :fields="[{ t: 'login', hot: true }, 'auth', 'required', 'pam_unix.so', { t: 'nullok' }]"
+  :legend="[
+    { t: 'service – имя службы, к которой относится правило', hot: true },
+    'type – тип правила (группа управления): auth, account, password, session',
+    'control – управляющий флаг: как результат модуля влияет на итог стека',
+    'module-path – имя модуля в каталоге модулей или абсолютный путь',
+    'module-arguments – аргументы модуля (могут отсутствовать)',
+  ]"
+/>
+
+<div class="grid grid-cols-2 gap-4 mt-3 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-pamconf.txt" lang="text" title="/etc/pam.conf" tag="пример" :numbers="false" />
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Одна строка на правило; правила разных служб перемешаны в одном файле, и порядок строк
+<b>внутри службы и типа</b> задаёт порядок исполнения.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+Linux-PAM читает <code>/etc/pam.conf</code>, только если каталога <code>/etc/pam.d/</code> нет
+(или в сборке с <code>PAM_READ_BOTH_CONFS</code>). Файл в Ubuntu лежит на диске, но не действует.
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<style>
+.field-record .fr-cell + .fr-cell { margin-left: 0.6em; }
+</style>
+
+<!--
+Исходная форма конфигурации – единый файл pam.conf с пятипольными строками.
+Разбор полей по образцу разбора /etc/passwd в лекции 2: служба, тип,
+управляющий флаг, модуль, аргументы. Пример показывает, как выглядят правила
+трёх служб в одном файле: при десятках служб и четырёх стеках у каждой файл
+становится необозримым – отсюда переход к каталогу. Оговорка: pam.conf
+читается только при отсутствии pam.d (или в специальной сборке), так что в
+Ubuntu он присутствует как памятник, но не исполняется; увидим это в коде
+_pam_init_handlers в разделе 10.
+-->
+
+---
+
+# Формат правила: файлы /etc/pam.d/&lt;служба&gt;
+
+В каталожной форме поле службы **исчезает** – его заменяет имя файла; остаются четыре поля:
+
+<FieldRecord class="mt-3" sep="" size="0.95rem" legendSize="0.78rem" :cols="2"
+  :fields="['auth', { t: '[success=1 default=ignore]', hot: true }, 'pam_unix.so', 'nullok']"
+  :legend="[
+    'type – тип правила: стек, в который оно входит',
+    { t: 'control – управляющий флаг: как учесть код возврата модуля (раздел 2.4)', hot: true },
+    'module-path – какой модуль вызвать',
+    'module-arguments – параметры модуля, например nullok или try_first_pass',
+  ]"
+/>
+
+<div class="grid grid-cols-[1fr_1.1fr] gap-4 mt-3 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-pamd-files.txt" lang="text" title="то же – три файла в /etc/pam.d/" tag="пример" :numbers="false" fontSize="0.5rem" />
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Пример строки – из <code>common-auth</code> Ubuntu: подробная форма флага в квадратных скобках
+(раздел 2.4). Правила <b>одного типа</b> в файле образуют <b>стек</b> (раздел 2.3).
+</div>
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
+<code>nullok</code> синтаксически корректен, но разрешает вход с <b>пустым</b> паролем
+(<Man p="pam_unix(8)" />) – в политиках серверов его убирают.
+</div>
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+Директива <code>@include common-auth</code> подставляет строки из другого файла – так все службы
+Ubuntu разделяют общие правила (разделы 2.6 и 3.1).
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf man-pam-unix pam-sag" />
+
+<style>
+.field-record .fr-cell + .fr-cell { margin-left: 0.6em; }
+</style>
+
+<!--
+Каталожная форма: имя файла заменяет поле службы, остаются четыре поля.
+Разбираем настоящую строку из common-auth Ubuntu: тип auth, управляющий флаг в
+подробной форме (квадратные скобки – раздел 2.4), модуль pam_unix, аргумент
+nullok. Те же три правила предыдущего слайда теперь лежат в трёх файлах.
+Предостережение про nullok: аргумент корректен, но разрешает пустые пароли –
+на серверах его убирают. Директива @include – способ Debian разделять общие
+правила между службами; общий механизм include/substack – раздел 2.6.
+-->
+
+---
+
+# Детали синтаксиса строки правила
+
+<CodeSnippet src="snippets/ex-syntax.txt" lang="text" title="/etc/pam.d/<служба>" tag="пример" :numbers="false" fontSize="0.5rem" class="mt-1">
+  <TCallout :line="1" :col="1" :span="13" :n="1" />
+  <TCallout :line="3" :col="46" :span="1" :n="2" />
+  <TCallout :line="5" :col="62" :span="22" :n="3" />
+  <TCallout :line="6" :col="1" :span="8" :n="4" />
+</CodeSnippet>
+
+<div class="grid grid-cols-2 gap-x-5 gap-y-1.5 mt-3 text-xs">
+<div><span class="co-ball">1</span> пустые строки и <b>комментарии</b> от <code>#</code> до конца строки игнорируются; поля разделяются любым числом пробелов и табуляций</div>
+<div><span class="co-ball">2</span> правило можно <b>продолжить</b> на следующей строке, поставив <code>\</code> перед концом строки</div>
+<div><span class="co-ball">3</span> аргумент, содержащий пробелы, заключают в <b>квадратные скобки</b> – это группировка аргумента, а не подробная форма флага</div>
+<div><span class="co-ball">4</span> <b>дефис</b> перед типом подавляет запись в журнал об отсутствии модуля; правило не отключается, флаг остаётся <code>optional</code></div>
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-3 text-xs">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Аргументы передаются модулю как есть:</b> их не интерпретирует оболочка – конвейеры,
+подстановки команд и переменных недоступны; смысл каждого аргумента определяет сам модуль
+(<code>debug</code>, <code>quiet</code>, <code>nullok</code>, <code>retry=N</code>… – смотрите его man-страницу).
+</div>
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Имена модулей и аргументы чувствительны к регистру; ключевые слова типа и флага libpam
+принимает в любом регистре, но принято писать строчными. Имена файлов служб – строчными.
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<!--
+Четыре детали синтаксиса на одном примере. Комментарии и пустые строки
+игнорируются – поэтому прыжки N считают правила, а не строки (раздел 2.4).
+Продолжение строки – обратная косая черта перед переводом строки. Квадратные
+скобки в поле аргументов группируют аргумент с пробелами – не путать с
+подробной формой управляющего флага: это две разные роли одних скобок.
+Дефис перед типом – частый вопрос: он лишь подавляет сообщение в журнал,
+если модуль не установлен (типично для pam_systemd в контейнерах без systemd);
+правило остаётся правилом, а флаг остаётся optional. Аргументы передаются
+модулю как есть – оболочка в разборе не участвует, и универсального языка
+аргументов нет: каждый модуль определяет свои; nullok у pam_unix и nullok у
+другого модуля могут значить разное или не существовать вовсе.
 -->
 
 ---
 layout: section
 ---
 
-# 3. Конфигурация Ubuntu Server 26.04
+# 2. Устройство PAM
+
+<SectionTOC prefix="2" :current="3" :items="[
+  'Библиотека и модули',
+  'Файлы конфигурации',
+  'Типы правил и стек модулей',
+  'Управляющие флаги',
+  'Примеры исполнения стека',
+  'include и substack: повторное использование правил',
+]" />
+
+---
+
+# Четыре типа правил (группы управления)
+
+Задачи, выполняемые модулями, разделены на **четыре независимые группы управления**
+(management groups); поле `type` правила называет группу, а приложение запускает каждую
+группу **своим вызовом API**:
+
+<div class="t-table text-xs mt-2">
+
+| Тип | Вызов API | Вопрос | Что делают модули | Примеры |
+|---|---|---|---|---|
+| **auth** | <Man p="pam_authenticate(3)" /> | «вы – тот, за кого себя выдаёте?» | запрашивают пароль или иное подтверждение подлинности; <Man p="pam_setcred(3)" /> выдаёт и снимает «удостоверения» (credentials) | <Man p="pam_unix(8)" />, `pam_sss`, `pam_google_authenticator` |
+| **account** | <Man p="pam_acct_mgmt(3)" /> | «можно ли вам сейчас?» | проверки, не связанные с паролем: срок действия учётной записи, время суток, источник входа, список доступа | <Man p="pam_time(8)" />, <Man p="pam_access(8)" />, <Man p="pam_nologin(8)" /> |
+| **password** | <Man p="pam_chauthtok(3)" href="https://man7.org/linux/man-pages/man3/pam_chauthtok.3.html" /> | «как обновить аутентификатор?» | смена пароля; здесь проверяется соответствие нового пароля политике | `pam_unix`, <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" /> |
+| **session** | <Man p="pam_open_session(3)" /> / <Man p="pam_close_session(3)" /> | «что сделать до и после сеанса?» | журналирование входа и выхода, переменные окружения, лимиты ресурсов, регистрация сеанса | <Man p="pam_limits(8)" />, <Man p="pam_env(8)" />, <Man p="pam_systemd(8)" /> |
+
+</div>
+
+<v-click>
+
+<div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Аналогия с проходной (лекция 2): <b>auth</b> – «докажите, что пропуск ваш»;
+<b>account</b> – «а действует ли пропуск сегодня?»; <b>session</b> – записать
+в журнал и выдать ключ от кабинета; <b>password</b> – замена пропуска.
+</div>
+<div class="p-2 border border-slate-400/40 rounded">
+Тип – свойство <b>правила</b>, а не модуля: <code>pam_unix</code> реализует все четыре
+группы – проверку пароля, контроль срока действия по <code>/etc/shadow</code>, смену пароля
+и журналирование сеанса.
+</div>
+</div>
+
+</v-click>
+
+<Refs ids="man-pam man-pam-conf man-pam-authenticate man-pam-session man-pam-unix" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+Терминология pam(7): четыре независимые группы управления, и у каждой – свой
+вызов API, которым приложение её запускает: pam_authenticate для auth,
+pam_acct_mgmt для account, pam_chauthtok для password, pam_open_session и
+pam_close_session для session; pam_setcred тоже относится к группе auth и
+устанавливает или снимает удостоверения. auth – собственно аутентификация,
+диалог с пользователем; account – верификация учётной записи без пароля: не
+истёк ли срок, подходит ли время суток, есть ли право доступа к службе;
+password – обновление аутентификационных данных; session – настройка окружения
+и журналирование. Вернуться к аналогии с проходной из лекции 2. Подчеркнуть:
+тип – свойство ПРАВИЛА, а не модуля; pam_unix участвует во всех четырёх стеках.
+-->
+
+---
+
+# Типы правил: по примеру на каждую группу
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-4 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-types.txt" lang="text" title="фрагменты политики" tag="примеры" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="1" :col="11" :span="10" :n="1" />
+  <TCallout :line="6" :col="23" :span="13" :n="2" />
+  <TCallout :line="8" :col="1" :span="8" :n="3" />
+  <TCallout :line="9" :col="35" :span="11" :n="3" />
+  <TCallout :line="12" :col="1" :span="8" :n="4" />
+</CodeSnippet>
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">1</span> <b>auth:</b> два <code>sufficient</code> подряд – выбор <b>альтернативного</b>
+механизма (локальный пароль <i>или</i> каталог), а не два фактора. В реальной политике нужно
+учесть неизвестного пользователя, недоступный каталог, предшествующие обязательные проверки.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">2</span> <b>account:</b> успех стека auth <b>не влечёт</b> успеха account.
+Вход по ключу SSH минует стек auth, но правила account исполняются.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">3</span> <b>password:</b> первый модуль получает и оценивает новый пароль;
+<code>use_authtok</code> велит следующему взять <b>уже принятый</b> пароль, а не спрашивать заново.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">4</span> <b>session:</b> одно правило исполняется и при
+<code>pam_open_session</code>, и при <code>pam_close_session</code> – модуль делает разную работу
+на входе и выходе.
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf man-pam-unix man-pam-access pam-sag" />
+
+<!--
+По одному учебному фрагменту на группу. auth: пара sufficient pam_unix /
+pam_sss с pam_deny в конце – это «или», выбор альтернативного механизма, а не
+двухфакторная схема; производственная политика должна предусмотреть
+неизвестного пользователя, недоступный сервер каталога, повторное
+использование токена и обязательные проверки перед sufficient. account:
+pam_unix (срок действия) и pam_access (откуда и кому) – и напоминание, что
+успех auth ничего не говорит об account: при входе по ключу OpenSSH стек auth
+вообще не вызывается, а account – да. password: типичная связка «качество –
+затем запись»: pam_pwquality получает и проверяет новый пароль, pam_unix с
+use_authtok берёт уже принятый токен, не задавая второй вопрос. session: одна и
+та же строка срабатывает при открытии и закрытии сеанса; модуль различает фазы
+сам (pam_limits ставит лимиты на входе, pam_unix пишет opened/closed).
+-->
+
+---
+
+# Порядок вызовов приложения при входе
+
+<div class="grid grid-cols-[1fr_1.1fr] gap-5 items-start">
+<div>
+
+<div class="life-chain mt-1">
+  <div class="bf-block bf-fill-tint lc-step"><div class="bf-head bf-mono">pam_start(служба, пользователь, диалог)</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-accent lc-step"><div class="bf-head bf-mono">pam_authenticate()</div><div class="bf-sub">стек auth</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-accent lc-step"><div class="bf-head bf-mono">pam_acct_mgmt()</div><div class="bf-sub">стек account</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-tint lc-step lc-opt"><div class="bf-head bf-mono">pam_chauthtok()</div><div class="bf-sub">стек password – если account потребовал сменить пароль</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-tint lc-step"><div class="bf-head bf-mono">pam_setcred(ESTABLISH)</div><div class="bf-sub">стек auth: выдать удостоверения</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-accent lc-step"><div class="bf-head bf-mono">pam_open_session()</div><div class="bf-sub">стек session</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-amber lc-step"><div class="bf-head">приложение выполняет свою работу</div><div class="bf-sub">запускает оболочку, выполняет команду</div></div>
+  <div class="lc-arrow"></div>
+  <div class="bf-block bf-fill-accent lc-step"><div class="bf-head bf-mono">pam_close_session() · pam_setcred(DELETE) · pam_end()</div></div>
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+Последовательность <b>иллюстративна, а не обязательна</b>: приложение вправе опускать операции,
+менять порядок некоторых из них или аутентифицировать пользователя <b>другим протоколом</b>,
+обращаясь к PAM только за account и session, – как OpenSSH при входе по ключу.
+</div>
+
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Каждый вызов исполняет <b>только свой стек</b>: правила auth не исполняются оттого, что открыт
+сеанс; стек password вызывается лишь при смене пароля – поэтому четыре стека службы
+независимы и работают в разное время.
+</div>
+
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+Код возврата <code>new_authtok_reqd</code> из стека account («пароль истёк») – не отказ: приложение
+обязано вызвать <code>pam_chauthtok</code> и лишь затем продолжить вход (<code>login</code>
+так и делает; раздел 3.1).
+</div>
+
+<div class="opacity-80">
+Программирование этой последовательности – раздел 8 (программа <code>authprint</code>).
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam3 man-pam-start man-pam-authenticate man-pam-session pam-adg" />
+
+<style>
+.life-chain { display: flex; flex-direction: column; font-size: 0.7rem; text-align: center; }
+.life-chain .lc-step { padding: 0.25em 0.5em; }
+.life-chain .lc-step .bf-head { font-size: 0.95em; }
+.life-chain .lc-opt { border-style: dashed; }
+.life-chain .lc-arrow { align-self: center; width: 2px; height: 0.75em; background: #555; position: relative; }
+.life-chain .lc-arrow::after { content: ''; position: absolute; bottom: -4px; left: -3px; border: 4px solid transparent; border-top-color: #555; }
+</style>
+
+<!--
+Как четыре группы складываются во вход в систему. pam_start создаёт транзакцию:
+имя службы, имя пользователя, функция диалога. Затем pam_authenticate (стек
+auth), pam_acct_mgmt (account); если account вернул new_authtok_reqd – пароль
+истёк, – приложение вызывает pam_chauthtok (password) и только потом
+продолжает; pam_setcred выдаёт удостоверения (группы, билеты Kerberos);
+pam_open_session открывает сеанс; приложение делает свою работу; при выходе –
+pam_close_session, снятие удостоверений, pam_end. Три оговорки. Схема
+иллюстративна: приложение может пропускать шаги и даже аутентифицировать
+другим протоколом, обращаясь к PAM только за account и session, – OpenSSH с
+ключом. Каждый вызов исполняет только свой стек – стеки независимы и работают в
+разное время. И new_authtok_reqd – пример кода возврата, который не является ни
+успехом, ни отказом: он требует от приложения действия. Код всей этой
+последовательности напишем в разделе 8.
+-->
+
+---
+
+# Стек модулей – последовательность правил
+
+**Стек** (stack) – упорядоченный набор правил **одной службы и одного типа**. Это не общий
+список всех строк PAM: вызов <Man p="pam_authenticate(3)" /> исполняет правила `auth` данной
+службы – включая подставленные через `include` – по их управляющим флагам, **сверху вниз**.
+
+<div class="grid grid-cols-[1fr_1.25fr] gap-4 mt-2 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-stack.txt" lang="text" title="стек auth" tag="пример" :numbers="false">
+  <TCallout :line="1" :col="1" :span="4" :rows="4" :n="1" />
+  <TCallout :line="1" :col="7" :span="10" :rows="4" :n="2" />
+</CodeSnippet>
+
+<div class="mt-2 text-xs space-y-1">
+<div><span class="co-ball">1</span> один тип – один стек; четыре правила исполняются по порядку</div>
+<div><span class="co-ball">2</span> флаг каждого правила решает, как учесть результат модуля и продолжать ли</div>
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Порядок строк важен:</b> стек – не множество, а последовательность; перестановка
+строк меняет поведение (пример с <Man p="pam_faillock(8)" /> – раздел 6).
+</div>
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
+<b>Ошибка в строке = отказ:</b> некорректно оформленное правило libpam превращает
+в правило «обязан отказать» – система ошибается в сторону запрета
+(<Man p="pam.conf(5)" />; код – раздел 10).
+</div>
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+Четыре стека службы (auth, account, password, session) выполняются <b>независимо</b>
+и в разное время – каждый своим вызовом API (предыдущий слайд).
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<!--
+Понятие стека: правила одного типа одной службы, в порядке записи, включая
+подставленные include. Это не глобальный список всех строк PAM: вызов
+pam_authenticate видит только правила auth своей службы. Пример – стек из
+четырёх правил: pam_env, pam_nologin, pam_unix, pam_deny. Два предупреждения:
+порядок строк значим (вернёмся при разговоре о faillock), а синтаксически
+некорректная строка не игнорируется – она становится правилом «обязан
+отказать»: PAM ошибается в сторону запрета. Четыре стека службы независимы.
+-->
+
+---
+
+# Стек – не логическое И и не ИЛИ
+
+Каждый модуль возвращает код; **управляющий флаг** решает, записать ли результат в итог
+или отбросить, и что делать дальше – продолжить, остановиться, перепрыгнуть правила или
+сбросить накопленное состояние.
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<div class="t-table text-xs">
+
+| Правило | Флаг | Результат модуля | Накопленный итог |
+|---|---|---|---|
+| A | `required` | неудача | **неудача** записана |
+| B | `required` | успех | неудача сохраняется |
+| C | `sufficient` | успех | не может ни стереть неудачу, ни завершить стек досрочно |
+| | | **итог стека** | **неудача** |
+
+</div>
+
+<div class="mt-2 text-xs opacity-80">
+Будь стек логическим «И», достаточно было бы одного отказа без исполнения остальных;
+будь он «ИЛИ» – успех C означал бы успех стека. Ни то ни другое не верно.
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Три правила накопленного итога:</b>
+<div class="mt-1 space-y-1">
+<div>① успех <b>не стирает</b> ранее записанную (не отброшенную) неудачу;</div>
+<div>② неудача модуля <b>не обязательно</b> проваливает стек – это решает его флаг;</div>
+<div>③ некоторые действия <b>прерывают</b> стек до того, как позднейшие модули выполнятся.</div>
+</div>
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+Единственное действие, стирающее записанную неудачу, – явный <code>reset</code> (раздел 2.4).
+Свойство «позднейший успех не отменяет ранней неудачи» – важная гарантия безопасности PAM.
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<!--
+Главная мысль раздела 2.3: стек – не булево выражение. Трассируем пример: A
+required провалился – неудача записана; B required успешен – ничего не стирает;
+C sufficient успешен – но sufficient завершает стек досрочно лишь при
+отсутствии ранее записанных неудач, поэтому и он не спасает: итог – неудача.
+Три правила накопленного итога: успех не стирает неудачу; неудача не
+обязательно фатальна – решает флаг; действия потока управления могут вовсе не
+дать модулю выполниться. Единственный способ забыть неудачу – явный reset, и
+именно поэтому он опасен. Это свойство и делает PAM пригодным для безопасности:
+обязательную проверку нельзя «перекрыть» позднейшим успехом.
+-->
+
+---
+
+# Коды возврата модулей
+
+Модуль возвращает одну из именованных констант (<Man p="pam(3)" />); в подробной форме флага
+они записываются **строчными именами без префикса** `PAM_`:
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-2 items-start">
+<div class="t-table text-xs">
+
+| Константа | Имя во флаге | Смысл |
+|---|---|---|
+| `PAM_SUCCESS` | `success` | операция выполнена |
+| `PAM_AUTH_ERR` | `auth_err` | аутентификация не пройдена |
+| `PAM_PERM_DENIED` | `perm_denied` | доступ запрещён |
+| `PAM_USER_UNKNOWN` | `user_unknown` | пользователь неизвестен **этому модулю** |
+| `PAM_AUTHINFO_UNAVAIL` | `authinfo_unavail` | источник данных недоступен |
+| `PAM_MAXTRIES` | `maxtries` | исчерпаны попытки |
+| `PAM_NEW_AUTHTOK_REQD` | `new_authtok_reqd` | пароль нужно сменить |
+| `PAM_ACCT_EXPIRED` | `acct_expired` | срок учётной записи истёк |
+| `PAM_AUTHTOK_ERR` | `authtok_err` | ошибка работы с аутентификатором |
+| `PAM_IGNORE` | `ignore` | модуль просит не учитывать его результат |
+| `PAM_MODULE_UNKNOWN` | `module_unknown` | модуль не найден или не распознан |
+| `PAM_SYSTEM_ERR` | `system_err` | системная ошибка |
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+Код может нести <b>больше</b>, чем «да/нет»: <code>new_authtok_reqd</code> означает «пароль
+необходимо сменить», а не «всё выполнено»; <code>user_unknown</code> – «этот модуль
+пользователя не знает», что при нескольких источниках не равно отказу.
+</div>
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Прочие документированные имена: <code>open_err</code>, <code>symbol_err</code>, <code>service_err</code>,
+<code>cred_insufficient</code>, <code>cred_expired</code>, <code>session_err</code>, <code>conv_err</code>,
+<code>authtok_expired</code>, <code>try_again</code>, <code>abort</code>, <code>incomplete</code>… –
+полный список в <Man p="pam.conf(5)" />.
+</div>
+<div class="opacity-80">
+Как именно флаг отображает каждый код в действие – раздел 2.4.
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam3 man-pam-conf" />
+
+<style>
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.12em !important; padding-bottom: 0.12em !important; }
+</style>
+
+<!--
+Коды возврата – словарь, которым разговаривают модуль и libpam. Таблица –
+наиболее употребительные константы и их имена в подробной форме флага:
+success, auth_err, perm_denied, user_unknown, authinfo_unavail, maxtries,
+new_authtok_reqd, acct_expired, authtok_err, ignore, module_unknown,
+system_err. Два замечания о семантике: new_authtok_reqd – не успех и не отказ,
+а требование действия; user_unknown – локальное незнание модуля, а при
+нескольких источниках учётных записей это нормальный ответ одного из них.
+Остальные имена перечислены в pam.conf(5). Следующий раздел – как флаг
+сопоставляет каждому коду действие.
+-->
+
+---
+layout: section
+---
+
+# 2. Устройство PAM
+
+<SectionTOC prefix="2" :current="4" :items="[
+  'Библиотека и модули',
+  'Файлы конфигурации',
+  'Типы правил и стек модулей',
+  'Управляющие флаги',
+  'Примеры исполнения стека',
+  'include и substack: повторное использование правил',
+]" />
+
+---
+
+# Управляющие флаги: краткая форма
+
+Поле `control` определяет, **как результат модуля влияет на итог всего стека**. Четыре
+классических флага:
+
+<div class="t-table text-xs mt-2">
+
+| Флаг | Успех модуля | Неудача модуля |
+|---|---|---|
+| **required** | учесть результат, продолжить | **запомнить неудачу**, продолжить исполнение стека |
+| **requisite** | учесть результат, продолжить | **запомнить неудачу**, стек прервать **немедленно** |
+| **sufficient** | завершить стек **успехом**, если ранее не записано ни одной неудачи | неудача **игнорируется**, продолжить |
+| **optional** | учитывается, только если нет более сильного результата в стеке | обычно игнорируется |
+
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-3 text-xs">
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Почему required не прерывает стек?</b> Чтобы не раскрывать атакующему,
+<b>на каком шаге</b> он провалился: оставшиеся модули выполняются, время ответа
+и диалог не зависят от места отказа. <code>requisite</code> жертвует этим ради
+гарантии: ни один следующий модуль не получит, например, пароль, введённый
+при подозрительных условиях.
+</div>
+<div class="p-3 border-l-4 border-sky-500 bg-sky-500/10">
+Структурные флаги <code>include</code> и <code>substack</code> – не правила-модули, а
+подстановка правил из другого файла; им посвящён раздел 2.6. Таблица описывает
+обычные успех и неудачу; точное отображение каждого кода возврата – на слайде
+о подробной форме.
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<!--
+Семантика по pam.conf(5). required: неудача учитывается, но стек доходит до
+конца – атакующий не узнаёт, где именно провалился. requisite: немедленный
+отказ; SAG приводит мотив – не дать модулям ниже по стеку получить пароль при
+подозрительных условиях. sufficient: успех достаточен, если до этого не было
+неудач required; неудача sufficient просто игнорируется. optional учитывается,
+только когда он единственный в стеке. include и substack подставляют строки из
+другого файла – о них отдельно в разделе 2.6. Таблица – сводка для обычных
+исходов; точные правила для каждого кода даёт подробная форма.
+-->
+
+---
+
+# Краткие флаги на примерах
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-flags.txt" lang="text" title="фрагменты стеков" tag="примеры" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="2" :col="10" :span="8" :rows="2" :n="1" />
+  <TCallout :line="6" :col="10" :span="9" :n="2" />
+  <TCallout :line="10" :col="10" :span="10" :rows="2" :n="3" />
+  <TCallout :line="15" :col="10" :span="8" :n="4" />
+</CodeSnippet>
+
+<div class="mt-2 text-xs space-y-1">
+<div><span class="co-ball">1</span> неудача <code>pam_unix</code> не мешает <code>pam_nologin</code> выполниться – но может иметь побочные эффекты (счётчики, журнал)</div>
+<div><span class="co-ball">2</span> «система закрыта» – пароль не спрашивается вовсе; короткий путь выдаёт, <b>какая</b> проверка отказала</div>
+<div><span class="co-ball">3</span> удобно для альтернатив, но <b>опасно</b>, если ниже стоит обязательный второй фактор</div>
+<div><span class="co-ball">4</span> модуль всё равно <b>выполняется</b> (побочные эффекты остаются); <b>optional ≠ «неважно»</b>: единственное правило типа в стеке решает итог – <code>auth optional pam_unix.so</code> в одиночестве разрешит вход</div>
+</div>
+
+</div>
+<div>
+
+<div class="t-table text-xs">
+
+| Вопрос | required | requisite |
+|---|---|---|
+| Неудача делает итог неуспешным? | да | да |
+| Следующие правила после неудачи исполняются? | **да** | **нет** |
+| Позднейший успех исправляет неудачу? | нет | нет |
+| Назначение | все обязательные проверки выполняются | быстрый отказ по предусловию |
+
+</div>
+
+<div class="mt-3 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>sufficient перед обязательным фактором</b> – самая узнаваемая ошибка конфигурации:
+верный пароль завершает стек успехом, и строка второго фактора не исполняется
+(раздел 7). Замена <code>required</code> на <code>sufficient</code> «чтобы заработало» –
+обход проверки, а не настройка.
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag man-pam-nologin" />
+
+<!--
+Четыре фрагмента. required (1): обе проверки выполняются; первая неудача
+решает итог, но у второго модуля могут быть побочные эффекты – запись в
+журнал, инкремент счётчика. requisite (2): при закрытой системе pam_nologin
+отказывает до запроса пароля – быстро, но путь ответа выдаёт, какая именно
+проверка отказала. sufficient (3): механизм альтернатив – локальный пароль или
+каталог; опасен, если ниже стоит обязательный фактор: успех завершает стек
+раньше него. optional (4): результат обычно не учитывается, но модуль
+выполняется, а если он единственный в стеке – его успех решает всё. Таблица
+справа формализует разницу required/requisite четырьмя вопросами; обе формы
+проваливают стек и ни одна не прощает неудачу – различие только в том,
+исполняются ли следующие правила. Два предупреждения: sufficient перед
+обязательным фактором и «optional значит неважно» – обе ошибки встретим в
+разделе о безопасности.
+-->
+
+---
+
+# Подробная форма флага: значение = действие
+
+Краткие флаги – сокращения. Полная форма задаёт **действие на каждый код возврата**
+модуля:
+
+<FieldRecord class="mt-3" sep="" size="0.95rem" legendSize="0.78rem" :cols="3"
+  :fields="[{ t: 'success=ok', hot: true }, 'auth_err=die', 'default=ignore']"
+  :legend="[
+    { t: 'пара «код возврата = действие»: слева – код (success), справа – действие (ok)', hot: true },
+    'при auth_err – записать неудачу и прервать стек (die)',
+    'default – все не перечисленные коды: здесь – не учитывать',
+  ]"
+/>
+
+<div class="mt-1 text-xs opacity-80">
+Пары разделяются пробелами и заключаются в <b>квадратные скобки</b>: <code>[success=ok auth_err=die default=ignore]</code> – это одно поле <code>control</code>.
+</div>
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-ext-syntax.txt" lang="text" title="подробная форма в правиле" tag="примеры" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="2" :col="8" :span="6" :n="1" />
+  <TCallout :line="2" :col="15" :span="6" :n="2" />
+</CodeSnippet>
+
+<div class="mt-2 text-xs space-y-1">
+<div><span class="co-ball">1</span> слева <code>ignore</code> – <b>код возврата</b> <code>PAM_IGNORE</code>: «модуль просит не учитывать результат»</div>
+<div><span class="co-ball">2</span> справа <code>ignore</code> – <b>действие</b>: не записывать этот результат в итог</div>
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Два пространства имён.</b> Слева от «=» – селектор кода возврата
+(<code>success</code>, <code>auth_err</code>, <code>user_unknown</code>, … или <code>default</code>),
+справа – действие (<code>ignore</code>, <code>bad</code>, <code>die</code>, <code>ok</code>,
+<code>done</code>, число <code>N</code>, <code>reset</code>). Одно и то же слово
+<code>ignore</code> по разные стороны означает разное – они не взаимозаменяемы.
+</div>
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Тип правила перед скобками пишется как обычно: <code>auth [success=done auth_err=bad default=ignore] pam_unix.so</code>;
+такая строка читается «успех – завершить стек, ошибка пароля – неудача, прочее – не учитывать».
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<style>
+.field-record .fr-cell + .fr-cell { margin-left: 0.45em; }
+</style>
+
+<!--
+Полный синтаксис: в квадратных скобках пары значение=действие. Разбор
+единственной строки по полям: скобки, пара success=ok, пара auth_err=die,
+default для всех прочих кодов. Главный источник путаницы – слово ignore: слева
+от знака равенства это код возврата PAM_IGNORE, которым модуль сам просит не
+учитывать его результат; справа – действие «не записывать результат в итог».
+Пример [ignore=ignore success=ok default=bad] читается так: если модуль вернул
+PAM_IGNORE – отбросить, если успех – записать, всё прочее – неудача. Селекторы и
+действия – два разных словаря. Пробелы внутри скобок допустимы: libpam
+воспринимает всё в скобках как одно поле control.
+-->
+
+---
+
+# Действия подробной формы
+
+<div class="grid grid-cols-[1fr_1.25fr] gap-4 items-start">
+<div class="t-table text-xs">
+
+| Действие | Влияние на итог | Ход исполнения |
+|---|---|---|
+| `ignore` | результат не учитывается | продолжить |
+| `bad` | записать неудачу; ранние неудачи не стираются | продолжить |
+| `die` | записать неудачу | **остановить** стек |
+| `ok` | принять результат, не перекрывая записанной неудачи | продолжить |
+| `done` | как `ok` | завершить стек, если записанных неудач нет |
+| `N` | в стеках auth/account/password/open_session – как `ignore` | **перепрыгнуть** следующие N правил |
+| `reset` | **стереть** накопленное состояние | продолжить |
+
+</div>
+<div>
+
+<CodeSnippet src="snippets/ex-ext-actions.txt" lang="text" title="по примеру на действие" tag="примеры" :numbers="false" fontSize="0.47rem">
+  <TCallout :line="5" :col="16" :span="1" :n="1" />
+  <TCallout :line="6" :col="16" :span="5" :n="2" />
+</CodeSnippet>
+
+<div class="mt-2 text-xs space-y-1.5">
+<div><span class="co-ball">1</span> <b>прыжок</b> считает <b>правила</b>, а не строки файла: комментарии и пустые строки не в счёт; вложенный <code>substack</code> – одно правило; <code>0</code> ведёт себя как <code>ignore</code>. Вставка правила между прыжком и его целью меняет, что именно пропускается</div>
+<div><span class="co-ball">2</span> <b>reset</b> стирает и ранее записанную обязательную неудачу – самое опасное действие: применять только после полной трассировки стека</div>
+</div>
+
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+Итог стека складывается из <b>первой решающей</b> неудачи: <code>bad</code> и <code>die</code> не
+перезаписывают её, <code>ok</code> и <code>done</code> не перекрывают; <code>done</code> завершает стек
+досрочно лишь при чистом итоге. Прыжок в <code>pam_setcred</code> и <code>pam_close_session</code>
+может учитываться иначе – <Man p="pam.conf(5)" />.
+</div>
+
+<Refs ids="man-pam-conf pam-sag man-pam-succeed-if" />
+
+<style>
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+Семь действий в двух измерениях: что происходит с накопленным итогом и что с
+ходом исполнения. ignore – отбросить результат, идти дальше (но модуль
+выполнился, побочные эффекты остались). bad – записать неудачу, идти дальше;
+die – записать и остановиться. ok – принять, не перекрывая записанной
+неудачи; done – то же плюс досрочное завершение, если итог чист. Число N –
+прыжок через N правил: для стеков auth, account, password и open_session его
+вклад в итог подобен ignore; для setcred и close_session pam.conf(5)
+оговаривает иной учёт – поэтому прыжок нельзя описывать как чисто «изменение
+счётчика команд». reset – стирание накопленного состояния, включая ранее
+записанную обязательную неудачу, – единственный способ «простить» отказ, и
+потому опасный. Прыжки считают правила, а не строки; substack – одно правило;
+ноль равносилен ignore; вставка строки между прыжком и целью смещает цель –
+при каждой правке стека с прыжками нужно пересчитывать их заново (раздел 6,
+faillock: success=1 → success=2).
+-->
+
+---
+
+# Умолчание и эквиваленты кратких флагов
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-4 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-default.txt" lang="text" title="default и эквиваленты" tag="примеры" :numbers="false" fontSize="0.47rem">
+  <TCallout :line="1" :col="32" :span="14" :n="1" />
+  <TCallout :line="2" :col="7" :span="27" :n="2" />
+  <TCallout :line="3" :col="7" :span="24" :n="3" />
+  <TCallout :line="4" :col="7" :span="58" :n="4" />
+</CodeSnippet>
+
+<CodeSnippet src="snippets/pam-conf-controls.txt" lang="text" title="pam.conf(5): соответствие кратких флагов" tag="Linux-PAM 1.7.0" :numbers="false" fontSize="0.47rem" class="mt-2">
+  <TCallout :line="1" :col="59" :span="11" :n="5" />
+  <TCallout :line="2" :col="59" :span="11" :n="6" />
+  <TCallout :line="3" :col="14" :span="12" :n="7" />
+</CodeSnippet>
+
+</div>
+<div class="text-xs space-y-1">
+<div><span class="co-ball">1</span> <code>default</code> покрывает все не перечисленные коды: здесь – <code>ignore</code></div>
+<div><span class="co-ball">2</span> <b>если <code>default</code> опущен</b>, не перечисленный код получает <code>bad</code> – так решается судьба <code>user_unknown</code> или <code>authinfo_unavail</code>, о которых администратор не подумал</div>
+<div><span class="co-ball">3</span> <code>[success=ok default=bad]</code> – <b>не</b> то же, что <code>required</code>: теряется особая обработка <code>new_authtok_reqd</code> и <code>ignore</code></div>
+<div><span class="co-ball">4</span> точный эквивалент <code>required</code> – дословно по <Man p="pam.conf(5)" /></div>
+<div><span class="co-ball">5</span> <span class="co-ball">6</span> required и requisite различаются только действием по умолчанию: <code>bad</code> против <code>die</code></div>
+<div><span class="co-ball">7</span> sufficient: успех завершает стек (<code>done</code>), прочее – <code>ignore</code></div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Прыжок <code>N</code> – основной приём Debian/Ubuntu: <code>[success=1 default=ignore]</code> у
+<Man p="pam_unix(8)" /> означает «успех – перепрыгнуть <Man p="pam_deny(8)" />»; разбор – пример D (раздел 2.5) и раздел 3.1.
+</div>
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<!--
+Правило умолчания: default сопоставляет действие всем не перечисленным кодам.
+Коварная деталь: если default опущен, не перечисленные коды получают bad –
+и модуль, вернувший user_unknown или authinfo_unavail, провалит стек, хотя
+администратор, возможно, рассчитывал его пропустить. Эквиваленты кратких
+флагов – не приблизительные аналогии, а точные определения pam.conf(5):
+required и requisite различаются лишь действием по умолчанию, sufficient –
+done на успех и ignore на всё прочее; у всех трёх особая обработка
+new_authtok_reqd (принимается как успех) и у required/requisite – ignore. Поэтому
+[success=ok default=bad] – НЕ required: пользователь с истёкшим паролем получит
+отказ вместо требования сменить пароль. Debian строит common-auth на прыжках –
+разберём в примере D и в разделе 3.
+-->
+
+---
+layout: section
+---
+
+# 2. Устройство PAM
+
+<SectionTOC prefix="2" :current="5" :items="[
+  'Библиотека и модули',
+  'Файлы конфигурации',
+  'Типы правил и стек модулей',
+  'Управляющие флаги',
+  'Примеры исполнения стека',
+  'include и substack: повторное использование правил',
+]" />
+
+---
+
+# Исполнение стека «на бумаге» и pamtester
+
+Лучший способ понять PAM – **исполнить стек вручную**, отслеживая две величины:
+**накопленный итог** и **номер следующего правила**. Проверить трассировку позволяет
+утилита `pamtester`: она открывает PAM-транзакцию для указанной службы и пользователя и
+выполняет одну операцию.
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-3 items-start">
+<div>
+
+<div class="t-table text-xs">
+
+| Служба | Стек auth | Что демонстрирует |
+|---|---|---|
+| `demo-a` | два `required` | оба модуля выполняются при любом исходе |
+| `demo-b` | `requisite`, затем `required` | немедленная остановка стека |
+| `demo-c` | `required` условие, `sufficient`, `required deny` | sufficient не спасает после неудачи |
+| `demo-d` | `[success=1 default=ignore]`, `requisite deny`, `required permit` | числовой прыжок – схема Debian |
+| `demo-e` | `[success=2 default=ignore]`, …, `required permit` | прыжок через два модуля – обход проверки |
+
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+<b>Лабораторная среда:</b> Ubuntu Server 26.04, пакет <code>pamtester</code>; пять учебных
+служб <code>/etc/pam.d/demo-a</code> … <code>demo-e</code>; <code>bob</code> – член группы
+<code>operators</code>, <code>carol</code> – нет. Вызов:
+<code>pamtester &lt;служба&gt; &lt;пользователь&gt; authenticate</code>.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<code>pamtester</code> исполняет выбранную операцию, но не гарантирует, что приложение передаст
+те же элементы транзакции и вызовет те же операции. У проверок есть <b>побочные эффекты</b>:
+растут счётчики неудач, открываются сеансы, <code>chauthtok</code> меняет пароль.
+</div>
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-stack-examples.sh</code>.</SrcRef>
+
+<Refs ids="pam-sag pamtester man-pam-conf" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+</style>
+
+<!--
+Методика раздела: исполняем стек на бумаге – две переменные, накопленный итог и
+индекс следующего правила, – а затем сверяем с реальностью при помощи pamtester.
+Утилита открывает транзакцию pam_start для названной службы и пользователя и
+вызывает одну операцию – здесь authenticate, то есть pam_authenticate. Пять
+учебных служб demo-a…demo-e покрывают пять конструкций: два required,
+requisite, sufficient после неудачи, прыжок Debian и опасный прыжок через два
+модуля. Оговорка: pamtester проверяет стек, но не приложение – настоящий sshd
+может передавать другие элементы (rhost, tty) и вызывать другие операции; и
+проверки не бесплатны: faillock считает неудачи, session открывает сеансы,
+chauthtok меняет пароль. Сценарий 00-stack-examples.sh воспроизводит все пять
+примеров на одноразовой машине.
+-->
+
+---
+
+# Примеры A и B: два required против requisite
+
+<div class="grid grid-cols-2 gap-4 items-start">
+<div>
+
+<TerminalCapture src="captures/14-stack-examples.txt" section="1" title="demo-a · оба модуля выполняются" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="9" :span="8" :rows="2" :n="1" />
+  <TCallout :line="6" :col="1" :span="9" :n="2" />
+  <TCallout :line="7" :col="1" :span="29" :n="3" />
+</TerminalCapture>
+
+<div class="t-table text-xs mt-2">
+
+| `pam_unix` | `pam_nologin` | Итог |
+|---|---|---|
+| успех | успех | успех |
+| успех | неудача | неудача |
+| неудача | успех | неудача |
+| неудача | неудача | неудача |
+
+</div>
+
+</div>
+<div>
+
+<TerminalCapture src="captures/14-stack-examples.txt" section="2" title="demo-b · пароль не запрашивается" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="9" :span="9" :n="4" />
+  <TCallout :line="7" :col="1" :span="29" :n="5" />
+  <TCallout :line="13" :col="1" :span="9" :n="6" />
+</TerminalCapture>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем:</b>
+<div class="mt-1 space-y-1">
+<div><span class="co-ball">1</span> оба правила <code>required</code>; файл <code>/etc/nologin</code> закрывает систему для всех, кроме root</div>
+<div><span class="co-ball">2</span> запрос пароля – свидетельство, что <code>pam_unix</code> <b>выполнился</b>…</div>
+<div><span class="co-ball">3</span> …и <code>pam_nologin</code> выполнился тоже: при любом пароле итог – отказ (таблица)</div>
+<div><span class="co-ball">4</span> <code>requisite</code> первым: при отказе стек прерывается</div>
+<div><span class="co-ball">5</span> сообщение есть, запроса пароля <b>нет</b> – до <code>pam_unix</code> дело не дошло</div>
+<div><span class="co-ball">6</span> без <code>/etc/nologin</code> стек проходит до конца и запрашивает пароль</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-stack-examples.sh</code>.</SrcRef>
+
+<Refs ids="man-pam-conf man-pam-nologin man-pam-unix pamtester" />
+
+<!--
+Пример A. Стек из двух required; создаём /etc/nologin, чтобы pam_nologin
+отказывал bob. С верным паролем pamtester всё равно запрашивает пароль –
+значит pam_unix выполнился, – затем печатает сообщение nologin и отказ; с
+неверным паролем картина та же. Таблица исходов: итог успешен, только если
+успешны оба; при этом оба модуля выполняются при любом исходе первого.
+Пример B. Те же два модуля, но pam_nologin стоит первым с requisite: при
+закрытой системе выводится сообщение, а запроса пароля нет вовсе – стек
+прерван до pam_unix. Удаляем /etc/nologin – стек проходит до конца, пароль
+запрашивается, вход успешен. Разница между A и B видна невооружённым глазом:
+есть ли приглашение Password.
+-->
+
+---
+
+# Пример C: sufficient после неудачи не спасает
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 items-start">
+<div>
+
+<TerminalCapture src="captures/14-stack-examples.txt" section="3" title="demo-c · член группы и посторонний" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="9" :span="8" :n="1" />
+  <TCallout :line="2" :col="43" :span="28" :n="1" />
+  <TCallout :line="3" :col="9" :span="10" :n="2" />
+  <TCallout :line="4" :col="9" :span="8" :n="3" />
+  <TCallout :line="10" :col="12" :span="27" :n="4" />
+  <TCallout :line="14" :col="12" :span="22" :n="5" />
+</TerminalCapture>
+
+</div>
+<div class="text-xs">
+
+<div class="t-table">
+
+| Шаг | bob ∈ operators | carol ∉ operators |
+|---|---|---|
+| ① `pam_succeed_if` (`required`) | успех | **неудача записана** |
+| ② `pam_unix` (`sufficient`) | успех → стек завершён **успехом** | успех – но стереть неудачу или завершить стек он **не может** |
+| ③ `pam_deny` (`required`) | не достигнут | неудача |
+| итог | **успех** | **неудача** |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1">
+<div><span class="co-ball">4</span> верный пароль члена группы – вход разрешён: <code>sufficient</code> сработал при чистом итоге</div>
+<div><span class="co-ball">5</span> верный пароль carol – отказ: записанную неудачу условия <b>не отменяет</b> даже успешный <code>sufficient</code></div>
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+Так строится правило «только члены группы, и только по паролю»: обязательное условие
+<b>перед</b> <code>sufficient</code>, безусловный отказ <b>после</b>.
+</div>
+
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-stack-examples.sh</code>.</SrcRef>
+
+<Refs ids="man-pam-conf man-pam-succeed-if man-pam-rootok" />
+
+<style>
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+Пример C: три правила – обязательное условие членства в группе
+(pam_succeed_if, required), sufficient pam_unix, required pam_deny. Для bob,
+члена operators, с верным паролем: условие успешно, пароль успешен, sufficient
+завершает стек до pam_deny – успех. Для carol с верным паролем: условие
+провалено и неудача записана; pam_unix успешен, но sufficient не может ни
+стереть записанную неудачу, ни завершить стек; pam_deny выполняется – отказ.
+Это и есть практическое следствие правила «успех не стирает неудачу»: так
+строится политика «только члены группы» – условие перед sufficient, deny после.
+-->
+
+---
+
+# Пример D: числовой прыжок (схема Debian)
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 items-start">
+<div>
+
+<TerminalCapture src="captures/14-stack-examples.txt" section="4" title="demo-d · success=1" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="9" :span="26" :n="1" />
+  <TCallout :line="3" :col="9" :span="9" :n="2" />
+  <TCallout :line="4" :col="9" :span="8" :n="3" />
+  <TCallout :line="7" :col="12" :span="27" :n="4" />
+  <TCallout :line="11" :col="12" :span="22" :n="5" />
+</TerminalCapture>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Это ровно <code>common-auth</code> Ubuntu (раздел 3.1) без аргумента <code>nullok</code>.
+Задел на расширение: модуль каталога вставляется между <code>pam_unix</code> и
+<code>pam_deny</code>, а прыжок становится <code>success=2</code> (раздел 6, faillock).
+</div>
+
+</div>
+<div class="text-xs">
+
+<div class="grid grid-cols-2 gap-2">
+<div class="p-2 border-l-4 border-teal-600 bg-teal-500/10">
+<b>Верный пароль</b> <span class="co-ball">4</span>
+<div class="mt-1 space-y-0.5">
+<div><code>pam_unix</code>: success → прыжок через 1 правило</div>
+<div><code>pam_deny</code>: <b>пропущен</b></div>
+<div><code>pam_permit</code>: success</div>
+<div><b>итог: успех</b></div>
+</div>
+</div>
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
+<b>Неверный пароль</b> <span class="co-ball">5</span>
+<div class="mt-1 space-y-0.5">
+<div><code>pam_unix</code>: auth_err → <code>ignore</code>, продолжить</div>
+<div><code>pam_deny</code>: неудача, <code>requisite</code> → <b>стоп</b></div>
+<div><code>pam_permit</code>: не достигнут</div>
+<div><b>итог: неудача</b></div>
+</div>
+</div>
+</div>
+
+<div class="mt-2 space-y-1">
+<div><span class="co-ball">1</span> подробная форма: успех – прыжок, всё прочее – не учитывать</div>
+<div><span class="co-ball">2</span> <Man p="pam_deny(8)" /> всегда отказывает; <code>requisite</code> делает отказ немедленным</div>
+<div><span class="co-ball">3</span> <Man p="pam_permit(8)" /> всегда успешен – он лишь <b>фиксирует</b> итог, которого достиг прыжок</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<code>pam_permit</code> всегда успешен, но на пути отказа <b>не исполняется</b> – его защищает
+поток управления. Уберите <code>success=1</code> или поменяйте строки местами – поведение
+изменится радикально. Правило с <code>pam_permit</code> никогда не является самостоятельной проверкой.
+</div>
+
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-stack-examples.sh</code>.</SrcRef>
+
+<Refs ids="man-pam-conf man-pam-rootok pam-sag" />
+
+<!--
+Пример D – конструкция Debian. Верный пароль: pam_unix успешен, success=1 –
+прыжок через одно правило, pam_deny пропущен, pam_permit успешен, итог – успех.
+Неверный пароль: auth_err попадает под default=ignore – продолжаем, pam_deny с
+requisite – немедленный отказ, pam_permit не достигнут. Почему так сложно?
+Задел на расширение: между pam_unix и pam_deny вставляется второй источник
+(pam_sss) или учёт неудач (faillock authfail), а прыжок пересчитывается –
+success=2; логика «любой подтвердивший – вход разрешён» собирается из прыжков.
+Предупреждение: pam_permit всегда успешен и безопасен лишь потому, что путь
+отказа до него не доходит; уберите прыжок – и permit станет дырой.
+-->
+
+---
+
+# Пример E: прыжок через два модуля
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-4 items-start">
+<div>
+
+<TerminalCapture src="captures/14-stack-examples.txt" section="5" title="demo-e · опасная конфигурация" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="9" :span="26" :n="1" />
+  <TCallout :line="3" :col="41" :span="14" :rows="2" :n="2" />
+  <TCallout :line="8" :col="12" :span="22" :n="3" />
+  <TCallout :line="10" :col="1" :span="37" :n="4" />
+  <TCallout :line="11" :col="12" :span="27" :n="5" />
+</TerminalCapture>
+
+</div>
+<div class="text-xs">
+
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Читаем:</b>
+<div class="mt-1 space-y-1">
+<div><span class="co-ball">1</span> при успехе условия – прыжок через <b>два</b> правила</div>
+<div><span class="co-ball">2</span> пропускаются и проверка пароля, и проверка <code>/etc/nologin</code></div>
+<div><span class="co-ball">3</span> carol не в группе: условие → <code>ignore</code>, <code>pam_unix</code> отвергает неверный пароль – отказ</div>
+<div><span class="co-ball">4</span> для bob <b>пароль не запрошен вовсе</b>…</div>
+<div><span class="co-ball">5</span> …и аутентификация успешна: членство в группе заменило пароль</div>
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-red-500 bg-red-500/10">
+<b>Намеренно небезопасный пример:</b> прыжок создаёт <b>обход аутентификации</b>
+для целой группы. Любая перестановка или вставка правил в стеке с числовыми прыжками
+требует <b>повторного разбора</b> потока управления; <MitreAttack t="T1556" /> –
+модификация процесса аутентификации.
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод раздела 2.5:</b> итог стека определяют не имена модулей, а отображение кодов
+возврата в действия и путь, по которому исполнение дошло – или не дошло – до каждого правила.
+</div>
+
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-stack-examples.sh</code>.</SrcRef>
+
+<Refs ids="man-pam-conf man-pam-succeed-if pam-sag" />
+
+<!--
+Пример E – тот же приём, что в D, но прыжок на два правила перескакивает и
+pam_unix, и pam_nologin. Для carol вне группы условие даёт ignore, pam_unix
+отвергает неверный пароль – отказ, как и положено. Для bob условие успешно –
+и pamtester даже не спрашивает пароль: проверка пароля пропущена, pam_permit
+фиксирует успех. Членство в группе стало заменой аутентификации – классический
+обход, MITRE ATT&CK T1556 «Modify Authentication Process». Мораль: прыжки
+считают правила, и любая вставка или перестановка в таком стеке требует
+пересчёта; а итог стека определяет не список модулей, а путь исполнения.
+Это и есть вывод раздела 2.5 перед переходом к include и substack.
+-->
+
+---
+layout: section
+---
+
+# 2. Устройство PAM
+
+<SectionTOC prefix="2" :current="6" :items="[
+  'Библиотека и модули',
+  'Файлы конфигурации',
+  'Типы правил и стек модулей',
+  'Управляющие флаги',
+  'Примеры исполнения стека',
+  'include и substack: повторное использование правил',
+]" />
+
+---
+
+# include: подстановка правил другого файла
+
+Директива `include` подставляет в стек правила **того же типа** из указанного файла –
+так общие правила разделяются между службами:
+
+<div class="grid grid-cols-[1fr_auto_1fr_auto_1.1fr] gap-3 mt-3 items-center">
+<div>
+
+<CodeSnippet src="snippets/ex-include-parent.txt" lang="text" title="/etc/pam.d/<служба>" tag="родитель" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="2" :col="7" :span="7" :n="1" />
+</CodeSnippet>
+
+</div>
+<div class="inc-plus">+</div>
+<div>
+
+<CodeSnippet src="snippets/ex-include-child.txt" lang="text" title="/etc/pam.d/common-auth" tag="включаемый файл" :numbers="false" fontSize="0.5rem" />
+
+</div>
+<div class="inc-plus">=</div>
+<div>
+
+<CodeSnippet src="snippets/ex-include-effective.txt" lang="text" title="эффективный стек auth" tag="результат" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="2" :col="17" :span="11" :n="2" />
+</CodeSnippet>
+
+</div>
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-4 text-xs">
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+<span class="co-ball">1</span> <code>include</code> берёт из <code>common-auth</code> только правила типа
+<code>auth</code>; <span class="co-ball">2</span> они встают на место директивы – стек ведёт себя так,
+будто строки написаны прямо в файле службы.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Включённые правила участвуют в потоке управления родителя:</b> <code>done</code> или
+<code>die</code> внутри включённого файла завершает <b>весь</b> стек службы, а прыжок
+<code>N</code> может перескочить через правила родителя, следующие за директивой.
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<style>
+.inc-plus { font-size: 1.6rem; font-weight: 700; color: var(--ossec-muted); }
+</style>
+
+<!--
+include – механизм повторного использования: директива подставляет в стек
+правила того же типа из другого файла. Пример: родитель с pam_env, include
+common-auth и pam_nologin; common-auth содержит pam_unix; эффективный стек –
+env, unix, nologin. Ключевое свойство: включённые правила ничем не отличаются
+от написанных в самом файле – они участвуют в потоке управления родителя:
+done или die внутри включённого файла завершит весь стек, а прыжок может
+перескочить через правила родителя, стоящие после директивы. Именно это
+свойство делает include удобным и опасным одновременно – следующий слайд.
+-->
+
+---
+
+# substack: граница потока управления
+
+`substack` тоже подставляет правила указанного типа, но вводит **границу**: вложенный стек
+исполняется как единое целое.
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-4 mt-2 items-start">
+<div class="text-xs space-y-2">
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<div class="space-y-1">
+<div>① <code>done</code> и <code>die</code> завершают <b>вложенный</b> стек, а не стек службы;</div>
+<div>② прыжок <code>N</code> внутри вложенного стека не может выйти за его пределы;</div>
+<div>③ для прыжков <b>родителя</b> весь вложенный стек считается <b>одним правилом</b>;</div>
+<div>④ <code>reset</code> внутри возвращает состояние <b>на момент входа</b> во вложенный стек, а не стирает историю родителя.</div>
+</div>
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+Результаты вложенных правил <b>по-прежнему входят</b> в накопленный итог службы:
+<code>substack</code> – граница управления, а не «песочница», глушащая неудачи.
+</div>
+</div>
+<div class="t-table text-xs">
+
+| Поведение | `include` | `substack` |
+|---|---|---|
+| Подставляет правила другого файла | да | да |
+| Берёт только правила своего типа | да | да |
+| `done` во включённом завершает родителя | **да** | нет |
+| `die` во включённом завершает родителя | **да** | нет |
+| Прыжок изнутри может попасть на правила родителя | возможно | нет |
+| Считается одним правилом для прыжков родителя | нет | **да** |
+| Ограниченная область `reset` | нет | **да** |
+
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+substack загружает те же правила, что и include, но исполняет их как единое
+целое с границей управления: done и die завершают только вложенный стек,
+прыжки изнутри не выходят наружу, для прыжков родителя вложенный стек – одно
+правило, reset внутри откатывает состояние лишь к моменту входа. При этом
+результаты вложенных правил входят в общий итог: substack не глушит неудачи,
+он лишь не даёт вложенному файлу управлять потоком родителя. Таблица сводит
+различия по семи признакам – четыре строки различаются, и все они про поток
+управления.
+-->
+
+---
+
+# include против substack: проверка после общих правил
+
+<div class="grid grid-cols-2 gap-4 items-start">
+<div>
+
+<CodeSnippet src="snippets/ex-substack-include.txt" lang="text" title="вариант 1 · include" tag="небезопасно" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="2" :col="7" :span="7" :n="1" />
+  <TCallout :line="6" :col="7" :span="10" :n="2" />
+</CodeSnippet>
+
+<div class="mt-2 p-2 border-l-4 border-red-500 bg-red-500/10 text-xs">
+<span class="co-ball">1</span> <span class="co-ball">2</span> верный пароль → <code>sufficient</code> при чистом итоге
+завершает <b>весь</b> стек службы: <code>pam_nologin</code> <b>не исполняется</b>, закрытая на
+обслуживание система впускает пользователя.
+</div>
+
+</div>
+<div>
+
+<CodeSnippet src="snippets/ex-substack-substack.txt" lang="text" title="вариант 2 · substack" tag="корректно" :numbers="false" fontSize="0.5rem">
+  <TCallout :line="2" :col="7" :span="8" :n="3" />
+</CodeSnippet>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+<span class="co-ball">3</span> успешный <code>sufficient</code> завершает только вложенный стек и возвращает
+управление родителю: <code>pam_nologin</code> <b>исполняется</b>. Для проверок, специфичных для
+службы и стоящих <b>после</b> общей аутентификации, нужен именно <code>substack</code>.
+</div>
+
+</div>
+</div>
+
+<div class="grid grid-cols-[1fr_1.3fr] gap-4 mt-3 items-start">
+<div>
+
+<TerminalCapture src="captures/02-common-files.txt" section="5" title="Ubuntu Server 26.04 · /etc/pam.d/other" fontSize="0.5rem" class="!mt-0" />
+
+</div>
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<b>Сокращение Debian <code>@include</code>:</b> без указания типа, подставляет <b>все</b> строки
+файла – каждая попадает в стек своего типа; по потоку управления равносильно
+<code>include</code>. Это соглашение Debian/Ubuntu, а не общий механизм PAM: на другие
+реализации и дистрибутивы переносить его нельзя – учить следует типизированные
+<code>include</code> и <code>substack</code>. В Ubuntu 26.04 <code>common-auth</code> подключается
+именно так – со всеми следствиями варианта 1 (раздел 3).
+</div>
+</div>
+
+<Refs ids="man-pam-conf pam-sag man-pam-auth-update" />
+
+<!--
+Почему разница важна. Вариант 1: служба включает общий файл primary-auth с
+sufficient pam_unix, а затем ставит собственную проверку pam_nologin. При
+верном пароле sufficient завершает весь стек – pam_nologin не исполняется, и
+закрытая на обслуживание система впускает пользователя. Вариант 2: substack –
+успех sufficient завершает лишь вложенный стек, управление возвращается
+родителю, pam_nologin исполняется. Правило: специфичные для службы ограничения
+после общей аутентификации требуют substack. Нижняя часть – @include Debian:
+сокращение без типа, подставляющее все строки файла в стеки соответствующих
+типов; по управлению это include, и переносить его на другие реализации
+нельзя. Ubuntu собирает все службы именно через @include – поэтому в разделе 3
+полезно смотреть на common-auth, помня о варианте 1: Debian компенсирует это
+тем, что общий файл заканчивается pam_permit/pam_deny без sufficient, а
+служебные проверки вроде pam_nologin в login стоят ДО include с requisite.
+-->
+
+---
+layout: section
+---
+
+# 3. Типичные конфигурации PAM
 
 <SectionTOC prefix="3" :current="1" :items="[
-  'Общие файлы <code>common-*</code>',
-  'Файлы служб: <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Debian и Ubuntu: общие файлы <code>common-*</code>',
+  'Debian и Ubuntu: файлы служб <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Семейство RHEL: <code>system-auth</code> и authselect',
+  'Arch Linux: цепочка включений <code>system-*</code>',
+  'Astra Linux Special Edition',
 ]" />
 
 ---
@@ -846,7 +2293,7 @@ Debian и Ubuntu выносят повторяющиеся стеки в **об�
 href="https://manpages.ubuntu.com/manpages/noble/en/man8/pam-auth-update.8.html" />
 из **профилей**, которые пакеты кладут в `/usr/share/pam-configs/`. Поэтому
 установка пакета с новым модулем может сама включить его в общие стеки –
-увидим в разделе 5.
+увидим в разделе 6.
 
 </InfoCard>
 
@@ -1020,7 +2467,7 @@ pam_unix пишет в журнал строки session opened/closed, pam_syst
 (<DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" />) и истории (<Man p="pam_pwhistory(8)" />) вставляются
 в этот стек <b>перед</b> <Man p="pam_unix(8)" /> – политика задаётся один раз
 и действует на <code>passwd</code>, <code>chpasswd</code>, смену пароля по ssh –
-на всё (раздел 5).
+на всё (раздел 6).
 </div>
 
 </div>
@@ -1043,18 +2490,21 @@ pam_unix пишет в журнал строки session opened/closed, pam_syst
 видели в лекции 2 по префиксу $y$. Главное на слайде – зелёная карточка:
 common-password есть точка подключения парольной политики; модули качества и
 истории вставляются перед pam_unix, и политика действует на любую смену пароля
-в системе. Весь раздел 5 построен на этом факте.
+в системе. Весь раздел 6 построен на этом факте.
 -->
 
 ---
 layout: section
 ---
 
-# 3. Конфигурация Ubuntu Server 26.04
+# 3. Типичные конфигурации PAM
 
 <SectionTOC prefix="3" :current="2" :items="[
-  'Общие файлы <code>common-*</code>',
-  'Файлы служб: <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Debian и Ubuntu: общие файлы <code>common-*</code>',
+  'Debian и Ubuntu: файлы служб <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Семейство RHEL: <code>system-auth</code> и authselect',
+  'Arch Linux: цепочка включений <code>system-*</code>',
+  'Astra Linux Special Edition',
 ]" />
 
 ---
@@ -1076,9 +2526,9 @@ layout: section
 <b>Читаем файл:</b>
 <div class="mt-1 space-y-1.5">
 <div><span class="co-ball">1</span> <code>pam_faildelay</code> – пауза 3 с после неудачной попытки: перебор паролей с клавиатуры замедляется</div>
-<div><span class="co-ball">2</span> <Man p="pam_nologin(8)" /> – при существовании файла <code>/etc/nologin</code> вход разрешён только root (раздел 4.1)</div>
+<div><span class="co-ball">2</span> <Man p="pam_nologin(8)" /> – при существовании файла <code>/etc/nologin</code> вход разрешён только root (раздел 5.1)</div>
 <div><span class="co-ball">3</span> сама проверка пароля – <code>@include common-auth</code>: в файле <code>login</code> о <code>/etc/shadow</code> нет ни строки</div>
-<div><span class="co-ball">4</span> <Man p="pam_limits(8)" /> – лимиты ресурсов сеанса (раздел 4.4); рядом – окружение (<Man p="pam_env(8)" />), приветствие (<Man p="pam_motd(8)" />), почта (<code>pam_mail</code>)</div>
+<div><span class="co-ball">4</span> <Man p="pam_limits(8)" /> – лимиты ресурсов сеанса (раздел 5.4); рядом – окружение (<Man p="pam_env(8)" />), приветствие (<Man p="pam_motd(8)" />), почта (<code>pam_mail</code>)</div>
 </div>
 
 <v-click>
@@ -1134,7 +2584,7 @@ loginuid передаёт ядру auid для аудита. А проверка
 
 пакет openssh-server в Ubuntu включает PAM (<Man p="sshd_config(5)" />);
 диалог модулей с пользователем идёт только через
-`KbdInteractiveAuthentication` – важно для второго фактора (раздел 6).
+`KbdInteractiveAuthentication` – важно для второго фактора (раздел 7).
 
 </InfoCard>
 
@@ -1184,9 +2634,9 @@ UsePAM yes (умолчание Debian/Ubuntu, не upstream!), а диалог �
 <v-click>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
-<b>Вывод по разделу:</b> три разных пути входа – консоль, сеть, графика –
+<b>Итог для Debian/Ubuntu:</b> три разных пути входа – консоль, сеть, графика –
 сходятся в одних и тех же общих стеках; меняя <code>common-*</code>,
-мы меняем политику всех путей сразу. Этим и пользуемся дальше.
+мы меняем политику всех путей сразу. Другие семейства решают ту же задачу иначе.
 </div>
 
 </v-click>
@@ -1203,16 +2653,956 @@ UsePAM yes (умолчание Debian/Ubuntu, не upstream!), а диалог �
 политика Ubuntu; проверка пароля – всё тот же common-auth; gnome_keyring с
 флагом optional разблокирует связку ключей паролем входа – пример модуля,
 неудача которого не мешает аутентификации. Вывод раздела: все пути входа
-сходятся в common-* – дальше работаем с ними.
+сходятся в common-* – дальше работаем с ними; но сначала посмотрим, как ту же
+задачу решают другие семейства дистрибутивов.
 -->
 
 ---
 layout: section
 ---
 
-# 4. Административные задачи
+# 3. Типичные конфигурации PAM
+
+<SectionTOC prefix="3" :current="3" :items="[
+  'Debian и Ubuntu: общие файлы <code>common-*</code>',
+  'Debian и Ubuntu: файлы служб <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Семейство RHEL: <code>system-auth</code> и authselect',
+  'Arch Linux: цепочка включений <code>system-*</code>',
+  'Astra Linux Special Edition',
+]" />
+
+---
+
+# Семейство RHEL: общая политика в system-auth и password-auth
+
+RHEL, Fedora, Rocky Linux, AlmaLinux – и РЕД ОС с той же пакетной базой – держат общие стеки
+не в `common-*`, а в **двух файлах**: `system-auth` для локальных служб и `password-auth` для сетевых.
+
+<div class="grid grid-cols-[1.45fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="10 · system-auth" title="Rocky Linux 10.2 · /etc/pam.d/system-auth" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="1" :span="25" :n="1" />
+  <TCallout :line="7" :col="6" :span="29" :rows="2" :n="2" />
+  <TCallout :line="10" :col="10" :span="26" :n="3" />
+  <TCallout :line="11" :col="56" :span="11" :n="4" />
+  <TCallout :line="15" :col="1" :span="8" :n="5" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем файл:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> файл <b>сгенерирован</b> утилитой authselect – ручная правка будет перезаписана (следующие слайды)</div>
+<div><span class="co-ball">2</span> вместо прыжков Debian – пара <code>sufficient</code> + <code>required pam_deny</code>: успех <Man p="pam_unix(8)" /> завершает стек, иначе отказ (раздел 2.4)</div>
+<div><span class="co-ball">3</span> <code>pam_pwquality</code> с <code>requisite</code> стоит в стеке password <b>по умолчанию</b> – без установки пакетов</div>
+<div><span class="co-ball">4</span> <code>use_authtok</code>: pam_unix берёт пароль, уже проверенный pam_pwquality (раздел 4.3)</div>
+<div><span class="co-ball">5</span> ведущий дефис: отсутствие модуля systemd не ломает вход (раздел 2.2)</div>
+</div>
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Задержка <code>pam_faildelay</code> и окружение <code>pam_env</code> включены в сам общий стек, а не в файлы
+служб, как в Ubuntu; <code>pam_succeed_if service in crond</code> освобождает cron от записи сеанса в журнал.
+</div>
+
+<Refs ids="rhel-pam rocky-pam authselect man-pam-conf" />
+
+<!--
+Второе большое семейство. Общая политика собрана в system-auth; password-auth –
+её двойник для сетевых служб (sshd), по умолчанию идентичный. Стиль правил
+другой: вместо [success=1 default=ignore] здесь классическая пара sufficient +
+required pam_deny – семантически то же самое, разобрали в разделе 2.4.
+Важное отличие от Ubuntu: pam_pwquality уже стоит в стеке password, а pam_unix
+получает проверенный пароль через use_authtok. Строка с дефисом – pam_systemd
+может отсутствовать (контейнер без systemd), и это не ошибка. Заголовок файла
+честно предупреждает: сгенерировано authselect, руками не править.
+-->
+
+---
+
+# Файлы служб RHEL: password-auth через substack
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="10 · sshd" title="Rocky Linux 10.2 · /etc/pam.d/sshd" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="12" :span="26" :n="1" />
+  <TCallout :line="3" :col="12" :span="22" :n="2" />
+  <TCallout :line="4" :col="25" :span="15" :rows="2" :n="3" />
+  <TCallout :line="17" :col="1" :span="4" :n="4" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<div class="t-table text-xs">
+
+| Общий файл | Подключают | Содержимое |
+|---|---|---|
+| `system-auth` | `login`, `su`, `sudo`, `passwd`… | четыре стека |
+| `password-auth` | `sshd`, `remote` | копия для сетевых служб |
+| `postlogin` | службы входа | `pam_umask`, `pam_lastlog` |
+| `smartcard-auth`, `fingerprint-auth` | графический вход | другие факторы |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<div class="space-y-1.5">
+<div><span class="co-ball">1</span> <code>substack</code>, а не <code>include</code>: прыжки внутри <code>password-auth</code> не выходят в файл службы (раздел 2.6)</div>
+<div><span class="co-ball">2</span> <code>postlogin</code> – второй общий файл, тоже сгенерированный</div>
+<div><span class="co-ball">3</span> обвязка службы: <code>pam_sepermit</code> (SELinux) и <Man p="pam_nologin(8)" /> – в стеке account, как у Ubuntu</div>
+<div><span class="co-ball">4</span> оба общих файла по умолчанию совпадают: разделение – задел на разную политику для локального и сетевого входа</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<Refs ids="rhel-pam man-pam-conf man-sshd-config" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+Файл sshd в Rocky – та же идея, что в Ubuntu: обвязка службы плюс подключение
+общих стеков. Но подключение через substack: прыжки внутри password-auth
+остаются внутри него – именно тот случай, который мы разбирали в разделе 2.6.
+Таблица: какие файлы считаются общими и кто их подключает. system-auth –
+локальные службы, password-auth – сетевые; diff показывает, что по умолчанию
+они совпадают. Разделение сделано на вырост: политику для удалённого входа
+(например, обязательный второй фактор) можно ужесточить отдельно.
+-->
+
+---
+
+# authselect: готовые профили вместо правки стеков
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="текущий профиль" title="Rocky Linux 10.2 · authselect" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="2" :col="63" :span="34" :rows="2" :n="1" />
+  <TCallout :line="5" :col="1" :span="17" :n="2" />
+  <TCallout :line="8" :col="3" :span="7" :rows="3" :n="3" />
+  <TCallout :line="12" :col="1" :span="16" :rows="5" :n="4" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем вывод:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> файлы в <code>/etc/pam.d</code> – символические ссылки на результат генерации в <code>/etc/authselect/</code></div>
+<div><span class="co-ball">2</span> <b>профиль</b> – согласованный набор <code>system-auth</code>, <code>password-auth</code>, <code>postlogin</code>, <code>nsswitch.conf</code>; в RHEL 10 по умолчанию <code>local</code>, в RHEL 8–9 – <code>sssd</code></div>
+<div><span class="co-ball">3</span> три профиля поставщика: локальные учётные записи, домен через SSSD, домен Windows через winbind</div>
+<div><span class="co-ball">4</span> <b>функции</b> профиля включают готовые фрагменты: блокировка, история паролей, <code>pam_access</code>, создание домашнего каталога, запрет пустых паролей</div>
+</div>
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+authselect появился в RHEL 8 на смену authconfig; он не настраивает сами службы
+(SSSD, Kerberos) – только стеки PAM и NSS, которые к ним обращаются.
+</div>
+
+<Refs ids="rhel10-authselect authselect rhel-pam" />
+
+<!--
+Генератор семейства RHEL. Идея противоположна pam-auth-update: не собирать
+файл из фрагментов пакетов, а выбрать один целостный профиль и включить в нём
+функции. Файлы в /etc/pam.d – ссылки на /etc/authselect, где лежит результат.
+Профилей три: local (RHEL 10 по умолчанию), sssd (умолчание RHEL 8–9 – даже
+для локальных пользователей), winbind. Функции – именованные фрагменты:
+with-faillock добавляет pam_faillock в auth и account, with-pwhistory –
+pam_pwhistory в password, without-nullok убирает nullok. Для аудита
+достаточно двух команд: authselect current и authselect list-features.
+-->
+
+---
+
+# authselect: смена профиля и свой профиль
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="смена профиля" title="Rocky Linux 10.2 · authselect select / check / create-profile" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="1" :col="21" :span="26" :n="1" />
+  <TCallout :line="2" :col="1" :span="16" :n="2" />
+  <TCallout :line="11" :col="1" :span="31" :n="3" />
+  <TCallout :line="12" :col="14" :span="39" :n="4" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<div class="space-y-1.5">
+<div><span class="co-ball">1</span> профиль и функции задаются одной командой; <code>--force</code> нужен, если файлы в <code>/etc/pam.d</code> были изменены вручную</div>
+<div><span class="co-ball">2</span> прежняя конфигурация сохраняется в резервной копии – откат одной командой <code>authselect backup-restore</code></div>
+<div><span class="co-ball">3</span> <code>check</code> сверяет файлы с профилем: расхождение – признак ручной правки <b>или постороннего вмешательства</b></div>
+<div><span class="co-ball">4</span> нестандартная политика – через <b>собственный профиль</b> на основе поставщика: правятся файлы в <code>/etc/authselect/custom/</code>, затем <code>select custom/custom-security</code></div>
+</div>
+</div>
+
+<v-click>
+
+<InfoCard icon="info" head="pam-auth-update против authselect" class="mt-2 text-xs">
+
+Debian **складывает** `common-*` из профилей пакетов: установили `libpam-pwquality` –
+модуль в стеке. RHEL **выбирает** профиль целиком: модуль включает функция
+профиля или свой профиль, а не пакет.
+
+</InfoCard>
+
+</v-click>
+
+</div>
+</div>
+
+<Refs ids="rhel10-authselect authselect unit42-pam" />
+
+<!--
+Рабочий цикл: select выбирает профиль и функции (здесь – sssd с блокировкой);
+предыдущая конфигурация уходит в резервную копию; check подтверждает, что файлы
+соответствуют профилю. Это ещё и инструмент контроля целостности: вредоносные
+PAM-модули (отчёт Unit 42 в списке источников) добавляют себя именно правкой
+стеков, и authselect check такую правку заметит. Для нестандартной политики –
+собственный профиль на основе поставщика. Карточка фиксирует главное отличие
+двух генераторов: аддитивная сборка Debian против выбора целостного профиля.
+-->
+
+---
+layout: section
+---
+
+# 3. Типичные конфигурации PAM
+
+<SectionTOC prefix="3" :current="4" :items="[
+  'Debian и Ubuntu: общие файлы <code>common-*</code>',
+  'Debian и Ubuntu: файлы служб <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Семейство RHEL: <code>system-auth</code> и authselect',
+  'Arch Linux: цепочка включений <code>system-*</code>',
+  'Astra Linux Special Edition',
+]" />
+
+---
+
+# Arch Linux: политика как цепочка включений
+
+Генераторов нет: файлы пакета `pambase` правят вручную, а общая политика собрана **слоями**, каждый подключает следующий.
+
+<div class="grid grid-cols-[1fr_1.25fr] gap-4 mt-1 items-start">
+<div>
+
+<div class="t-table text-xs">
+
+| Служба | подключает | → | → |
+|---|---|---|---|
+| `login` | `system-local-login` | `system-login` | `system-auth` |
+| `sshd` | `system-remote-login` | `system-login` | `system-auth` |
+| `sudo`, `su` | `system-auth` | | |
+
+</div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="Arch Linux · other" title="Arch Linux · /etc/pam.d/other" fontSize="0.45rem" class="mt-2">
+  <TCallout :line="3" :col="22" :span="11" :rows="2" :n="5" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="цепочка включений" title="Arch Linux (pam 1.7.3) · файлы служб" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="2" :col="21" :span="19" :n="1" />
+  <TCallout :line="7" :col="21" :span="12" :n="2" />
+  <TCallout :line="13" :col="25" :span="18" :n="3" />
+  <TCallout :line="18" :col="33" :span="11" :n="4" />
+</TerminalCapture>
+
+</div>
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-1 text-xs">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">1</span>–<span class="co-ball">4</span> файл службы состоит из одних <code>include</code>:
+действующие правила видны, только если развернуть граф включений до конца.
+<span class="co-ball">5</span> <code>other</code> – консервативный пример из руководства Linux-PAM (раздел 2.2);
+в Ubuntu <code>other</code> подключает <code>common-*</code>.
+</div>
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Зачем слои:</b> правка <code>system-remote-login</code> затрагивает только удалённый вход,
+<code>system-login</code> – любой интерактивный вход, <code>system-auth</code> – ещё и
+<code>sudo</code>, <code>su</code>, <code>passwd</code>. Чем ниже слой, тем шире последствия ошибки.
+</div>
+</div>
+
+<Refs ids="archwiki-pam pam-sag man-pam-conf" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+Третья схема – без генератора. Arch поставляет файлы в пакете pambase и
+ожидает ручной правки, но раскладывает общую политику по слоям: system-auth
+(собственно проверки), system-login (всё для интерактивного входа: shells,
+nologin, access, motd, systemd), и два тонких файла-переходника для локального
+и удалённого входа. sshd и login состоят из одних include – отсюда правило
+аудита: разворачивать цепочку до конца, иначе половина правил не видна.
+Отдельно other: Arch взял консервативный вариант из SAG дословно – deny + warn,
+тогда как Ubuntu для неизвестной службы применяет общие стеки.
+-->
+
+---
+
+# Arch Linux: system-auth с блокировкой pam_faillock по умолчанию
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="Arch Linux · system-auth" title="Arch Linux (pam 1.7.3) · /etc/pam.d/system-auth" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="2" :col="61" :span="7" :n="1" />
+  <TCallout :line="3" :col="1" :span="5" :n="2" />
+  <TCallout :line="4" :col="12" :span="23" :n="3" />
+  <TCallout :line="5" :col="61" :span="8" :n="4" />
+  <TCallout :line="8" :col="61" :span="8" :n="5" />
+  <TCallout :line="12" :col="40" :span="11" :n="6" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем файл:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> <Man p="pam_faillock(8)" /> <code>preauth</code> – до пароля: учётная запись уже заблокирована?</div>
+<div><span class="co-ball">2</span> дефис и прыжок через два правила: пользователь systemd-homed минует <code>pam_unix</code> и учёт неудач</div>
+<div><span class="co-ball">3</span> <code>[success=1 default=bad]</code>: верный пароль перепрыгивает <code>authfail</code>; <code>try_first_pass</code> – пароль берётся у предыдущего модуля</div>
+<div><span class="co-ball">4</span> <code>[default=die] … authfail</code> – неудача засчитана, стек завершён</div>
+<div><span class="co-ball">5</span> <code>authsucc</code> – успех сбрасывает счётчик</div>
+<div><span class="co-ball">6</span> <Man p="pam_time(8)" /> уже в стеке account: достаточно заполнить <code>time.conf</code></div>
+</div>
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
+Та же трёхстрочная схема faillock, которую в разделе 6 мы будем подключать к Ubuntu вручную,
+в Arch входит в поставку; параметры – в <code>/etc/security/faillock.conf</code> (раздел 2.2: два слоя настройки).
+</div>
+
+<Refs ids="archwiki-pam man-pam-faillock man-pam-conf" />
+
+<!--
+Нижний слой Arch – system-auth. Он интересен тем, что блокировка после
+неудачных попыток включена из коробки: preauth до пароля, authfail после
+неудачи с default=die, authsucc после успеха. Между ними – pam_unix с прыжком
+через authfail при успехе и систем-homed с дефисом и прыжком через два правила.
+Это буквально та конфигурация, которую мы будем собирать руками на Ubuntu в
+разделе 6 – полезно увидеть её целиком заранее. pam_time в account – правило
+есть, а ограничений в time.conf по умолчанию нет; достаточно дописать файл.
+-->
+
+---
+layout: section
+---
+
+# 3. Типичные конфигурации PAM
+
+<SectionTOC prefix="3" :current="5" :items="[
+  'Debian и Ubuntu: общие файлы <code>common-*</code>',
+  'Debian и Ubuntu: файлы служб <code>login</code>, <code>sshd</code>, <code>gdm-password</code>',
+  'Семейство RHEL: <code>system-auth</code> и authselect',
+  'Arch Linux: цепочка включений <code>system-*</code>',
+  'Astra Linux Special Edition',
+]" />
+
+---
+
+# Astra Linux SE 1.8: схема Debian с политикой блокировки по умолчанию
+
+Astra Linux Special Edition построена на Debian 12: те же `common-*`, `@include`
+и pam-auth-update – но профили поставщика **заранее включают** политику безопасности.
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="SE 1.8 · common-auth" title="Astra Linux SE 1.8.7 · common-auth" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="2" :col="9" :span="26" :n="1" />
+  <TCallout :line="3" :col="65" :span="24" :n="2" />
+  <TCallout :line="4" :col="57" :span="29" :n="3" />
+  <TCallout :line="5" :col="9" :span="26" :n="4" />
+</TerminalCapture>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="SE 1.8 · common-account" title="Astra Linux SE 1.8.7 · common-account" fontSize="0.45rem" class="mt-2">
+  <TCallout :line="3" :col="62" :span="23" :n="5" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем файлы:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> <code>pam_localuser</code>: для пользователя <b>не из локальных файлов</b> прыжок через два правила – учёт неудач только для локальных учётных записей</div>
+<div><span class="co-ball">2</span> члены группы <code>astra-admin</code> минуют <code>preauth</code>: администратора нельзя заблокировать перебором</div>
+<div><span class="co-ball">3</span> <Man p="pam_faillock(8)" />: блокировка после 8 неудач, счётчик на пользователя, событие в аудит</div>
+<div><span class="co-ball">4</span> верный пароль перепрыгивает <code>authfail</code> и <code>pam_deny</code> – схема Debian с прыжком 2 (раздел 2.5, пример E)</div>
+<div><span class="co-ball">5</span> в account – <Man p="pam_listfile(8)" />: учётные записи из <code>/etc/users.blocked</code> отклоняются с сообщением; файл по умолчанию пуст</div>
+</div>
+</div>
+</div>
+
+<Refs ids="astra-wiki-lock astra-redbook astra-repo man-pam-auth-update" />
+
+<!--
+Отечественный дистрибутив из семейства Debian: контейнерный образ Astra Linux
+SE 1.8.7 (libpam 1.5.2 с патчами Astra). Файлы common-* собраны тем же
+pam-auth-update, но из профилей поставщика faillock.preauth, faillock.authfail,
+listfile, pwquality – поэтому блокировка после неудачных попыток и список
+заблокированных учётных записей есть сразу. Разбор common-auth – хорошее
+упражнение на раздел 2: pam_localuser выводит доменных пользователей из-под
+учёта (их блокирует домен), astra-admin минует preauth, pam_unix при успехе
+прыгает через authfail и deny. Параметры (deny=8) меняет графическая утилита
+политик учётных записей; документация Astra – в списке источников.
+-->
+
+---
+
+# Astra Linux SE 1.8: ГОСТ-хеш пароля и проверки сеанса
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="SE 1.8 · common-password" title="Astra Linux SE 1.8.7 · common-password" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="2" :col="66" :span="24" :n="1" />
+  <TCallout :line="3" :col="69" :span="26" :n="2" />
+  <TCallout :line="3" :col="96" :span="10" :n="3" />
+</TerminalCapture>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="SE 1.8 · common-session" title="Astra Linux SE 1.8.7 · common-session" fontSize="0.45rem" class="mt-2">
+  <TCallout :line="7" :col="25" :span="11" :n="4" />
+  <TCallout :line="7" :col="96" :span="28" :n="5" />
+</TerminalCapture>
+
+<div class="grid grid-cols-2 gap-3 mt-2 text-xs">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1.5">
+<div><span class="co-ball">1</span> <code>pam_pwquality</code> с <code>requisite</code> в поставке: минимум 8 символов, 3 отличия от старого пароля, 3 попытки</div>
+<div><span class="co-ball">2</span> <code>use_authtok try_first_pass</code> – конвенция передачи пароля по стеку (раздел 4.3)</div>
+<div><span class="co-ball">3</span> <code>gost12_512</code>: хеш ГОСТ Р 34.11-2012 «Стрибог», префикс <code>$gost12512hash$</code> в <code>/etc/shadow</code> (лекция 2) – аргумент патченного pam_unix Astra</div>
+</div>
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1.5">
+<div><span class="co-ball">4</span> <Man p="pam_exec(8)" /> в стеке session запускает внешнюю программу при открытии сеанса</div>
+<div><span class="co-ball">5</span> сценарий предупреждает о нехватке места в <code>/</code>, <code>/var</code> и домашнем каталоге – пример расширения PAM без модуля на C (раздел 9)</div>
+</div>
+</div>
+</div>
+
+<Refs ids="astra-gost-hash astra-repo man-pam-env man-pam-unix" />
+
+<!--
+Два оставшихся общих файла. common-password: pam_pwquality с базовой политикой
+уже включён, а pam_unix получил нестандартный аргумент gost12_512 – алгоритм
+хеширования ГОСТ Р 34.11-2012, который мы видели в лекции 2 по префиксу
+$gost12512hash$. Это аргумент патченного Astra pam_unix: на Ubuntu он вызвал бы
+предупреждение «unrecognized option» – увидим в разделе 4.3. common-session:
+pam_exec запускает сценарий проверки свободного места – пример того, что
+расширить PAM можно и без собственного модуля, если задача простая.
+-->
+
+---
+
+# Astra Linux SE 1.8: модули PARSEC в файлах служб
+
+<div class="grid grid-cols-[1.45fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="SE 1.8 · sshd" title="Astra Linux SE 1.8.7 · /etc/pam.d/sshd" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="8" :col="18" :span="22" :n="1" />
+  <TCallout :line="16" :col="25" :span="17" :rows="2" :n="2" />
+  <TCallout :line="18" :col="18" :span="17" :n="3" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<div class="space-y-1.5">
+<div><span class="co-ball">1</span> <code>pam_parsec_mac</code> – мандатные метки PARSEC (конфиденциальность и целостность) для сеанса; <code>stub</code> – заглушка до общих стеков</div>
+<div><span class="co-ball">2</span> <code>pam_parsec_cap</code> и <code>pam_parsec_aud</code> – привилегии PARSEC и параметры аудита пользователя</div>
+<div><span class="co-ball">3</span> рабочий вызов <code>pam_parsec_mac</code> – после общих стеков, перед <code>pam_selinux open</code></div>
+</div>
+</div>
+
+<TerminalCapture src="captures/15-distro-stacks.txt" section="модули PARSEC" title="Astra Linux SE 1.8.7 · откуда модули" fontSize="0.45rem" class="mt-2">
+  <TCallout :line="6" :col="1" :span="28" :n="4" />
+</TerminalCapture>
+
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<span class="co-ball">4</span> Модули PARSEC лежат в <code>/usr/lib/security</code>, а строки в <code>login</code>, <code>sshd</code>, <code>su</code>
+добавляет сценарий пакета <code>parsec-mac</code>, а не pam-auth-update: при аудите их не найти в <code>common-*</code>.
+Полный состав зависит от уровня защищённости (базовый, усиленный, максимальный) – см. документацию Astra.
+</div>
+
+<Refs ids="astra-wiki-ipc astra-redbook astra-repo" />
+
+<!--
+Главная особенность Astra – подсистема безопасности PARSEC: мандатное
+управление доступом и контроль целостности, расширенные привилегии и аудит.
+С PAM она связана тремя модулями, которые пакеты PARSEC вписывают прямо в
+файлы служб: pam_parsec_mac устанавливает метку сеанса (вызывается дважды –
+заглушка до общих стеков и рабочий вызов после), pam_parsec_cap выдаёт
+привилегии, pam_parsec_aud – параметры аудита. Для аудита конфигурации важно:
+этих строк нет в common-*, и лежат модули не в мультиархитектурном каталоге, а
+в /usr/lib/security. Набор включённых механизмов зависит от выбранного уровня
+защищённости – подробности в документации Astra из списка источников.
+-->
+
+---
+
+# Четыре схемы – одна библиотека и одна семантика стека
+
+<div class="t-table text-xs mt-2">
+
+| | Debian, Ubuntu | Astra Linux SE | RHEL, Fedora, Rocky, РЕД ОС | Arch Linux |
+|---|---|---|---|---|
+| Общие файлы | `common-auth`, `-account`, `-password`, `-session` | те же `common-*` | `system-auth`, `password-auth`, `postlogin` | `system-auth` → `system-login` → `system-{local,remote}-login` |
+| Подключение | `@include` | `@include` | `substack`, `include` | `include` |
+| Кто собирает | pam-auth-update из профилей пакетов | pam-auth-update + сценарии пакетов PARSEC | authselect: профиль + функции | вручную, файлы пакета `pambase` |
+| Блокировка по умолчанию | нет | `pam_faillock deny=8`, `/etc/users.blocked` | функция `with-faillock` | `pam_faillock` в `system-auth` |
+| Качество пароля | нет (`obscure`) | `pam_pwquality` + хеш ГОСТ | `pam_pwquality` | нет |
+| Служба `other` | `@include common-*` | `@include common-*` | `pam_deny` | `pam_deny` + `pam_warn` |
+
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-3 text-xs">
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод по разделу:</b> дистрибутивы различаются не семантикой стека, а соглашениями –
+где лежит общая политика и кто её генерирует. Те же четыре типа, флаги и прыжки.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Перед правкой:</b> найти генератор (pam-auth-update, authselect) – иначе правка будет перезаписана.
+<b>Перед аудитом:</b> развернуть граф включений службы до последнего файла.
+</div>
+</div>
+
+<Refs ids="pam-sag man-pam-auth-update authselect archwiki-pam astra-redbook" />
+
+<!--
+Сводка раздела. Четыре колонки – четыре соглашения, но библиотека одна и
+семантика стека одна: типы, флаги, прыжки, include. Различия – в том, где лежит
+общая политика, кто её генерирует и что включено по умолчанию: Ubuntu
+поставляется без блокировки и проверки качества, Astra и Arch – с блокировкой,
+RHEL – с pam_pwquality и функциями authselect. Два практических правила:
+перед правкой найти генератор, иначе изменения исчезнут при следующей
+пересборке; перед аудитом развернуть граф включений до конца. Дальше по
+программе – сами модули, из которых эти стеки состоят.
+-->
+
+---
+layout: section
+---
+
+# 4. Распространённые модули PAM
 
 <SectionTOC prefix="4" :current="1" :items="[
+  'Обзор модулей по назначению',
+  'Предоставляемые типы: функции <code>pam_sm_*</code>',
+  'Аргументы модулей',
+]" />
+
+---
+
+# Модули проверки и управления доступом
+
+<div class="t-table text-xs mt-1">
+
+| Модуль | Назначение | Типы | В лекции |
+|---|---|---|---|
+| <Man p="pam_unix(8)" /> | пароль, срок действия, смена пароля, запись сеанса – по `/etc/passwd` и `/etc/shadow` | все четыре | 3, 6 |
+| `pam_sss` | учётные записи и пароли домена через SSSD (LDAP, Kerberos, FreeIPA, AD) | все четыре | – |
+| <Man p="pam_deny(8)" />, <Man p="pam_permit(8)" /> | безусловный отказ и безусловный успех – «замыкают» стек | все четыре | 2.4, 3 |
+| <Man p="pam_faillock(8)" /> | счётчик неудачных попыток и временная блокировка | auth, account | 6 |
+| <Man p="pam_nologin(8)" /> | при наличии `/etc/nologin` вход разрешён только root | auth, account | 5.1 |
+| <Man p="pam_securetty(8)" /> | вход root только с терминалов, перечисленных в `/etc/securetty` | auth | 4.2 |
+| <Man p="pam_wheel(8)" /> | `su` только членам группы `wheel` (`sudo`) | auth, account | – |
+| <Man p="pam_access(8)" /> | политика по пользователю, группе, хосту и терминалу: `access.conf` | все четыре | 5.2 |
+| <Man p="pam_listfile(8)" /> | разрешить или запретить по списку из файла | все четыре | 5.2, 3.5 |
+| <Man p="pam_time(8)" /> | ограничение по времени суток и дням недели: `time.conf` | account | 5.3 |
+| <Man p="pam_succeed_if(8)" /> | условие на атрибуты пользователя – ветвление стека прыжками | все четыре | 2.5, 3 |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Модули проверки (<code>pam_unix</code>, <code>pam_sss</code>) отвечают «тот ли это пользователь», модули политики
+(<code>pam_access</code>, <code>pam_time</code>, <code>pam_faillock</code>…) – «можно ли ему сейчас»: типы auth и account в действии.
+</div>
+
+<Refs ids="pam-sag man-pam-unix sssd man-pam-faillock man-pam-access man-pam-securetty" />
+
+<style>
+.t-table { font-size: 0.72rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+Обзор модулей начинаем с тех, что решают, пускать или нет. Первая группа –
+источники учётных данных: pam_unix для локальных файлов и pam_sss для домена;
+обе реализуют все четыре типа. Вторая – «замыкающие» pam_deny и pam_permit.
+Третья – модули политики: блокировка, nologin, securetty, wheel, access, time,
+listfile, succeed_if – почти все мы увидим в работе в разделе 5. Столбец
+«Типы» – по man-страницам Linux-PAM 1.7.0; как проверить его самостоятельно,
+покажем в разделе 4.2.
+-->
+
+---
+
+# Модули сеанса, смены пароля и служебные
+
+<div class="t-table text-xs mt-1">
+
+| Модуль | Назначение | Типы | В лекции |
+|---|---|---|---|
+| <Man p="pam_env(8)" /> | переменные окружения из `/etc/environment`, `pam_env.conf` | auth, session | 3 |
+| <Man p="pam_limits(8)" /> | лимиты ресурсов сеанса: `limits.conf` | session | 5.4 |
+| <Man p="pam_systemd(8)" /> | регистрация сеанса в systemd-logind | session | 3 |
+| <Man p="pam_mkhomedir(8)" /> | создать отсутствующий домашний каталог (доменные пользователи) | session | – |
+| <Man p="pam_keyinit(8)" />, <Man p="pam_loginuid(8)" /> | связка ключей ядра для сеанса; auid для подсистемы аудита | session | 3 |
+| <Man p="pam_umask(8)" />, <Man p="pam_motd(8)" /> | маска прав новых файлов; сообщение дня | session | 3 |
+| <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" /> | качество нового пароля: длина, классы символов, словарь | password | 6 |
+| <Man p="pam_pwhistory(8)" /> | запрет повторного использования прежних паролей | password | 6 |
+| <Man p="pam_exec(8)" /> | запуск внешней программы на любом этапе | все четыре | 3.5 |
+| <Man p="pam_warn(8)" /> | запись в журнал сведений о вызове: служба, пользователь, хост | все четыре | 2.2, 3.4 |
+| <Man p="pam_faildelay(8)" /> | задержка после неудачной попытки | auth | 3 |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Таблица – ориентир, а не спецификация.</b> Модуль не обязан поддерживать все типы, а одноимённые
+модули разных версий Linux-PAM различаются (<code>pam_tally2</code> → <code>pam_faillock</code>,
+<code>pam_lastlog</code> → <code>pam_lastlog2</code>). Решают локальная man-страница и сам файл <code>.so</code> – раздел 4.2.
+</div>
+
+<Refs ids="pam-sag man-pam-env man-pam-limits man-pam-systemd man-pam-pwquality man-pam-pwhistory" />
+
+<style>
+.t-table { font-size: 0.72rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+Вторая половина обзора – модули, которые ничего не решают, а обустраивают
+сеанс или участвуют в смене пароля. Стек session: окружение, лимиты,
+регистрация в logind, домашний каталог, связка ключей, auid, umask, motd.
+Стек password: pam_pwquality и pam_pwhistory – раздел 6. Служебные: pam_exec
+(видели в Astra), pam_warn (видели в other Arch), pam_faildelay. Предупреждение
+внизу – мост к разделу 4.2: таблица составлена по документации 1.7.0, а в
+другой системе модуль может называться иначе или поддерживать другие типы.
+pam_tally2 удалён в Linux-PAM 1.5, pam_lastlog объявлен устаревшим.
+-->
+
+---
+layout: section
+---
+
+# 4. Распространённые модули PAM
+
+<SectionTOC prefix="4" :current="2" :items="[
+  'Обзор модулей по назначению',
+  'Предоставляемые типы: функции <code>pam_sm_*</code>',
+  'Аргументы модулей',
+]" />
+
+---
+
+# Типы модуля видны по его символам pam_sm_*
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/16-module-args.txt" section="Символы" title="Ubuntu Server 26.04 · экспортируемые функции pam_securetty" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="20" :span="19" :rows="3" :n="1" />
+</TerminalCapture>
+
+<TerminalCapture src="captures/16-module-args.txt" section="Какие типы" title="Ubuntu Server 26.04 · функции pam_sm_* по модулям" fontSize="0.47rem" class="mt-2">
+  <TCallout :line="8" :col="17" :span="9" :n="2" />
+  <TCallout :line="9" :col="17" :span="26" :n="3" />
+  <TCallout :line="10" :col="17" :span="9" :n="4" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<div class="t-table text-xs">
+
+| Тип правила | Функции модуля |
+|---|---|
+| auth | `pam_sm_authenticate`, `pam_sm_setcred` |
+| account | `pam_sm_acct_mgmt` |
+| password | `pam_sm_chauthtok` |
+| session | `pam_sm_open_session`, `pam_sm_close_session` |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<div class="space-y-1.5">
+<div><span class="co-ball">1</span> <Man p="pam_securetty(8)" /> экспортирует функции auth (и account), но не session</div>
+<div><span class="co-ball">2</span> <Man p="pam_time(8)" /> – только account</div>
+<div><span class="co-ball">3</span> <Man p="pam_limits(8)" /> – только session</div>
+<div><span class="co-ball">4</span> <Man p="pam_pwhistory(8)" /> – только password</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+Модуль – разделяемая библиотека с функциями стандартных имён (раздел 9); libpam ищет
+нужную по имени типа через <Man p="dlsym(3)" /> ещё при загрузке конфигурации (раздел 10).
+</div>
+
+<Refs ids="pam-mwg man-pam-sm-authenticate man-pam-securetty linux-pam-src" />
+
+<!--
+Как проверить утверждение «модуль поддерживает такие-то типы», не доверяя
+таблице? Посмотреть экспортируемые символы: nm -D показывает функции
+pam_sm_*, а соответствие функций типам фиксировано интерфейсом модуля.
+pam_securetty экспортирует authenticate, setcred и acct_mgmt – но не
+open/close_session; pam_time – только acct_mgmt; pam_limits – только сеанс;
+pam_pwhistory – только chauthtok. Любопытно: man-страница pam_securetty
+говорит «только auth», а символ acct_mgmt в библиотеке есть – ещё один довод
+проверять по месту. Что произойдёт, если написать правило типа, которого
+модуль не предоставляет, – следующий слайд.
+-->
+
+---
+
+# Правило с неподдерживаемым типом: PAM_MODULE_UNKNOWN
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/16-module-args.txt" section="не предоставляет" title="Ubuntu Server 26.04 · pam_securetty в стеке session" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="2" :col="1" :span="7" :n="1" />
+  <TCallout :line="4" :col="12" :span="17" :n="2" />
+  <TCallout :line="6" :col="29" :span="45" :n="3" />
+</TerminalCapture>
+
+<TerminalCapture src="captures/16-module-args.txt" section="module_unknown" title="Ubuntu Server 26.04 · module_unknown=ignore" fontSize="0.47rem" class="mt-2">
+  <TCallout :line="2" :col="21" :span="21" :n="4" />
+  <TCallout :line="4" :col="12" :span="17" :n="5" />
+  <TCallout :line="8" :col="25" :span="13" :n="6" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> правило session для модуля, у которого нет функций сеанса</div>
+<div><span class="co-ball">2</span> результат правила – код <code>PAM_MODULE_UNKNOWN</code>; с <code>required</code> стек неуспешен</div>
+<div><span class="co-ball">3</span> libpam сообщает об этом в журнал ещё при загрузке конфигурации, а не при вызове</div>
+<div><span class="co-ball">4</span> <code>module_unknown=ignore</code> пропускает правило – так Ubuntu защищает <code>pam_selinux</code> в <code>login</code> и <code>sshd</code> (раздел 3.2)</div>
+<div><span class="co-ball">5</span> но стек из одних пропущенных правил <b>не имеет результата</b> – libpam отвечает отказом</div>
+<div><span class="co-ball">6</span> <code>pam_permit</code> даёт стеку результат – ради этого Debian завершает каждый <code>common-*</code> строкой <code>pam_permit</code> (раздел 3.1)</div>
+</div>
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-module-args.sh</code>.</SrcRef>
+
+<Refs ids="man-pam-conf man-pam-rootok linux-pam-src" />
+
+<!--
+Эксперимент на pamtester. Правило session для pam_securetty: при загрузке
+конфигурации libpam не находит pam_sm_open_session и пишет об этом в журнал;
+при вызове правило даёт PAM_MODULE_UNKNOWN, с required стек проваливается –
+pamtester печатает «Module is unknown». Действие module_unknown=ignore
+пропускает правило – но тогда стек не содержит ни одного результата, и libpam
+отвечает отказом: пустой результат – не успех. Отсюда загадочная строка
+pam_permit в конце каждого common-* Debian («prime the stack») и
+module_unknown=ignore у pam_selinux в Ubuntu: модуль может отсутствовать.
+Общий принцип fail-closed: неизвестно – значит отказ.
+-->
+
+---
+layout: section
+---
+
+# 4. Распространённые модули PAM
+
+<SectionTOC prefix="4" :current="3" :items="[
+  'Обзор модулей по назначению',
+  'Предоставляемые типы: функции <code>pam_sm_*</code>',
+  'Аргументы модулей',
+]" />
+
+---
+
+# Аргументы модулей: соглашения вместо словаря
+
+Поля после имени модуля libpam передаёт модулю как `argv`, не разбирая; общего словаря нет, но многие модули следуют **соглашениям**:
+
+<div class="t-table text-xs mt-1">
+
+| Аргумент | Соглашение | Где определён |
+|---|---|---|
+| `debug` | подробные сообщения в журнал (syslog) | почти все модули |
+| `quiet`, `silent` | не печатать сообщения пользователю | `pam_succeed_if`, `pam_faillock`, `pam_lastlog`… |
+| `try_first_pass` | взять пароль, уже введённый в стеке; если его нет – спросить | `pam_unix`, `pam_sss`, `pam_pwquality`… |
+| `use_first_pass` | только ранее введённый пароль; если его нет – отказ без запроса | те же |
+| `use_authtok` | стек password: новый пароль, уже проверенный предыдущим модулем | `pam_unix`, `pam_pwhistory` |
+| `nullok` | разрешить пустой пароль | `pam_unix` |
+| `retry=N`, `minlen=N`, `deny=N`… | числовые параметры политики | `pam_pwquality`, `pam_faillock` |
+| файл настроек | имя своё у каждого: `conf=` (`pam_faillock`, `pam_limits`), `accessfile=` (`pam_access`), `conffile=` (`pam_env`) | |
+
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-2 text-xs">
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Два токена:</b> <code>PAM_AUTHTOK</code> – текущий пароль (в стеке password – новый),
+<code>PAM_OLDAUTHTOK</code> – прежний при смене. Модули обмениваются ими через элементы транзакции
+(<Man p="pam_get_item(3)" />): <code>pam_pwquality</code> проверяет, а <code>pam_unix</code> хеширует один и тот же пароль.
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+Аргумент значим только там, где документирован: <code>nullok</code> у <code>pam_pwquality</code> или
+<code>minlen</code> у <code>pam_unix</code> – не ошибка синтаксиса, а проигнорированное слово.
+Сверяйтесь с man-страницей <b>установленной</b> версии модуля.
+</div>
+</div>
+
+<Refs ids="man-pam-conf man-pam-unix man-pam-get-authtok pam-sag" />
+
+<style>
+.t-table { font-size: 0.66rem !important; }
+.t-table td, .t-table th { padding-top: 0.18em !important; padding-bottom: 0.18em !important; }
+</style>
+
+<!--
+Четвёртое поле правила – аргументы модуля. libpam передаёт их модулю как есть;
+никакого общего языка нет, но за тридцать лет сложились соглашения: debug,
+quiet, семейство first_pass и use_authtok для передачи пароля по стеку,
+nullok, числовые параметры политики. Даже имя параметра «файл настроек» у
+каждого модуля своё. Карточка про два токена объясняет, как пароль «ходит» по
+стеку: модули кладут его в элемент транзакции PAM_AUTHTOK и берут оттуда –
+отсюда одна подсказка «Пароль:» на три модуля. Предупреждение справа: опечатка
+или чужой аргумент – не синтаксическая ошибка, модуль его просто не поймёт.
+-->
+
+---
+
+# Первый пароль в стеке: pam_get_authtok
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-4 mt-1 items-start">
+<div>
+
+<CodeSnippet src="snippets/pam_get_authtok-first.c" lang="c" title="libpam/pam_get_authtok.c" tag="v1.7.0" fontSize="0.47rem" class="!mt-0">
+  <TCallout :line="6" :col="3" :span="48" :n="1" />
+  <TCallout :line="11" :col="12" :span="35" :n="2" />
+  <TCallout :line="19" :col="13" :span="20" :n="3" />
+</CodeSnippet>
+
+</div>
+<div>
+
+<TerminalCapture src="captures/16-module-args.txt" section="use_first_pass" title="Ubuntu Server 26.04 · два pam_unix, use_first_pass, try_first_pass" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="5" :col="1" :span="9" :n="4" />
+  <TCallout :line="11" :col="12" :span="22" :n="5" />
+  <TCallout :line="18" :col="1" :span="9" :n="6" />
+</TerminalCapture>
+
+</div>
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-2 text-xs">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">1</span> заполненный <code>PAM_AUTHTOK</code> возвращается сразу – <b>повторный запрос не нужен</b>;
+<span class="co-ball">2</span> <code>use_first_pass</code> запрещает спрашивать: при пустом элементе – <span class="co-ball">3</span> <code>PAM_AUTH_ERR</code>
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<span class="co-ball">4</span> два <code>pam_unix</code> подряд – одна подсказка: в 1.7 поведение <code>try_first_pass</code> у pam_unix – умолчание;
+<span class="co-ball">5</span> <code>use_first_pass</code> первым в стеке – отказ без вопроса; <span class="co-ball">6</span> <code>try_first_pass</code> первым – обычный диалог
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-module-args.sh</code>; <code>pam_unix_auth.c:153</code> вызывает <code>pam_get_authtok</code>.</SrcRef>
+
+<Refs ids="man-pam-get-authtok man-pam-unix linux-pam-src" />
+
+<!--
+Механика «первого пароля» в коде. Модули Linux-PAM получают пароль через
+библиотечную функцию pam_get_authtok: если элемент PAM_AUTHTOK уже заполнен
+предыдущим модулем, она возвращает его без диалога; если пуст – спрашивает
+пользователя, кроме случая use_first_pass, когда возвращается ошибка.
+Поэтому в 1.7.0 два pam_unix подряд задают один вопрос даже без try_first_pass
+– аргумент сохранён для совместимости и для модулей с иной реализацией.
+Эксперимент справа: use_first_pass первым в стеке – отказ без подсказки, в
+журнале «could not identify password»; try_first_pass – обычный диалог.
+Практический вывод: порядок модулей в стеке определяет, кто спрашивает пароль.
+-->
+
+---
+
+# nullok, незнакомый аргумент и debug на практике
+
+<div class="grid grid-cols-2 gap-4 mt-1 items-start">
+<div>
+
+<TerminalCapture src="captures/16-module-args.txt" section="nullok" title="Ubuntu Server 26.04 · пустой пароль" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="2" :col="7" :span="2" :n="1" />
+  <TCallout :line="7" :col="12" :span="22" :n="2" />
+  <TCallout :line="12" :col="37" :span="6" :n="3" />
+</TerminalCapture>
+
+</div>
+<div>
+
+<TerminalCapture src="captures/16-module-args.txt" section="Неизвестный" title="Ubuntu Server 26.04 · foo=bar и debug" fontSize="0.45rem" class="!mt-0">
+  <TCallout :line="7" :col="48" :span="29" :n="4" />
+  <TCallout :line="15" :col="48" :span="23" :n="5" />
+</TerminalCapture>
+
+</div>
+</div>
+
+<div class="grid grid-cols-2 gap-3 mt-2 text-xs">
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1.5">
+<div><span class="co-ball">1</span> <code>NP</code> – у alice нет пароля (<Man p="passwd(1)" />)</div>
+<div><span class="co-ball">2</span> без <code>nullok</code> пустой пароль отвергается – в журнале обычная «authentication failure»</div>
+<div><span class="co-ball">3</span> с <code>nullok</code> вход без вопроса; в <code>common-auth</code> Ubuntu этот аргумент стоит по умолчанию (раздел 3.1)</div>
+</div>
+</div>
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1.5">
+<div><span class="co-ball">4</span> незнакомый аргумент не ломает стек: модуль пишет предупреждение и работает дальше – опечатка в <code>nullok</code> останется незамеченной без чтения журнала</div>
+<div><span class="co-ball">5</span> <code>debug</code> добавляет строки о ходе проверки – первое средство при отладке стека</div>
+</div>
+</div>
+</div>
+
+<SrcRef>См. <code>demos/00-module-args.sh</code>.</SrcRef>
+
+<Refs ids="man-pam-unix man-pam-conf" />
+
+<!--
+Три аргумента pam_unix в деле. nullok: учётная запись без пароля (NP в
+passwd -S) без аргумента отвергается, с ним – успех без вопроса; напомним,
+что Ubuntu держит nullok в common-auth по умолчанию, а на серверах его убирают.
+Незнакомый аргумент: модуль лишь предупреждает в журнале и продолжает –
+значит, опечатка в имени аргумента не остановит вход, но и не включит то, что
+вы хотели; после любой правки стека читайте журнал. debug – дополнительные
+строки о ходе проверки. На этом с устройством и словарём PAM закончено;
+дальше – административные задачи на живой системе.
+-->
+
+---
+layout: section
+---
+
+# 5. Административные задачи
+
+<SectionTOC prefix="5" :current="1" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
   'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
@@ -1285,9 +3675,9 @@ pam_nologin уже стоит в login (auth requisite) и sshd (account require
 layout: section
 ---
 
-# 4. Административные задачи
+# 5. Административные задачи
 
-<SectionTOC prefix="4" :current="2" :items="[
+<SectionTOC prefix="5" :current="2" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
   'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
@@ -1388,7 +3778,7 @@ layout: section
 
 <SrcRef>
 См. <code>demos/02-access-listfile.sh</code>. <code>sense=allow</code> превращает
-список в разрешающий – используем в разделе 7.
+список в разрешающий – используем в разделе 8.
 </SrcRef>
 
 <!--
@@ -1406,9 +3796,9 @@ auth – до.
 layout: section
 ---
 
-# 4. Административные задачи
+# 5. Административные задачи
 
-<SectionTOC prefix="4" :current="3" :items="[
+<SectionTOC prefix="5" :current="3" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
   'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
@@ -1474,9 +3864,9 @@ pam_access. Реалистичный вариант – ограничение �
 layout: section
 ---
 
-# 4. Административные задачи
+# 5. Административные задачи
 
-<SectionTOC prefix="4" :current="4" :items="[
+<SectionTOC prefix="5" :current="4" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
   'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
@@ -1549,7 +3939,7 @@ nproc защищает от fork-бомбы, nofile – от исчерпани�
 layout: section
 ---
 
-# 5. Парольная политика
+# 6. Парольная политика
 ## pam_pwquality · pam_pwhistory · pam_faillock
 
 ---
@@ -1862,7 +4252,7 @@ root. Вместе pwquality + pwhistory + faillock + chage (лекция 2) п�
 layout: section
 ---
 
-# 6. Двухфакторная аутентификация
+# 7. Двухфакторная аутентификация
 ## Одноразовые коды TOTP и аппаратные ключи
 
 ---
@@ -2091,7 +4481,7 @@ Yubico: pamu2fcfg регистрирует ключ, строка pam_u2f.so в 
 layout: section
 ---
 
-# 7. PAM в собственных программах
+# 8. PAM в собственных программах
 ## Интерфейс приложения: libpam API и программа authprint
 
 ---
@@ -2164,7 +4554,7 @@ Linux-PAM v1.7.0:
 </div>
 <div class="p-2 border border-slate-400/40 rounded">
 <span class="co-ball">2</span> <b><code>user</code></b> – кого аутентифицируем; допустим <code>NULL</code> –
-тогда модуль запросит имя через диалог (<Man p="pam_get_user(3)" />, раздел 8).
+тогда модуль запросит имя через диалог (<Man p="pam_get_user(3)" />, раздел 9).
 </div>
 <div class="p-2 border border-slate-400/40 rounded">
 <span class="co-ball">3</span> <b><code>pam_conversation</code></b> – функция диалога: <b>обратный вызов</b>,
@@ -2502,7 +4892,7 @@ login и sshd: ей можно назначить любой стек – спи
 списка из демо 02: разрешены только перечисленные. bob проходит, carol с верным
 паролем получает отказ, и событие ложится в auth.log с именем нашей службы.
 Теперь программа - полноправный гражданин PAM: администратор может добавить ей
-TOTP из раздела 6 одной строкой. Это и есть смысл использования libpam вместо
+TOTP из раздела 7 одной строкой. Это и есть смысл использования libpam вместо
 самодельной проверки пароля.
 -->
 
@@ -2510,7 +4900,7 @@ TOTP из раздела 6 одной строкой. Это и есть смы�
 layout: section
 ---
 
-# 8. Разработка модуля PAM
+# 9. Разработка модуля PAM
 ## Интерфейс модуля: pam_sm_* и учебный модуль pam_math
 
 ---
@@ -2558,7 +4948,7 @@ layout: section
 
 <!--
 Симметрия интерфейсов: каждому вызову приложения соответствует pam_sm_-функция
-модуля; libpam находит её по имени через dlsym (раздел 9). Реализуются только
+модуля; libpam находит её по имени через dlsym (раздел 10). Реализуются только
 функции нужных стеков: auth-модулю достаточно pam_sm_authenticate и
 pam_sm_setcred. Аргументы argc/argv – слова из строки правила после имени
 модуля; соглашения о формате (ключ=значение) – на совести модуля. flags –
@@ -2593,7 +4983,7 @@ pam_sm_setcred. Аргументы argc/argv – слова из строки п
 <b>Главное правило:</b> модуль не читает терминал и не пишет на него –
 весь ввод-вывод идёт <b>через диалог приложения</b> (<Man p="pam_prompt(3)" />,
 <Man p="pam_error(3)" />): только так модуль одинаково работает в консоли,
-GDM и sshd (раздел 7).
+GDM и sshd (раздел 8).
 </div>
 
 </v-click>
@@ -2605,7 +4995,7 @@ GDM и sshd (раздел 7).
 аутентифицируем: имя берётся из контекста (его мог задать pam_start или
 предыдущий модуль), а при отсутствии запрашивается через диалог. pam_get_item/
 set_item – доступ к элементам транзакции, включая PAM_AUTHTOK – пароль, которым
-модули делятся по конвенции use_authtok/try_first_pass (раздел 5). pam_prompt,
+модули делятся по конвенции use_authtok/try_first_pass (раздел 6). pam_prompt,
 pam_error, pam_info – обёртки над функцией диалога; pam_syslog – журналирование.
 Повторить правило: никакого прямого ввода-вывода.
 -->
@@ -2759,7 +5149,7 @@ pam_error, pam_info – обёртки над функцией диалога; p
 <div><span class="co-ball">1</span> сборка разделяемой библиотеки: <code>-fPIC -shared</code>; имя – <code>pam_math.so</code></div>
 <div><span class="co-ball">2</span> установка в каталог модулей (раздел 2.1), права 644, владелец root</div>
 <div><span class="co-ball">3</span> служба <code>mathtest</code>: одно правило auth с аргументом <code>max=50</code>; account – <Man p="pam_permit(8)" /></div>
-<div><span class="co-ball">4</span> клиент – <code>authprint mathtest</code> из раздела 7: вопрос модуля пришёл через <Man p="misc_conv(3)" />; верный ответ – успех</div>
+<div><span class="co-ball">4</span> клиент – <code>authprint mathtest</code> из раздела 8: вопрос модуля пришёл через <Man p="misc_conv(3)" />; верный ответ – успех</div>
 <div><span class="co-ball">5</span> неверный ответ – «Wrong answer.» и отказ</div>
 </div>
 
@@ -2782,7 +5172,7 @@ pam_error, pam_info – обёртки над функцией диалога; p
 <!--
 Сборка: -fPIC -shared, получаем pam_math.so; установка в каталог модулей с
 правами 644 root. Служба mathtest из двух строк: auth required pam_math.so
-max=50, account pam_permit. Тестовый клиент – authprint из раздела 7 с именем
+max=50, account pam_permit. Тестовый клиент – authprint из раздела 8 с именем
 службы mathtest: вопрос «math for bob: 23+14=» пришёл из модуля через libpam и
 misc_conv; правильный ответ печатает строку, неверный – Wrong answer и
 Authentication failure. Приложение и модуль не знают друг о друге – их связал
@@ -2805,7 +5195,7 @@ Authentication failure. Приложение и модуль не знают д�
 <div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем демонстрацию:</b>
 <div class="mt-1 space-y-1.5">
-<div><span class="co-ball">1</span> строка после <code>@include common-auth</code> – как у TOTP-модуля в разделе 6</div>
+<div><span class="co-ball">1</span> строка после <code>@include common-auth</code> – как у TOTP-модуля в разделе 7</div>
 <div><span class="co-ball">2</span> ssh задаёт пароль, затем вопрос модуля – диалог дошёл по сети через keyboard-interactive</div>
 </div>
 
@@ -2813,7 +5203,7 @@ Authentication failure. Приложение и модуль не знают д�
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
 <b>Вывод:</b> собственный модуль ничем не отличается от «фирменных»:
-те же правила, те же стеки, тот же диалог. Весь инструментарий раздела 6
+те же правила, те же стеки, тот же диалог. Весь инструментарий раздела 7
 теперь доступен и вашему коду.
 </div>
 
@@ -2836,7 +5226,7 @@ Authentication failure. Приложение и модуль не знают д�
 </SrcRef>
 
 <!--
-Финал демонстрации: та же строка, что для google_authenticator в разделе 6,
+Финал демонстрации: та же строка, что для google_authenticator в разделе 7,
 подключает наш модуль вторым фактором к sshd. Клиент ssh показывает вопрос
 модуля после пароля – диалог прошёл по сети через keyboard-interactive, модуль
 об этом не знает. Красная карточка обязательна: арифметика – не секрет, модуль
@@ -2899,7 +5289,7 @@ Plague (Nextron, 2025) – модули, перехватывающие паро
 мастер-паролю; ставятся после получения root как средство закрепления.
 Контрмеры организационно-технические: целостность pam.d и каталога модулей
 (dpkg -V, AIDE, auditd), модули только из подписанных репозиториев, ревизия
-стеков. Мост к разделу 9: чтобы читать и проверять стеки, нужно понимать, как
+стеков. Мост к разделу 10: чтобы читать и проверять стеки, нужно понимать, как
 libpam их исполняет, – смотрим исходный код.
 -->
 
@@ -2907,9 +5297,9 @@ libpam их исполняет, – смотрим исходный код.
 layout: section
 ---
 
-# 9. Реализация Linux-PAM
+# 10. Реализация Linux-PAM
 
-<SectionTOC prefix="9" :current="1" :items="[
+<SectionTOC prefix="10" :current="1" :items="[
   'Основные структуры',
   'Разбор конфигурации',
   'Исполнение стека',
@@ -2921,7 +5311,7 @@ layout: section
 # Исходный код: struct pam_handle
 
 Смотрим Linux-PAM **v1.7.0** – версию из Ubuntu 26.04. Непрозрачный
-`pam_handle_t` из раздела 7 внутри libpam определён так:
+`pam_handle_t` из раздела 8 внутри libpam определён так:
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-2">
 <div>
@@ -2999,7 +5389,7 @@ caller_is охраняет границу приложение/модуль: н�
 <div>
 
 <div class="text-xs space-y-1">
-<div><span class="co-ball">1</span> функция модуля, найденная <Man p="dlsym(3)" /> (раздел 9.2)</div>
+<div><span class="co-ball">1</span> функция модуля, найденная <Man p="dlsym(3)" /> (раздел 10.2)</div>
 <div><span class="co-ball">2</span> вместо текста флага – массив действий: <code>actions[i]</code> – действие на код возврата <code>i</code>; подробная форма флага хранится буквально</div>
 <div><span class="co-ball">3</span> каждая строка конфигурации – узел <b>односвязного списка</b>: стек и есть список</div>
 <div><span class="co-ball">4</span> шесть голов списков – по одной на вызов API</div>
@@ -3039,9 +5429,9 @@ service хранит два набора: conf – правила службы, 
 layout: section
 ---
 
-# 9. Реализация Linux-PAM
+# 10. Реализация Linux-PAM
 
-<SectionTOC prefix="9" :current="2" :items="[
+<SectionTOC prefix="10" :current="2" :items="[
   'Основные структуры',
   'Разбор конфигурации',
   'Исполнение стека',
@@ -3274,7 +5664,7 @@ _pam_set_default_control: bad у required, die у requisite, ignore у sufficien
 <span class="co-ball">3</span> Для каждого типа правила – своё имя символа: правило <code>auth</code>
 ищет в модуле <code>pam_sm_authenticate</code>. Вот почему наш
 <code>pam_math.so</code> обязан экспортировать именно эти имена
-(раздел 8).
+(раздел 9).
 </div>
 
 <div class="p-2 border-l-4 border-red-500 bg-red-500/10">
@@ -3310,9 +5700,9 @@ account → pam_sm_acct_mgmt и т. д.; dlsym возвращает указат
 layout: section
 ---
 
-# 9. Реализация Linux-PAM
+# 10. Реализация Linux-PAM
 
-<SectionTOC prefix="9" :current="3" :items="[
+<SectionTOC prefix="10" :current="3" :items="[
   'Основные структуры',
   'Разбор конфигурации',
   'Исполнение стека',
@@ -3348,7 +5738,7 @@ layout: section
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <div class="grid grid-cols-2 gap-x-6 gap-y-0.5">
 <div><span class="co-ball">1</span> вызывать стек может только приложение, не модуль</div>
-<div><span class="co-ball">5</span> догрузить стеки (раздел 9.2)</div>
+<div><span class="co-ball">5</span> догрузить стеки (раздел 10.2)</div>
 <div><span class="co-ball">2</span> <span class="co-ball">4</span> время ответа при неудаче не зависит от того, какой модуль отказал</div>
 <div><span class="co-ball">6</span> выбор головы списка по вызову API</div>
 <div><span class="co-ball">3</span> проход по стеку – в <code>_pam_dispatch</code></div>
@@ -3376,7 +5766,7 @@ Linux-PAM v1.7.0:
 реализует fail delay: при неудаче библиотека выдерживает запрошенную модулями
 паузу, выравнивая время ответа, – защита от перебора и от анализа времени.
 _pam_dispatch: догрузить стеки, выбрать голову списка по choice – это таблица
-«вызов API - стек» из раздела 7, в коде; при отсутствии стека у службы – стек
+«вызов API - стек» из раздела 8, в коде; при отсутствии стека у службы – стек
 other. Сам проход – в _pam_dispatch_aux.
 -->
 
@@ -3450,9 +5840,9 @@ action = h->actions[retval] – семантика управляющих фла
 layout: section
 ---
 
-# 9. Реализация Linux-PAM
+# 10. Реализация Linux-PAM
 
-<SectionTOC prefix="9" :current="4" :items="[
+<SectionTOC prefix="10" :current="4" :items="[
   'Основные структуры',
   'Разбор конфигурации',
   'Исполнение стека',
@@ -3587,7 +5977,7 @@ routeAlias: refs
 
 # Источники
 
-<SourcesList class="mt-4" />
+<SourcesList class="mt-4" :to="24" />
 
 <div class="text-xs opacity-70 mt-3">
 Нумерация сквозная для всей лекции; ссылки «[n]» внизу слайдов ведут сюда и
@@ -3595,3 +5985,21 @@ routeAlias: refs
 man-страницы Ubuntu Server 26.04 (Linux-PAM 1.7.0); фрагменты исходного кода –
 Linux-PAM v1.7.0.
 </div>
+
+---
+routeAlias: refs2
+refsFrom: 25
+---
+
+# Источники (продолжение)
+
+<SourcesList class="mt-4" :from="25" :to="42" />
+
+---
+routeAlias: refs3
+refsFrom: 43
+---
+
+# Источники (окончание)
+
+<SourcesList class="mt-4" :from="43" />
