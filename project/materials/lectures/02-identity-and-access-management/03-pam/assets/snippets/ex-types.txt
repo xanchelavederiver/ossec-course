@@ -1,12 +1,14 @@
-auth      sufficient  pam_unix.so             # альтернативные механизмы,
-auth      sufficient  pam_sss.so              # а не два фактора
-auth      required    pam_deny.so
+# auth – подлинность: кто вы?
+auth      required    pam_unix.so              # спросить пароль, сверить хеш с /etc/shadow
 
-account   required    pam_unix.so             # срок действия учётной записи и пароля
-account   required    pam_access.so           # access.conf: кому и откуда разрешено
+# account – допуск: можно ли вам сейчас?
+account   required    pam_unix.so              # срок действия учётной записи и пароля
+account   required    pam_access.so            # access.conf: кому и откуда разрешено
 
-password  requisite   pam_pwquality.so retry=3
-password  required    pam_unix.so use_authtok # взять уже принятый новый пароль
+# password – смена аутентификатора
+password  required    pam_pwquality.so retry=3 # оценить новый пароль
+password  required    pam_unix.so use_authtok  # записать его хеш в /etc/shadow
 
-session   required    pam_limits.so
--session  optional    pam_systemd.so          # одна строка – и для open, и для close
+# session – до и после сеанса
+session   required    pam_limits.so            # лимиты ресурсов на входе
+session   required    pam_unix.so              # записать открытие и закрытие сеанса

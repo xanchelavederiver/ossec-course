@@ -17,6 +17,8 @@ count) and tab-expanded columns – recompute them if an excerpt changes.
 
 | Snippet | Source | Lines |
 |---|---|---|
+| `sudo-pam-service.c` | sudo v1.9.17p2 `plugins/sudoers/auth/pam.c` (GitHub, tag `v1.9.17p2`) | 195–197, 219–226 |
+| `sudo-rs-pam-service.rs` | sudo-rs v0.2.13 `src/sudo/pam.rs` (GitHub, tag `v0.2.13`) | 41–44 |
 | `pam_appl-start.h` | `libpam/include/security/pam_appl.h` | 22–25, 32–33 |
 | `pam_types-conv.h` | `libpam/include/security/_pam_types.h` | 254–257, 279–290 |
 | `pam_modules-sm.h` | `libpam/include/security/pam_modules.h` | 34–35 |
@@ -56,7 +58,8 @@ written for the slides after pam.conf(5)/pam.d(5) and the Linux-PAM SAG):
 |---|---|
 | `ex-pamconf.txt`, `ex-pamd-files.txt` | rule format: `/etc/pam.conf` line vs. per-service files |
 | `ex-syntax.txt` | syntax details: comments, continuation, `[...]` argument grouping, leading hyphen |
-| `ex-types.txt` | one example per management type |
+| `ex-types.txt` | one stack per management type, `required` only – the types and their purpose, not the flags |
+| `ex-include-typed.txt` | `/etc/pam.d/other` of Ubuntu 26.04 rewritten with typed `include` lines – slide «Две формы include» |
 | `ex-stack.txt` | a four-rule auth stack |
 | `ex-flags.txt` | required / requisite / sufficient / optional examples |
 | `ex-ext-syntax.txt`, `ex-ext-actions.txt`, `ex-default.txt` | extended control syntax: namespaces, actions, default matching, exact equivalents |

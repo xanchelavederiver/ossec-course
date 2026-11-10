@@ -288,5 +288,30 @@
     "id": "opensuse-pam",
     "text": "openSUSE: PAM configuration – порядок каталогов /etc/pam.d, /usr/lib/pam.d, /usr/etc/pam.d (vendordir) в openSUSE.",
     "url": "https://en.opensuse.org/openSUSE:PAM_configuration"
+  },
+  {
+    "id": "sudo-src",
+    "text": "sudo: исходный код, версия 1.9.17p2 (в Ubuntu 26.04 – пакет sudo 1.9.17p2-1ubuntu3.2), plugins/sudoers/auth/pam.c – выбор имени службы PAM.",
+    "url": "https://github.com/sudo-project/sudo/blob/v1.9.17p2/plugins/sudoers/auth/pam.c#L219"
+  },
+  {
+    "id": "man-sudoers",
+    "text": "sudoers(5) – Sudo Manual: параметры pam_service, pam_login_service, pam_askpass_service.",
+    "url": "https://www.sudo.ws/docs/man/sudoers.man/"
+  },
+  {
+    "id": "sudo-rs-src",
+    "text": "sudo-rs: исходный код, версия 0.2.13 (в Ubuntu 26.04 – пакет rust-sudo-rs 0.2.13-0ubuntu1.2, команда sudo по умолчанию), src/sudo/pam.rs.",
+    "url": "https://github.com/trifectatechfoundation/sudo-rs/blob/v0.2.13/src/sudo/pam.rs#L41"
+  },
+  {
+    "id": "debian-pam-include",
+    "text": "Debian: пакет pam, патч 031_pam_include – директива @include (авторы J. C. Nordholz, S. Hartman; «Upstream status: not yet submitted»); введена в pam 0.76-13.1 (август 2003).",
+    "url": "https://sources.debian.org/src/pam/latest/debian/patches/031_pam_include/"
+  },
+  {
+    "id": "opensuse-pam-changes",
+    "text": "openSUSE Factory: pam.changes – история каталога поставщика: /usr/etc/pam.d (2019), перенос политик в /usr/lib/pam.d (2022), удаление /usr/etc/pam.d (2024); сборка с vendordir=/usr/etc.",
+    "url": "https://github.com/bmwiedemann/openSUSE/blob/master/packages/p/pam/pam.changes"
   }
 ]

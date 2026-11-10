@@ -45,7 +45,7 @@ gdm-autologin                   newusers
 # ls -l /etc/pam.conf
 -rw-r--r-- 1 root root 552 Jul  3  2025 /etc/pam.conf
 # ls /usr/lib/pam.d/
-ls: cannot access '/usr/lib/pam.d/': No such file or directory
+polkit-1  systemd-user
 # ls /etc/security/
 access.conf     limits.d        opasswd         time.conf
 faillock.conf   namespace.conf  pam_env.conf
