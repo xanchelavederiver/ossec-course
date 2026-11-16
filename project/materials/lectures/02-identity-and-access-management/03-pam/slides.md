@@ -1384,14 +1384,14 @@ layout: section
 <div class="mt-3 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Почему required не прерывает стек?</b> Чтобы не раскрывать атакующему,
 <b>на каком шаге</b> произошла ошибка: оставшиеся модули выполняются, время ответа
-и диалог не зависят от места отказа. <code>requisite</code> также жертвует этим ради
-гарантии: ни один следующий модуль не получит информацию (например, пароль, введённый
-при подозрительных условиях).
+и диалог не зависят от места отказа. <code>requisite</code> прерывает работу сразу ради
+гарантий: ни одно следующее действие не будет выполнено, ни один модуль 
+не получит информацию (например, пароль, введённый при подозрительных условиях).
 </div>
 
 <div class="sub-box mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
 
-Кроме флагов поле `control` принимает две **директивы подстановки** – задают способ
+Кроме флагов поле `control` принимает две **директивы подстановки** – они задают способ
 включения правил из другого файла (раздел 2.6):
 
 <div class="t-table sub-table mt-1">
@@ -1462,15 +1462,16 @@ layout: section
 </div>
 
 <div class="mt-3 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-<b>sufficient перед обязательным фактором</b> – одна из наиболее типичных ошибок конфигурации:
+<b>sufficient перед обязательным вторым фактором</b> – одна из наиболее типичных ошибок конфигурации:
 верный пароль завершает стек успехом, и строка второго фактора не исполняется
-(раздел 7). Замена <code>required</code> на <code>sufficient</code> «чтобы заработало» =
-обход проверки, а не настройка.
+(см. раздел 7).
 </div>
 
 <div class="mt-3 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
-<b>optional ≠ «неважно»</b>: единственное правило типа в стеке решает итог – будучи единственным правило
-<code>auth optional pam_unix.so</code> разрешит вход
+<b>optional ≠ «неважно»</b>: во-первых, выполняемые действия имеют побочные эффекты, во-вторых,
+будучи единственным, результат <b>optional</b> правила определяет результат всего стека –
+например, единственное правило <code>auth optional pam_unix.so</code> определит успешность 
+проверки пароля.
 </div>
 
 </div>
@@ -1608,7 +1609,7 @@ PAM_IGNORE – отбросить, если успех – записать, в�
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
 Код может нести <b>больше</b>, чем «да/нет»: <code>new_authtok_reqd</code> означает «пароль
 необходимо сменить», а не «всё выполнено»; <code>user_unknown</code> – «этот модуль
-пользователя не знает», что при нескольких источниках не равно отказу.
+не знает пользователя», что при нескольких источниках не равно отказу.
 </div>
 <div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
 Прочие документированные имена: <code>open_err</code>, <code>symbol_err</code>, <code>service_err</code>,
@@ -1655,7 +1656,7 @@ system_err. Два замечания о семантике: new_authtok_reqd �
 | `die` | записать неудачу | **остановить** стек |
 | `ok` | принять результат, не перекрывая записанной неудачи | продолжить |
 | `done` | как `ok` | завершить стек, если записанных неудач нет |
-| `N` | в стеках auth/account/password/open_session – как `ignore` | **перепрыгнуть** следующие N правил |
+| `N` | в стеках `auth` / `account` / `password` / `open_session` – как `ignore` | **перепрыгнуть** следующие N правил |
 | `reset` | **стереть** накопленное состояние | продолжить |
 
 </div>
@@ -1668,7 +1669,7 @@ system_err. Два замечания о семантике: new_authtok_reqd �
 
 <div class="mt-2 text-xs space-y-1.5">
 <div><span class="co-ball">1</span> <b>прыжок</b> считает <b>правила</b>, а не строки файла: комментарии и пустые строки не в счёт; вложенный <code>substack</code> – одно правило; <code>0</code> ведёт себя как <code>ignore</code>. Вставка правила между прыжком и его целью меняет, что именно пропускается</div>
-<div><span class="co-ball">2</span> <b>reset</b> стирает и ранее записанную обязательную неудачу – самое опасное действие: применять только после полной трассировки стека</div>
+<div><span class="co-ball">2</span> <b>reset</b> стирает любое значение, в том числе и ранее записанную обязательную неудачу – самое опасное действие</div>
 </div>
 
 </div>
@@ -1724,15 +1725,17 @@ faillock: success=1 → success=2).
 
 <div class="text-xs space-y-1">
 <div><span class="co-ball">1</span> <code>default</code> покрывает все не перечисленные коды: здесь – <code>ignore</code></div>
-<div><span class="co-ball">2</span> <b>если <code>default</code> опущен</b>, не перечисленный код получает <code>bad</code> – способ подстраховать администратора, неподумавшего о результатах наподобие <code>user_unknown</code> или <code>authinfo_unavail</code></div>
+<div><span class="co-ball">2</span> <b>если <code>default</code> опущен</b>, не перечисленный код получает <code>bad</code> – способ подстраховать администратора, не подумавшего о результатах наподобие <code>user_unknown</code> или <code>authinfo_unavail</code></div>
 <div><span class="co-ball">3</span> <code>[success=ok default=bad]</code> – <b>не</b> то же, что <code>required</code>: теряется особая обработка <code>new_authtok_reqd</code> и <code>ignore</code></div>
 <div><span class="co-ball">4</span> точный эквивалент <code>required</code> – дословно по <Man p="pam.conf(5)" /></div>
 <div><span class="co-ball">5</span> <span class="co-ball">6</span> required и requisite различаются только действием по умолчанию: <code>bad</code> против <code>die</code></div>
 <div><span class="co-ball">7</span> sufficient: успех завершает стек (<code>done</code>), прочее – <code>ignore</code></div>
 
 <div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10">
-Прыжок <code>N</code> – основной приём Debian/Ubuntu: <code>[success=1 default=ignore]</code> у
-<Man p="pam_unix(8)" /> означает «успех – перепрыгнуть <Man p="pam_deny(8)" />»; разбор – пример D (раздел 2.5) и раздел 3.1.
+<b>Аналогия</b>: прыжок через <code>N</code> правил позволяет реализовать <b>оператор ветвления</b>.
+В таком качестве прыжки часто используются в при написании сложных сценариев, ход исполнения
+которых зависит от результата проверки некоторого условия (см. пример D в разделе 2.5 и сценарии 
+<code>common-*</code> в разделе 3.1).
 </div>
 </div>
 
@@ -1758,9 +1761,9 @@ new_authtok_reqd (принимается как успех) и у required/requi
 
 <div>
 
-Каждый модуль возвращает код; **управляющий флаг** решает, записать ли результат в итог
-или отбросить, и что делать дальше – продолжить, остановиться, перепрыгнуть правила или
-сбросить накопленное состояние.
+Каждый модуль возвращает код, **управляющий флаг** определяет способ агрегирования кода 
+в результат работы стека, а также дальшейшие действия  – продолжить, остановиться, 
+перепрыгнуть правила или сбросить накопленное состояние.
 
 </div>
 
@@ -1779,23 +1782,23 @@ new_authtok_reqd (принимается как успех) и у required/requi
 </div>
 
 <div class="mt-2 text-xs opacity-80">
-Будь стек логическим «И», достаточно было бы одного отказа без исполнения остальных;
-будь он «ИЛИ» – успех C означал бы успех стека. Ни то ни другое не верно.
+Будь накопление результата стека логическим «И», достаточно было бы одного отказа без исполнения 
+остальных модулей; будь оно «ИЛИ» – успех правила C означал бы успех стека. Ни то ни другое не верно.
 </div>
 
 </div>
 <div class="text-xs space-y-2">
 <div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
-<b>Три правила накопленного итога:</b>
+<b>Три правила накопления итога:</b>
 <div class="mt-1 space-y-1">
 <div>① успех <b>не стирает</b> ранее записанную (не отброшенную) неудачу;</div>
-<div>② неудача модуля <b>не обязательно</b> проваливает стек – это решает его флаг;</div>
-<div>③ некоторые действия <b>прерывают</b> стек до того, как позднейшие модули выполнятся.</div>
+<div>② неудача модуля <b>не обязательно</b> останавливает проверку стека – определяется его флагом;</div>
+<div>③ некоторые действия <b>прерывают</b> стек до того, как выполнение дойдёт до следующих модулей.</div>
 </div>
 </div>
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
-Единственное действие, стирающее записанную неудачу, – явный <code>reset</code> (предыдущие слайды).
-Свойство «позднейший успех не отменяет ранней неудачи» – важная гарантия безопасности PAM.
+Единственное действие, стирающее записанную неудачу, – явный <code>reset</code>.
+Свойство «дальнейший успех не отменяет ранней неудачи» – важная гарантия безопасности PAM.
 </div>
 </div>
 </div>
@@ -1833,10 +1836,14 @@ layout: section
 
 # Исполнение стека «на бумаге» и pamtester
 
+<div>
+
 Лучший способ понять PAM – **исполнить стек вручную**, отслеживая две величины:
 **накопленный итог** и **номер следующего правила**. Проверить трассировку позволяет
 утилита `pamtester`: она открывает PAM-транзакцию для указанной службы и пользователя и
 выполняет одну операцию.
+
+</div>
 
 <div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-3 items-start">
 <div>
@@ -1858,12 +1865,12 @@ layout: section
 <div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
 <b>Лабораторная среда:</b> Ubuntu Server 26.04, пакет <code>pamtester</code>; пять учебных
 служб <code>/etc/pam.d/demo-a</code> … <code>demo-e</code>; <code>bob</code> – член группы
-<code>operators</code>, <code>carol</code> – нет. Вызов:
-<code>pamtester &lt;служба&gt; &lt;пользователь&gt; authenticate</code>.
+<code>operators</code>, <code>carol</code> – нет.<br/>
+Вызов: <code>pamtester &lt;служба&gt; &lt;пользователь&gt; authenticate</code>.
 </div>
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
 <code>pamtester</code> исполняет выбранную операцию, но не гарантирует, что приложение передаст
-те же элементы транзакции и вызовет те же операции. У проверок есть <b>побочные эффекты</b>:
+те же агрументы в транзакции и вызовет те же операции. Также у проверок имеются <b>побочные эффекты</b>:
 растут счётчики неудач, открываются сеансы, <code>chauthtok</code> меняет пароль.
 </div>
 </div>
@@ -1893,7 +1900,7 @@ chauthtok меняет пароль. Сценарий 00-stack-examples.sh во�
 
 ---
 
-# Примеры A и B: два required против requisite
+# Примеры A и B: required vs requisite
 
 <div class="grid grid-cols-2 gap-4 items-start">
 <div>
@@ -1929,10 +1936,10 @@ chauthtok меняет пароль. Сценарий 00-stack-examples.sh во�
 <div class="mt-1 space-y-1">
 <div><span class="co-ball">1</span> оба правила <code>required</code>; файл <code>/etc/nologin</code> закрывает систему для всех, кроме root</div>
 <div><span class="co-ball">2</span> запрос пароля – свидетельство, что <code>pam_unix</code> <b>выполнился</b>…</div>
-<div><span class="co-ball">3</span> …и <code>pam_nologin</code> выполнился тоже: при любом пароле итог – отказ (таблица)</div>
+<div><span class="co-ball">3</span> …<code>pam_nologin</code> выполнился также: при любом пароле итог – отказ (таблица)</div>
 <div><span class="co-ball">4</span> <code>requisite</code> первым: при отказе стек прерывается</div>
-<div><span class="co-ball">5</span> сообщение есть, запроса пароля <b>нет</b> – до <code>pam_unix</code> дело не дошло</div>
-<div><span class="co-ball">6</span> без <code>/etc/nologin</code> стек проходит до конца и запрашивает пароль</div>
+<div><span class="co-ball">5</span> сообщение выведено, а запрос пароля <b>нет</b> – вызов <code>pam_unix</code> не выполнялся</div>
+<div><span class="co-ball">6</span> без <code>/etc/nologin</code> стек проходит до конца и запрашивает пароль – <code>nologin</code> отрабатывает успешно</div>
 </div>
 </div>
 
@@ -1979,9 +1986,9 @@ chauthtok меняет пароль. Сценарий 00-stack-examples.sh во�
 
 | Шаг | bob ∈ operators | carol ∉ operators |
 |---|---|---|
-| ① `pam_succeed_if` (`required`) | успех | **неудача записана** |
-| ② `pam_unix` (`sufficient`) | успех → стек завершён **успехом** | успех – но стереть неудачу или завершить стек он **не может** |
-| ③ `pam_deny` (`required`) | не достигнут | неудача |
+| <span class="co-ball">1</span> `pam_succeed_if` (`required`) | успех | **неудача записана** |
+| <span class="co-ball">2</span> `pam_unix` (`sufficient`) | успех → стек завершён **успехом** | успех – но стереть неудачу или завершить стек он **не может** |
+| <span class="co-ball">3</span> `pam_deny` (`required`) | не достигнут | неудача |
 | итог | **успех** | **неудача** |
 
 </div>
@@ -1994,7 +2001,7 @@ chauthtok меняет пароль. Сценарий 00-stack-examples.sh во�
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
-Так строится правило «только члены группы, и только по паролю»: обязательное условие
+Пример демонстрирует способ реализации правила «только члены группы, и только по паролю»: обязательное условие
 <b>перед</b> <code>sufficient</code>, безусловный отказ <b>после</b>.
 </div>
 
@@ -2045,6 +2052,12 @@ chauthtok меняет пароль. Сценарий 00-stack-examples.sh во�
 </div>
 <div class="text-xs">
 
+<div class="mt-2 space-y-1">
+<div><span class="co-ball">1</span> успех – прыжок, всё прочее – не учитывать</div>
+<div><span class="co-ball">2</span> <Man p="pam_deny(8)" /> всегда отказывает; <code>requisite</code> делает отказ немедленным</div>
+<div><span class="co-ball">3</span> <Man p="pam_permit(8)" /> всегда успешен – он лишь <b>фиксирует</b> итог, которого достиг прыжок</div>
+</div>
+
 <div class="grid grid-cols-2 gap-2">
 <div class="p-2 border-l-4 border-teal-600 bg-teal-500/10">
 <b>Верный пароль</b> <span class="co-ball">4</span>
@@ -2066,19 +2079,13 @@ chauthtok меняет пароль. Сценарий 00-stack-examples.sh во�
 </div>
 </div>
 
-<div class="mt-2 space-y-1">
-<div><span class="co-ball">1</span> подробная форма: успех – прыжок, всё прочее – не учитывать</div>
-<div><span class="co-ball">2</span> <Man p="pam_deny(8)" /> всегда отказывает; <code>requisite</code> делает отказ немедленным</div>
-<div><span class="co-ball">3</span> <Man p="pam_permit(8)" /> всегда успешен – он лишь <b>фиксирует</b> итог, которого достиг прыжок</div>
+</div>
 </div>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10">
-<code>pam_permit</code> всегда успешен, но на пути отказа <b>не исполняется</b> – его защищает
-поток управления. Уберите <code>success=1</code> или поменяйте строки местами – поведение
+<code>pam_permit</code> всегда успешен, но на пути отказа <b>не исполняется</b> – исполнение сценария
+обходит этот модуль. Уберите <code>success=1</code> или поменяйте строки местами – поведение
 изменится радикально. Правило с <code>pam_permit</code> никогда не является самостоятельной проверкой.
-</div>
-
-</div>
 </div>
 
 <SrcRef>См. <code>demos/00-stack-examples.sh</code>.</SrcRef>
@@ -2133,10 +2140,10 @@ success=2; логика «любой подтвердивший – вход р�
 модификация процесса аутентификации.
 </div>
 
-<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<!-- <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
 <b>Вывод раздела 2.5:</b> итог стека определяют не имена модулей, а отображение кодов
 возврата в действия и путь, по которому исполнение дошло – или не дошло – до каждого правила.
-</div>
+</div> -->
 
 </div>
 </div>
@@ -2281,7 +2288,7 @@ done или die внутри включённого файла завершит 
 <b>Сокращение Debian <code>@include</code></b> – соглашение дистрибутива, а не общий механизм PAM: патч
 <code>031_pam_include</code> не принят upstream, в <code>libpam</code> RHEL и Arch строки <code>@include</code> нет.
 Переносить его на другие системы нельзя – использовать следует типизированные <code>include</code> и <code>substack</code>.
-В Ubuntu 26.04 <code>common-*</code> подключаются именно так – со всеми следствиями подстановки без границы (далее, раздел 3).
+В Ubuntu 26.04 <code>common-*</code> подключаются именно так – со всеми следствиями подстановки без границы (см. далее, раздел 3).
 </div>
 
 <Refs ids="man-pam-conf pam-sag debian-pam-include man-pam-auth-update linux-pam-src" />
@@ -2334,7 +2341,7 @@ Ubuntu 26.04, справа – его запись стандартным син
 <code>substack</code> – граница управления, а не «песочница», глушащая неудачи.
 </div>
 <div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
-<b>Аналогия:</b> <code>include</code> – макрос, <code>substack</code> – вызов подпрограммы: у неё
+<b>Аналогия:</b> <code>include</code> – макрос, <code>substack</code> – вызов функции: у неё
 собственный поток управления, а наружу возвращается один результат.
 </div>
 </div>
@@ -2448,8 +2455,12 @@ layout: section
 
 # Общие файлы common-*
 
+<div>
+
 Debian и Ubuntu выносят повторяющиеся стеки в **общие файлы**, которые файлы служб
 подключают директивой `@include`:
+
+</div>
 
 <div class="grid grid-cols-[1.2fr_1fr] gap-5 mt-2 items-start">
 <div>
@@ -2472,7 +2483,7 @@ Debian и Ubuntu выносят повторяющиеся стеки в **об�
 | `common-account` | account | срок действия по `/etc/shadow` |
 | `common-password` | password | смена пароля, алгоритм yescrypt |
 | `common-session` | session | журналирование, `pam_umask`, <Man p="pam_systemd(8)" /> |
-| `common-session-noninteractive` | session | то же для неинтерактивных служб (`cron`) |
+| `common-session-noninteractive` | session | то же для неинтерактивных служб (`cron`, `sudo -i`) |
 
 </div>
 
@@ -2492,7 +2503,7 @@ href="https://manpages.ubuntu.com/manpages/noble/en/man8/pam-auth-update.8.html"
 <div class="mt-3 p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Одна правка – все службы:</b> изменение <code>common-auth</code> действует
 сразу на вход с консоли, по ssh, на <code>su</code> и <code>sudo</code>.
-Это удобно – и ответственно: ошибка блокирует все пути входа одновременно.
+Это удобно, но и потенциально опасно: ошибка блокирует все пути входа одновременно.
 </div>
 
 </div>
@@ -2522,7 +2533,7 @@ session-noninteractive для служб без терминала. Собира
 
 ---
 
-# Разбор common-auth
+# common-auth
 
 <div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-1 items-start">
 <div>
@@ -2552,7 +2563,7 @@ session-noninteractive для служб без терминала. Собира
 <div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
 <b>Читаем файл:</b>
 <div class="mt-1 space-y-1.5">
-<div><span class="co-ball">1</span> подробная форма флага: успех – прыжок через 1 правило, остальное – не учитывать</div>
+<div><span class="co-ball">1</span> успех – прыжок через 1 правило, остальное – не учитывать</div>
 <div><span class="co-ball">2</span> <code>pam_unix</code> проверяет пароль по <code>/etc/shadow</code> (лекция 2)</div>
 <div><span class="co-ball">3</span> <code>pam_deny</code> всегда возвращает отказ</div>
 <div><span class="co-ball">4</span> <code>pam_permit</code> всегда возвращает успех – фиксирует итог</div>
@@ -2564,7 +2575,7 @@ session-noninteractive для служб без терминала. Собира
 <InfoCard icon="warning" head="nullok" class="mt-2 text-xs">
 
 аргумент разрешает вход с **пустым** паролем – по умолчанию `pam_unix`
-его запрещает (<Man p="pam_unix(8)" />). На серверах параметр убирают.
+его запрещает (<Man p="pam_unix(8)" />).
 
 </InfoCard>
 
@@ -2626,7 +2637,7 @@ default=ignore ведёт на deny с requisite, немедленный отк�
 
 <div class="mt-3 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
 Первая строка <code>common-session</code> – <code>[default=1] pam_permit.so</code>:
-технический приём pam-auth-update, выравнивающий прыжки при пересборке файла.
+технический приём <code>pam-auth-update</code>, выравнивающий прыжки при пересборке файла.
 </div>
 
 <Refs ids="man-pam-unix man-pam-conf" />
@@ -2643,7 +2654,7 @@ pam_unix пишет в журнал строки session opened/closed, pam_syst
 
 ---
 
-# common-password: здесь живёт парольная политика
+# common-password: здесь определяется парольная политика
 
 <div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-1 items-start">
 <div>
@@ -2657,7 +2668,7 @@ pam_unix пишет в журнал строки session opened/closed, pam_syst
 <div class="mt-3 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
 <b>Точка подключения политики:</b> модули проверки качества
 (<DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" />) и истории (<Man p="pam_pwhistory(8)" />) вставляются
-в этот стек <b>перед</b> <Man p="pam_unix(8)" /> – политика задаётся один раз
+в этот стек <b>перед</b> <Man p="pam_unix(8)" />; политика задаётся один раз
 и действует на <code>passwd</code>, <code>chpasswd</code>, смену пароля по ssh –
 на всё (раздел 6).
 </div>
