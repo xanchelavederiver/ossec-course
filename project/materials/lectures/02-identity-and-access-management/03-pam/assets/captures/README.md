@@ -51,7 +51,7 @@
   authenticate` (пакет pamtester); bob – член группы `operators` (GID 1004),
   carol – нет; пароли в ремарках `# …`; снято 09.11.2026 тем же контейнером
   (expect-driven ввод пароля).
-- `15-distro-stacks.txt` – раздел 3.3–3.5: файлы PAM других дистрибутивов, сняты
+- `15-distro-stacks.txt` – раздел 4.3–4.5: файлы PAM других дистрибутивов, сняты
   09.11.2026 в одноразовых контейнерах: `rockylinux/rockylinux:10` (Rocky Linux 10.2,
   pam 1.6.1-9.el10, authselect 1.5.2; доустановлены authselect, openssh-server;
   вывод `system-auth` показан через `tr -s ' '`, из `list-features` оставлены пять
@@ -61,9 +61,16 @@
   этого в `common-*` появились профили faillock и pwquality, а в файлах служб –
   строки pam_parsec_*). Файлы показаны без комментариев (`grep -Ev '^#|^$'`),
   табуляция развёрнута.
-- `16-module-args.txt` – раздел 4.2–4.3: экспортируемые функции `pam_sm_*` (`nm -D`,
+- `16-module-args.txt` – раздел 3.2–3.3: экспортируемые функции `pam_sm_*` (`nm -D`,
   пакет binutils), учебные службы `/etc/pam.d/demo-f…demo-k` (неподдерживаемый тип,
   `module_unknown=ignore`, `use_first_pass`/`try_first_pass`, незнакомый аргумент,
   `debug`, `nullok`) и проверки `pamtester`; снято 09.11.2026 в свежем контейнере
   ubuntu:26.04 (libpam 1.7.0-5ubuntu3.2; rsyslog для `/var/log/auth.log`, метки
   времени сокращены до часов; alice создана без пароля – `passwd -d`).
+- `17-pam-auth-update.txt` – раздел 4.1: профили `/usr/share/pam-configs/` (`unix`,
+  `mkhomedir`) и шаблон `/usr/share/pam/common-auth`; `pam-auth-update --enable /
+  --disable mkhomedir`, сохранение ручной правки аргументов (удалён `nullok`),
+  отказ от обновления после удаления маркера `# end of pam-auth-update config`
+  (в неинтерактивном режиме – без сообщения) и пересборка `--force`; снято
+  16.11.2026 в свежем контейнере `ubuntu:26.04` (libpam-runtime 1.7.0-5ubuntu3.2,
+  `DEBIAN_FRONTEND=noninteractive`).

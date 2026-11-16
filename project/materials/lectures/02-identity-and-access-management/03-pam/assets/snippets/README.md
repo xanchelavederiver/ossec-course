@@ -41,7 +41,7 @@ count) and tab-expanded columns – recompute them if an excerpt changes.
 | `pam_dispatch-ok.c` | `libpam/pam_dispatch.c` | 201, 208–229 |
 | `pam_dispatch-bad.c` | `libpam/pam_dispatch.c` | 231–232, 240–254, 259–260 |
 | `pam_dispatch-sanity.c` | `libpam/pam_dispatch.c` | 309–318 |
-| `pam_get_authtok-first.c` | `libpam/pam_get_authtok.c` | 82–84, 119–137 (section 4.3: a cached PAM_AUTHTOK is reused, `use_first_pass` forbids prompting) |
+| `pam_get_authtok-first.c` | `libpam/pam_get_authtok.c` | 82–84, 119–137 (section 3.3: a cached PAM_AUTHTOK is reused, `use_first_pass` forbids prompting) |
 
 Text snippets (rendered with `lang="text"`, no line numbers):
 
@@ -66,3 +66,18 @@ written for the slides after pam.conf(5)/pam.d(5) and the Linux-PAM SAG):
 | `ex-include-parent.txt`, `ex-include-child.txt`, `ex-include-effective.txt` | `include` expansion |
 | `ex-substack-include.txt`, `ex-substack-substack.txt` | `include` vs `substack` boundary |
 | `ex-two-layers.txt` | PAM rule vs. module file (`faillock.conf`) |
+
+Illustrative module examples for section 3.1 (one per module slide; written for the
+slides after the Linux-PAM 1.7.0 man pages, rule lines of `login`/`sshd`/`common-*`
+as in Ubuntu 26.04):
+
+| Snippet | Shown on |
+|---|---|
+| `mod-unix.txt` | `pam_unix` in the four `common-*` stacks (arguments by type) |
+| `mod-permit-deny.txt` | `pam_deny` closing a stack and the `other` service, `pam_permit` priming a stack |
+| `mod-faillock.txt` | `preauth` / `authfail` / `authsucc` scheme (pam_faillock(8) example) + `faillock.conf` |
+| `mod-nologin.txt` | `pam_nologin` in auth (`login`) and account (`sshd`), `file=` |
+| `mod-access.txt` | `pam_access` rule and an allow-list `access.conf` |
+| `mod-listfile.txt` | deny list and allow list with `pam_listfile` |
+| `mod-time.txt` | `pam_time` rule and `time.conf` entries |
+| `mod-limits.txt` | `pam_limits` rule and `limits.conf` entries |

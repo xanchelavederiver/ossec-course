@@ -1,0 +1,11 @@
+# /etc/pam.d/login, sshd, su (Ubuntu 26.04)
+session  required  pam_limits.so
+
+# /etc/security/limits.conf:  кому  тип  ресурс  значение
+bob        hard  fsize      1024
+
+@students  soft  nproc      100
+@students  hard  nproc      150
+@students  -     maxlogins  2
+
+*          hard  core       0

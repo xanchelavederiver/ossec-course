@@ -1,0 +1,8 @@
+# /etc/pam.d/login (Ubuntu 26.04): до запроса пароля
+auth     requisite  pam_nologin.so
+
+# /etc/pam.d/sshd (Ubuntu 26.04): стек account исполняется и при входе по ключу
+account  required   pam_nologin.so
+
+# собственный файл-признак для одной службы
+account  required   pam_nologin.so file=/etc/nologin.backup

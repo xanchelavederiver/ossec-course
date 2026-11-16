@@ -1,0 +1,5 @@
+# /etc/pam.d/common-* после установки libpam-pwquality – по одному правилу каждого типа
+auth      [success=1 default=ignore]                       pam_unix.so nullok
+account   [success=1 new_authtok_reqd=done default=ignore] pam_unix.so
+password  [success=1 default=ignore]                       pam_unix.so obscure  use_authtok try_first_pass  yescrypt
+session   required                                         pam_unix.so

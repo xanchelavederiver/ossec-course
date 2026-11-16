@@ -1,0 +1,8 @@
+# /etc/pam.d/sshd
+account  required  pam_access.so
+
+# /etc/security/access.conf:  право : пользователи : источники
++:root:LOCAL
++:(admins):192.168.10.0/24
++:bob:ALL EXCEPT tty1
+-:ALL:ALL

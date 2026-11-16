@@ -1,0 +1,11 @@
+# замыкание стека: не подтвердил ни один источник – отказ
+auth      sufficient  pam_unix.so
+auth      sufficient  pam_sss.so use_first_pass
+auth      required    pam_deny.so
+
+# служба other: всё, что не описано явно, запрещено и записано в журнал
+auth      required    pam_warn.so
+auth      required    pam_deny.so
+
+# тип, проверки которого службе не нужны: стеку требуется результат
+account   required    pam_permit.so

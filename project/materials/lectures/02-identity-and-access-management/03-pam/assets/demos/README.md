@@ -29,7 +29,7 @@ sudo env OSSEC_DEMO_VM=1 bash 01-nologin.sh
 | № | Файл | Модули | Захват |
 |---|------|--------|--------|
 | 00 | `00-stack-examples.sh` | исполнение стека: pam_succeed_if, pam_deny, pam_permit, pam_nologin + `pamtester` (раздел 2.5) | `captures/14-stack-examples.txt` |
-| 00 | `00-module-args.sh` | предоставляемые типы (`nm -D`), PAM_MODULE_UNKNOWN и `module_unknown=ignore`, `use_first_pass`/`try_first_pass`, незнакомый аргумент, `debug`, `nullok` + `pamtester` (разделы 4.2–4.3) | `captures/16-module-args.txt` |
+| 00 | `00-module-args.sh` | предоставляемые типы (`nm -D`), PAM_MODULE_UNKNOWN и `module_unknown=ignore`, `use_first_pass`/`try_first_pass`, незнакомый аргумент, `debug`, `nullok` + `pamtester` (разделы 3.2–3.3) | `captures/16-module-args.txt` |
 | 01 | `01-nologin.sh` | pam_nologin | `captures/04-nologin.txt` |
 | 02 | `02-access-listfile.sh` | pam_access, pam_listfile | `captures/05-access-listfile.txt` |
 | 03 | `03-time.sh` | pam_time | `captures/06-time.txt` |

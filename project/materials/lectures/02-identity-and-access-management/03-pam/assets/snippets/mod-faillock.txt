@@ -1,0 +1,11 @@
+# /etc/pam.d/<служба>: три вызова модуля вокруг проверки пароля
+auth     required                 pam_faillock.so preauth
+auth     [success=1 default=bad]  pam_unix.so
+auth     [default=die]            pam_faillock.so authfail
+auth     sufficient               pam_faillock.so authsucc
+auth     required                 pam_deny.so
+
+# /etc/security/faillock.conf
+deny = 5
+fail_interval = 900
+unlock_time = 600

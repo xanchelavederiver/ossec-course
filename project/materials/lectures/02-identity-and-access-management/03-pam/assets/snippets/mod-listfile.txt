@@ -1,0 +1,9 @@
+# запрещающий список: перечисленным в файле вход закрыт
+auth  required  pam_listfile.so item=user  sense=deny  file=/etc/ssh/denied.users  onerr=succeed
+
+# разрешающий список: вход только перечисленным группам
+auth  required  pam_listfile.so item=group  sense=allow  file=/etc/ssh/allowed.groups  onerr=fail
+
+# /etc/ssh/denied.users – по одному значению в строке
+bob
+carol

@@ -1,0 +1,7 @@
+# /etc/pam.d/sshd
+account  required  pam_time.so
+
+# /etc/security/time.conf:  службы ; терминалы ; пользователи ; время
+sshd;*;bob;Wk0900-1800
+login;tty*;!root;Al0600-2400
+sshd|login;*;carol;!SaSu0000-2400

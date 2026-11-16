@@ -1,0 +1,50 @@
+===== Профили и шаблоны pam-auth-update =====
+
+# ls /usr/share/pam-configs/
+mkhomedir
+unix
+# sed -n 1,8p /usr/share/pam-configs/unix
+Name: Unix authentication
+Default: yes
+Priority: 256
+Auth-Type: Primary
+Auth:
+        [success=end default=ignore]    pam_unix.so nullok try_first_pass
+Auth-Initial:
+        [success=end default=ignore]    pam_unix.so nullok
+# cat /usr/share/pam-configs/mkhomedir
+Name: Create home directory on login
+Default: no
+Priority: 0
+Session-Type: Additional
+Session-Interactive-Only: yes
+Session:
+        optional                        pam_mkhomedir.so
+# grep -Ev '^#|^$' /usr/share/pam/common-auth
+$auth_primary
+auth    requisite                       pam_deny.so
+auth    required                        pam_permit.so
+$auth_additional
+
+===== Включение профиля и ручные правки =====
+
+# pam-auth-update --enable mkhomedir
+# grep -Ev '^#|^$' /etc/pam.d/common-session
+session [default=1]                     pam_permit.so
+session requisite                       pam_deny.so
+session required                        pam_permit.so
+session optional                        pam_umask.so
+session required        pam_unix.so
+session optional                        pam_mkhomedir.so
+# sed -i 's/pam_unix.so nullok/pam_unix.so/' /etc/pam.d/common-auth
+# pam-auth-update --disable mkhomedir
+# grep pam_unix /etc/pam.d/common-auth
+auth    [success=1 default=ignore]      pam_unix.so
+
+# sed -i '/^# end of pam-auth-update config/d' /etc/pam.d/common-auth
+# pam-auth-update --enable mkhomedir
+# grep -c mkhomedir /etc/pam.d/common-session
+0
+# pam-auth-update --force --enable mkhomedir
+# grep -c mkhomedir /etc/pam.d/common-session
+1
