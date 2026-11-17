@@ -51,7 +51,7 @@ Section 5 (идентификация и аутентификация в при�
 | `pwauth-pw_auth.c` | shadow `lib/pwauth.c` | 51–53, 76–78, 114–116, 125–130, 157–160 |
 | `encrypt-pw_encrypt.c` | shadow `lib/encrypt.c` | 21–27, 33–34 |
 | `myname-get_my_pwent.c` | shadow `lib/myname.c` | 25–29, 41–45, 51–52 |
-| `passwd-target.c` | shadow `src/passwd.c` | 757, 904, 913–914, 919–922, 1007–1011, 1019–1020 |
+| `passwd-target.c` | shadow `src/passwd.c` | 757, 904, 986, 1007–1011, 1019–1020 |
 | `passwd-pw_status.c` | shadow `src/passwd.c` | 439–448 |
 | `passwd-print_status.c` | shadow `src/passwd.c` | 453–468 |
 | `passwd-lock.c` | shadow `src/passwd.c` | 510, 534–537, 544–547 |

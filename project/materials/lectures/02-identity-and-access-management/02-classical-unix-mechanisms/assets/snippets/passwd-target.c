@@ -2,8 +2,8 @@
 	amroot = (getuid () == 0);
 @@ 904
 	pw = get_my_pwent ();
-@@ 913
-	myname = xstrdup (pw->pw_name);
+@@ 986
+	pw = xprefix_getpwnam (name);
 @@ 1007
 	/*
 	 * If the UID of the user does not match the current real UID,

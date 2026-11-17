@@ -1,11 +1,14 @@
 ===== Модули NSS =====
 
 # ls /usr/lib/x86_64-linux-gnu/ | grep '^libnss_'
+libnss_compat.so
 libnss_compat.so.2
 libnss_dns.so.2
 libnss_files.so.2
+libnss_hesiod.so
 libnss_hesiod.so.2
 libnss_sss.so.2
+libnss_systemd.so.2
 
 # dpkg -S /usr/lib/x86_64-linux-gnu/libnss_sss.so.2
 libnss-sss:amd64: /usr/lib/x86_64-linux-gnu/libnss_sss.so.2
@@ -18,10 +21,10 @@ libnss-sss:amd64: /usr/lib/x86_64-linux-gnu/libnss_sss.so.2
 
 # grep -v '^#' /etc/nsswitch.conf
 
-passwd:         files
-group:          files
-shadow:         files
-gshadow:        files
+passwd:         files systemd
+group:          files systemd
+shadow:         files systemd
+gshadow:        files systemd
 
 hosts:          files dns
 networks:       files
@@ -48,8 +51,10 @@ hosts:          files dns
 2
 
 # getent hosts google.com
-2a00:1450:4010:c0e::71 google.com
-2a00:1450:4010:c0e::64 google.com
+2a00:1450:4010:c0b::8b google.com
+2a00:1450:4010:c0b::8a google.com
+2a00:1450:4010:c0b::71 google.com
+2a00:1450:4010:c0b::65 google.com
 
 ===== Имени нет нигде =====
 
@@ -60,16 +65,16 @@ hosts:          files dns
 
 # chmod 000 /etc/hosts
 
-$ getent hosts intranet.example.test; echo $?
+$ getent -s files hosts intranet.example.test; echo $?
 2
-$ getent hosts google.com
-2a00:1450:4010:c0e::71 google.com
-2a00:1450:4010:c0e::64 google.com
+$ getent hosts intranet.example.test
+192.0.2.80      intranet.example.test
+$ getent -s dns hosts intranet.example.test
+192.0.2.80      intranet.example.test
 
 $ strace -f -e trace=openat getent hosts intranet.example.test 2>&1 | grep '/etc/hosts'
 openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_CLOEXEC) = -1 EACCES (Permission denied)
 openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_CLOEXEC) = -1 EACCES (Permission denied)
 
-# chmod 644 /etc/hosts
-$ getent hosts intranet.example.test
-192.0.2.80      intranet.example.test
+$ grep nameserver /etc/resolv.conf
+nameserver 127.0.0.53

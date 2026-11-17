@@ -1,0 +1,27 @@
+#cloud-config
+# Unattended install of the reference lab VM (Ubuntu Server 26.04 LTS).
+# Deliberately close to a default interactive install: no extra packages,
+# default storage layout. Deviations from a stock install, all needed to
+# drive the VM from the host: OpenSSH server, an authorized key and
+# passwordless sudo for the admin account.
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard: { layout: us }
+  identity:
+    hostname: ossec-lab
+    realname: Lab Admin
+    username: ubuntu
+    password: "@PASSWORD_HASH@"
+  ssh:
+    install-server: true
+    allow-pw: true
+    authorized-keys:
+      - "@SSH_PUBKEY@"
+  storage:
+    layout: { name: direct }
+  updates: security
+  late-commands:
+    - echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/90-ossec-lab
+    - chmod 0440 /target/etc/sudoers.d/90-ossec-lab
+  shutdown: poweroff

@@ -18,4 +18,4 @@ ossec-demo2:x:1002:1002::/home/ossec-demo2:/bin/bash
 # stat -c '%A  %n' /home/ossec-demo2
 drwx------  /home/ossec-demo2
 # getent shadow ossec-demo2
-ossec-demo2:!:20755:0:99999:7:30::
+ossec-demo2:!:20774:0:99999:7:30::

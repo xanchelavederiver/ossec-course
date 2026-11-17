@@ -6,45 +6,45 @@
 # chmod u+s /usr/local/bin/idprobe
 
 # ls -l /usr/local/bin/idprobe
--rwsr-xr-x 1 root root 16512 Oct 18 19:41 /usr/local/bin/idprobe
+-rwsr-xr-x 1 root root 16768 Nov 17 18:30 /usr/local/bin/idprobe
 
 ===== fork(2): потомок наследует копии всех идентификаторов =====
 
 $ idprobe fork
-start                  pid=464 ruid=1001 euid=0 suid=0
-after seteuid(ruid)    pid=464 ruid=1001 euid=1001 suid=0
-child after fork       pid=465 ruid=1001 euid=1001 suid=0
-child seteuid(0)       pid=465 ruid=1001 euid=0 suid=0
-parent seteuid(0)      pid=464 ruid=1001 euid=0 suid=0
+start                  pid=2195 ruid=1001 euid=0 suid=0
+after seteuid(ruid)    pid=2195 ruid=1001 euid=1001 suid=0
+child after fork       pid=2196 ruid=1001 euid=1001 suid=0
+child seteuid(0)       pid=2196 ruid=1001 euid=0 suid=0
+parent seteuid(0)      pid=2195 ruid=1001 euid=0 suid=0
 
 ===== Сброс привилегий: seteuid(2) против setuid(2) =====
 
 $ idprobe drop
-start                  pid=15 ruid=1001 euid=0 suid=0
+start                  pid=2198 ruid=1001 euid=0 suid=0
 open("/etc/shadow"): OK
-after seteuid(ruid)    pid=15 ruid=1001 euid=1001 suid=0
+after seteuid(ruid)    pid=2198 ruid=1001 euid=1001 suid=0
 open("/etc/shadow"): Permission denied
-after seteuid(suid)    pid=15 ruid=1001 euid=0 suid=0
+after seteuid(suid)    pid=2198 ruid=1001 euid=0 suid=0
 open("/etc/shadow"): OK
-after setuid(ruid)     pid=15 ruid=1001 euid=1001 suid=1001
+after setuid(ruid)     pid=2198 ruid=1001 euid=1001 suid=1001
 setuid(0): Operation not permitted
 open("/etc/shadow"): Permission denied
 
 ===== execve(2) без setuid-бита сохраняет идентификаторы =====
 
 $ idprobe exec
-start                  pid=467 ruid=1001 euid=0 suid=0
-uid=1001(bob) gid=1001(bob) euid=0(root) groups=1001(bob)
+start                  pid=2200 ruid=1001 euid=0 suid=0
+uid=1001(bob) gid=1001(bob) euid=0(root) groups=1001(bob),1010(project)
 
 ===== Крайний случай: bash сбрасывает euid, если не задан -p =====
 
 $ idprobe bash
-start                  pid=469 ruid=1001 euid=0 suid=0
-uid=1001(bob) gid=1001(bob) groups=1001(bob)
+start                  pid=2202 ruid=1001 euid=0 suid=0
+uid=1001(bob) gid=1001(bob) groups=1001(bob),1010(project)
 
 $ idprobe bash-p
-start                  pid=471 ruid=1001 euid=0 suid=0
-uid=1001(bob) gid=1001(bob) euid=0(root) groups=1001(bob)
+start                  pid=2204 ruid=1001 euid=0 suid=0
+uid=1001(bob) gid=1001(bob) euid=0(root) groups=1001(bob),1010(project)
 
 ===== Крайний случай: setuid-бит на скрипте игнорируется =====
 
@@ -53,7 +53,7 @@ uid=1001(bob) gid=1001(bob) euid=0(root) groups=1001(bob)
 id
 
 # ls -l /usr/local/bin/suid.sh
--rwsr-xr-x 1 root root 15 Oct 18 19:41 /usr/local/bin/suid.sh
+-rwsr-xr-x 1 root root 15 Nov 17 18:30 /usr/local/bin/suid.sh
 
 $ /usr/local/bin/suid.sh
-uid=1001(bob) gid=1001(bob) groups=1001(bob)
+uid=1001(bob) gid=1001(bob) groups=1001(bob),1010(project)

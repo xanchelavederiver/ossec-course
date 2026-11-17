@@ -16,7 +16,7 @@ uid=1003(alice) gid=1003(alice) groups=1003(alice),4(adm),1010(project)
 # id carol
 uid=1002(carol) gid=1002(carol) groups=1002(carol)
 # grep -E '^(bob|alice|carol|project|adm):' /etc/group
-adm:x:4:ubuntu,alice
+adm:x:4:syslog,ubuntu,alice
 bob:x:1001:
 carol:x:1002:
 alice:x:1003:

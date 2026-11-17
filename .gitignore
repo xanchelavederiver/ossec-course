@@ -3,3 +3,5 @@
 .sources/
 .tmp/
 .claude/prompts/tmp.md
+
+.vm/

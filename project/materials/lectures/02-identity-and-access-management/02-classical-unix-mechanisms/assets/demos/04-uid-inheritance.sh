@@ -13,6 +13,8 @@ new_user
 # Small helper: prints getresuid(2), demonstrates fork/execve inheritance.
 cat >"$DEMO_TMP/idprobe.c" <<'IDPROBE'
 #define _GNU_SOURCE
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -24,6 +26,14 @@ static void show(const char *label)
     getresuid(&ruid, &euid, &suid);
     printf("%-22s pid=%d ruid=%d euid=%d suid=%d\n",
            label, getpid(), ruid, euid, suid);
+    fflush(stdout);
+}
+
+static void try_shadow(void)
+{
+    int fd = open("/etc/shadow", O_RDONLY);
+    printf("open(\"/etc/shadow\"): %s\n", fd < 0 ? strerror(errno) : "OK");
+    if (fd >= 0) close(fd);
     fflush(stdout);
 }
 
@@ -48,6 +58,20 @@ int main(int argc, char **argv)
         if (waitpid(pid, NULL, 0) < 0) { perror("waitpid"); return 1; }
         if (seteuid(suid)) { perror("seteuid(0)"); return 1; }
         show("parent seteuid(0)");
+    } else if (strcmp(mode, "drop") == 0) {
+        /* Temporary drop: the saved UID keeps the way back to euid 0. */
+        try_shadow();
+        if (seteuid(ruid)) { perror("seteuid(ruid)"); return 1; }
+        show("after seteuid(ruid)");
+        try_shadow();
+        if (seteuid(suid)) { perror("seteuid(suid)"); return 1; }
+        show("after seteuid(suid)");
+        try_shadow();
+        /* Permanent drop: with euid 0, setuid() overwrites ruid, euid and suid. */
+        if (setuid(ruid)) { perror("setuid(ruid)"); return 1; }
+        show("after setuid(ruid)");
+        if (setuid(0)) printf("setuid(0): %s\n", strerror(errno));
+        try_shadow();
     } else if (strcmp(mode, "exec") == 0) {
         execlp("id", "id", (char *)NULL);
         perror("execlp(id)"); return 1;
@@ -69,14 +93,18 @@ run ls -l /usr/local/bin/ossec-idprobe
 #    the saved UID — both parent and child can re-raise privileges.
 run runuser -u "$DEMO_USER" -- ossec-idprobe fork
 
-# 2. execve of a non-setuid program keeps the credentials.
+# 2. Dropping privileges: seteuid(2) is reversible through the saved UID,
+#    setuid(2) called with euid 0 is not (EPERM on the way back).
+run runuser -u "$DEMO_USER" -- ossec-idprobe drop
+
+# 3. execve of a non-setuid program keeps the credentials.
 run runuser -u "$DEMO_USER" -- ossec-idprobe exec
 
-# 3. Edge case: bash resets euid to ruid unless started with -p.
+# 4. Edge case: bash resets euid to ruid unless started with -p.
 run runuser -u "$DEMO_USER" -- ossec-idprobe bash
 run runuser -u "$DEMO_USER" -- ossec-idprobe bash-p
 
-# 4. Edge case: the setuid bit on interpreter scripts is ignored by execve.
+# 5. Edge case: the setuid bit on interpreter scripts is ignored by execve.
 cat >/usr/local/bin/ossec-suid-script <<'SCRIPT'
 #!/bin/bash
 id

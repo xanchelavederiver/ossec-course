@@ -45,7 +45,7 @@ drwxr-x---  ossec-demo1:ossec-demo1  /home/ossec-demo1
 # ls -A /home/ossec-demo1         # объединение /etc/skel и /usr/etc/skel
 .bash_logout .bashrc .ossec_profile .profile
 # getent shadow ossec-demo1
-ossec-demo1:!:20755:0:99999:7:::
+ossec-demo1:!:20774:0:99999:7:::
 
 ===== Создание группы =====
 

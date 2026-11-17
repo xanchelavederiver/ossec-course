@@ -4,8 +4,10 @@ DEMO_DESCRIPTION='NSS + SSSD: passwd/group from LDAP, custom actions ([!UNAVAIL=
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 demo_init "$@"
 # Prerequisites: apt-get install slapd ldap-utils sssd libnss-sss
+# (installing libnss-sss appends sss to passwd/group/shadow in /etc/nsswitch.conf:
+#  on Ubuntu Server 26.04 the lines become "files systemd sss").
 need getent id slapd sssd ldapadd ldapsearch debconf-set-selections dpkg-reconfigure \
-     groupadd gpasswd groupdel useradd userdel sed install pkill
+     groupadd gpasswd groupdel useradd userdel sed install systemctl
 
 # DANGER: this demo RECONFIGURES slapd (any existing directory is moved aside by
 # dpkg-reconfigure), replaces /etc/sssd/sssd.conf and edits /etc/nsswitch.conf.
@@ -18,14 +20,16 @@ U1=ossec-demo1 G=developers
 ! getent -s files passwd "$U1" >/dev/null || die "$U1 already exists"
 ! getent -s files group "$G" >/dev/null || die "group $G already exists"
 [[ ! -e /etc/sssd/sssd.conf ]] || die '/etc/sssd/sssd.conf already exists; refusing to overwrite'
+grep -Eq '^passwd:.*\bsss\b' /etc/nsswitch.conf || die 'passwd line of nsswitch.conf has no sss source; install libnss-sss'
 install -m 600 /etc/nsswitch.conf "$DEMO_TMP/nsswitch.conf.orig"
+restore_nss() { install -m 644 "$DEMO_TMP/nsswitch.conf.orig" /etc/nsswitch.conf; }
 cleanup() {
   local rc=0
-  install -m 644 "$DEMO_TMP/nsswitch.conf.orig" /etc/nsswitch.conf 2>/dev/null || rc=1
-  pkill sssd 2>/dev/null && sleep 1
+  restore_nss 2>/dev/null || rc=1
+  systemctl stop sssd 2>/dev/null || true
   rm -f /etc/sssd/sssd.conf
   find /var/lib/sss/db /var/lib/sss/mc -type f -delete 2>/dev/null || true
-  service slapd stop 2>/dev/null || true
+  systemctl stop slapd 2>/dev/null || true
   ! getent -s files group "$G" >/dev/null || groupdel "$G" || rc=1
   if getent -s files passwd "$U1" >/dev/null; then
     userdel -r "$U1" 2>/dev/null || userdel "$U1" || { printf 'Remove %s manually\n' "$U1" >&2; rc=1; }
@@ -46,7 +50,7 @@ slapd slapd/no_configuration boolean false
 slapd slapd/move_old_database boolean true
 EOF
 dpkg-reconfigure -f noninteractive slapd
-service slapd start
+systemctl restart slapd
 ldapadd -x -D "$ADMIN" -w "$LDAP_PW" <<EOF
 dn: ou=people,$BASE
 objectClass: organizationalUnit
@@ -101,10 +105,8 @@ cache_credentials = true
 enumerate = true
 EOF
 run cat /etc/sssd/sssd.conf
-mkdir -p /run/sssd
-run sssd -D --logger=files
-sleep 2
-set_db passwd 'files sss'; set_db group 'files sss'; set_db shadow 'files sss'
+run systemctl restart sssd
+sleep 4
 run grep -E '^(passwd|group|shadow):' /etc/nsswitch.conf
 
 printf '\n### 2. One getpwnam interface, two sources\n'
@@ -118,29 +120,30 @@ run getent -s sss passwd dave
 run id dave
 
 printf '\n### 3. Trap: passwd: sss [!UNAVAIL=return] files hides local accounts\n'
-set_db passwd 'sss [!UNAVAIL=return] files'
+set_db passwd 'sss [!UNAVAIL=return] files systemd'
 run grep '^passwd:' /etc/nsswitch.conf
 run getent passwd dave
 run getent passwd root || printf 'exit status: %s\n' "$?"
 run getent passwd "$U1" || printf 'exit status: %s\n' "$?"
 printf '\n--- sssd is stopped: sss returns UNAVAIL, files is reachable again ---\n'
-run pkill sssd
+run systemctl stop sssd
 sleep 1
 run getent passwd root
-set_db passwd 'files sss'
-mkdir -p /run/sssd
-run sssd -D --logger=files
-sleep 2
+restore_nss
+run systemctl start sssd
+sleep 4
 
 printf '\n### 4. [SUCCESS=merge]: one group, members from both sources\n'
-set_db group 'files'
+set_db group 'files systemd'    # otherwise groupadd sees the LDAP group and refuses
 run groupadd -g 5100 "$G"       # same name and GID as the LDAP group
 run gpasswd -a "$U1" "$G"
 run grep "^$G" /etc/group
-set_db group 'files sss'
+restore_nss
 run grep '^group:' /etc/nsswitch.conf
 run getent group "$G"
-set_db group 'files [SUCCESS=merge] sss'
+# merge joins two ADJACENT sources, so sss goes right after files
+# ("files [SUCCESS=merge] systemd sss" does not merge the members).
+set_db group 'files [SUCCESS=merge] sss systemd'
 run grep '^group:' /etc/nsswitch.conf
 run getent group "$G"
 run id "$U1"
@@ -148,7 +151,7 @@ run id dave
 
 printf '\n### 5. The sss fast memory cache answers even when SSSD is down\n'
 run getent passwd dave
-run pkill sssd
+run systemctl stop sssd
 sleep 1
 run getent passwd dave
 run ls /var/lib/sss/mc

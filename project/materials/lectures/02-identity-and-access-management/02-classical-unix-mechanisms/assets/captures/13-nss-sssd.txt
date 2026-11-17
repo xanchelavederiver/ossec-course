@@ -1,7 +1,7 @@
 ===== Каталог LDAP =====
 
-# service slapd status
- * slapd is running
+# systemctl is-active slapd
+active
 
 # ldapsearch -x -LLL -b ou=people,dc=example,dc=test '(uid=dave)'
 dn: uid=dave,ou=people,dc=example,dc=test
@@ -34,18 +34,18 @@ sudo_provider = none
 cache_credentials = true
 enumerate = true
 
-# sssd -D --logger=files
+# systemctl restart sssd
 
 # grep -E '^(passwd|group|shadow):' /etc/nsswitch.conf
-passwd:         files sss
-group:          files sss
-shadow:         files sss
+passwd:         files systemd sss
+group:          files systemd sss
+shadow:         files systemd sss
 
 ===== Файлы или каталог =====
 
 # grep -E '^(passwd|group):' /etc/nsswitch.conf
-passwd:         files sss
-group:          files sss
+passwd:         files systemd sss
+group:          files systemd sss
 
 # grep dave /etc/passwd; echo $?
 1
@@ -67,7 +67,7 @@ uid=5000(dave) gid=5000(dave) groups=5000(dave),5100(developers)
 ===== Ловушка [!UNAVAIL=return] =====
 
 # grep '^passwd:' /etc/nsswitch.conf
-passwd:         sss [!UNAVAIL=return] files
+passwd:         sss [!UNAVAIL=return] files systemd
 
 # getent passwd dave
 dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
@@ -76,7 +76,7 @@ dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
 # getent passwd bob; echo $?
 2
 
-# pkill sssd   <-- служба остановлена: sss возвращает UNAVAIL
+# systemctl stop sssd   <-- служба остановлена: sss возвращает UNAVAIL
 # getent passwd root
 root:x:0:0:root:/root:/bin/bash
 
@@ -89,11 +89,11 @@ dn: cn=developers,ou=groups,dc=example,dc=test
 memberUid: dave
 
 # grep '^group:' /etc/nsswitch.conf
-group:          files sss
+group:          files systemd sss
 # getent group developers
 developers:x:5100:bob
 
-# sed -i 's/^group:.*/group:  files [SUCCESS=merge] sss/' /etc/nsswitch.conf
+# sed -i 's/^group:.*/group:  files [SUCCESS=merge] sss systemd/' /etc/nsswitch.conf
 # getent group developers
 developers:x:5100:bob,dave
 # id bob
@@ -103,7 +103,7 @@ uid=1001(bob) gid=1001(bob) groups=1001(bob),5100(developers)
 
 # getent passwd dave
 dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
-# pkill sssd
+# systemctl stop sssd
 # getent passwd dave   <-- служба остановлена, но ответ получен
 dave:*:5000:5000:Dave Directory:/home/dave:/bin/bash
 

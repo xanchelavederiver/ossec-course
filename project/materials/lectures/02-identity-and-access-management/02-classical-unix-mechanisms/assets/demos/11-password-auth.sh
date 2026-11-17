@@ -12,6 +12,9 @@ BIN=/usr/local/bin/pwcheck
 [[ ! -e $BIN ]] || die "$BIN already exists"
 cleanup() {
   local rc=0
+  if [[ ${NSS_SAVED:-0} == 1 ]]; then
+    install -m 644 "$DEMO_TMP/nsswitch.conf.orig" /etc/nsswitch.conf || rc=1
+  fi
   rm -f "$BIN" || rc=1
   if getent passwd "$U1" >/dev/null; then
     userdel "$U1" || { printf 'Remove %s manually\n' "$U1" >&2; rc=1; }
@@ -34,4 +37,14 @@ run "$BIN" "$U1" || true
 run "$BIN" "$U1" || true
 
 printf '\n### 4. Unprivileged session: shadow is unreadable\n'
+run ls -l /etc/shadow
+run grep '^shadow:' /etc/nsswitch.conf
+# Ubuntu Server: "shadow: files systemd" - the EACCES of files is masked by the
+# next source, getspnam() returns NULL with errno 0 and pwcheck asks for a password.
+run runuser -u "$U1" -- "$BIN" "$U1" || true
+# With files alone the classic TLPI behaviour is visible: errno = EACCES.
+install -m 644 /etc/nsswitch.conf "$DEMO_TMP/nsswitch.conf.orig"
+NSS_SAVED=1
+sed -i -E 's/^(shadow):.*/\1:         files/' /etc/nsswitch.conf
+run grep '^shadow:' /etc/nsswitch.conf
 run runuser -u "$U1" -- "$BIN" "$U1" || true

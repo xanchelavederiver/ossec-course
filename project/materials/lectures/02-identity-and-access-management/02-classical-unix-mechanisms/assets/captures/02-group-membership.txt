@@ -1,12 +1,12 @@
 ===== Членство bob в двух базах: id, /etc/group и /etc/passwd =====
 
 # id bob
-uid=1001(bob) gid=1001(bob) groups=1001(bob),4(adm),27(sudo),100(users)
+uid=1001(bob) gid=1001(bob) groups=1001(bob),4(adm),27(sudo),100(users),1010(project)
 
 # grep -E '^(bob|sudo|users|adm):' /etc/group
-adm:x:4:ubuntu,bob
+adm:x:4:syslog,ubuntu,alice,bob
 sudo:x:27:ubuntu,bob
-users:x:100:bob
+users:x:100:ubuntu,bob
 bob:x:1001:
 
 # grep '^bob:' /etc/passwd
