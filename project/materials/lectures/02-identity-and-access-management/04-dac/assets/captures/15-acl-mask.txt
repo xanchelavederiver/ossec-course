@@ -3,7 +3,7 @@
 
 $ touch file
 $ ls -l file
--rw-r--r-- 1 bob bob 0 Oct 25 22:35 file
+-rw-r--r-- 1 bob bob 0 Nov 17 19:03 file
 $ getfacl --omit-header file
 user::rw-
 group::r--
@@ -12,7 +12,7 @@ other::r--
 
 $ chmod 0770 file
 $ ls -l file
--rwxrwx--- 1 bob bob 0 Oct 25 22:35 file
+-rwxrwx--- 1 bob bob 0 Nov 17 19:03 file
 $ getfacl --omit-header file
 user::rwx
 group::rwx
@@ -23,7 +23,7 @@ other::---
 
 $ setfacl -m user:alice:rw file
 $ ls -l file
--rwxrwx---+ 1 bob bob 0 Oct 25 22:35 file
+-rwxrwx---+ 1 bob bob 0 Nov 17 19:03 file
 $ getfacl --omit-header file
 user::rwx
 user:alice:rw-
@@ -34,7 +34,7 @@ other::---
 
 $ chmod 0333 file
 $ ls -l file
---wx-wx-wx+ 1 bob bob 0 Oct 25 22:35 file
+--wx-wx-wx+ 1 bob bob 0 Nov 17 19:03 file
 $ getfacl --omit-header file
 user::-wx
 user:alice:rw-  #effective:-w-
@@ -48,7 +48,7 @@ other::-wx
 $ touch file2
 $ setfacl -m g:nogroup:w file2
 $ ls -l file2
--rw-rw-r--+ 1 bob bob 0 Oct 25 22:35 file2
+-rw-rw-r--+ 1 bob bob 0 Nov 17 19:03 file2
 $ getfacl --omit-header file2
 user::rw-
 group::r--
@@ -59,4 +59,4 @@ other::r--
 
 $ setfacl -m mask::--x file2
 $ ls -l file2
--rw---xr--+ 1 bob bob 0 Oct 25 22:35 file2
+-rw---xr--+ 1 bob bob 0 Nov 17 19:03 file2

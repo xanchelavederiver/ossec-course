@@ -13,19 +13,23 @@ $ echo "25000 100000" | sudo tee A/R/cpu.max
 
 ===== По одному процессу в P, Q, R =====
 
-$ stress-ng --cpu 3 --timeout 45s &
+$ stress-ng --temp-path /tmp --cpu 3 --timeout 45s &
+[1] 4811
 $ _PID=`pgrep -x stress-ng-cpu`
 $ for g in P Q R; do read p; echo $p | sudo tee A/$g/cgroup.procs; done <<< "$_PID"
+4812
+4813
+4814
 $ pidstat -u 5 1 -C stress-ng
-      UID       PID    %usr %system  %guest    %CPU  Command
-     1001      5145   10.00    0.00    0.00   10.00  stress-ng-cpu
-     1001      5146   15.00    0.00    0.00   15.00  stress-ng-cpu
-     1001      5147   25.00    0.00    0.00   25.00  stress-ng-cpu
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:     1001      4812    9.98    0.00    0.00   91.62    9.98     -  stress-ng-cpu
+Average:     1001      4813   14.97    0.00    0.00   84.83   14.97     -  stress-ng-cpu
+Average:     1001      4814   24.75    0.20    0.00   74.65   24.95     -  stress-ng-cpu
 
 ===== Три процесса в одной группе R (делят 25%) =====
 
 $ pidstat -u 5 1 -C stress-ng
-      UID       PID    %usr %system  %guest    %CPU  Command
-     1001      5171    7.80    0.00    0.00    7.80  stress-ng-cpu
-     1001      5172    8.20    0.00    0.00    8.20  stress-ng-cpu
-     1001      5173    8.80    0.00    0.00    8.80  stress-ng-cpu
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:     1001      4834    6.19    0.00    0.00   93.61    6.19     -  stress-ng-cpu
+Average:     1001      4835   12.38    0.20    0.00   87.43   12.57     -  stress-ng-cpu
+Average:     1001      4836    6.19    0.00    0.00   93.61    6.19     -  stress-ng-cpu

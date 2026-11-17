@@ -2,7 +2,7 @@
 ===== Типичный пример: каталог /tmp =====
 
 $ ls -ld /tmp
-drwxrwxrwt 2 root root 4096 Oct 25 22:31 /tmp
+drwxrwxrwt 13 root root 280 Nov 17 19:02 /tmp
 
 ===== Каталог без sticky-бита: чужой файл удаляется =====
 
@@ -10,10 +10,10 @@ $ mkdir -p /tmp/experiments
 $ echo "Hello" > /tmp/experiments/file.txt
 $ sudo chown alice /tmp/experiments/file.txt
 $ ls -la /tmp/experiments
-total 12
-drwxr-xr-x 2 bob   bob  4096 Oct 25 22:31 .
-drwxrwxrwt 3 root  root 4096 Oct 25 22:31 ..
--rw-r--r-- 1 alice bob     6 Oct 25 22:31 file.txt
+total 4
+drwxr-xr-x  2 bob   bob   60 Nov 17 19:02 .
+drwxrwxrwt 14 root  root 300 Nov 17 19:02 ..
+-rw-r--r--  1 alice bob    6 Nov 17 19:02 file.txt
 $ whoami
 bob
 $ rm /tmp/experiments/file.txt
@@ -25,6 +25,6 @@ ls: cannot access '/tmp/experiments/file.txt': No such file or directory
 $ echo "Hello" > /tmp/file2.txt
 $ sudo chown alice /tmp/file2.txt
 $ ls -l /tmp/file2.txt
--rw-r--r-- 1 alice bob 6 Oct 25 22:31 /tmp/file2.txt
+-rw-r--r-- 1 alice bob 6 Nov 17 19:02 /tmp/file2.txt
 $ rm /tmp/file2.txt
 rm: cannot remove '/tmp/file2.txt': Operation not permitted

@@ -4,7 +4,7 @@ $ ulimit -n 128
 $ python3 -c "[open(f'/tmp/file_{i}', 'w') for i in range(128+10)]"
 Traceback (most recent call last):
   File "<string>", line 1, in <module>
-    [open(f"/tmp/file_{i}", "w") for i in range(128+10)]
+    [open(f'/tmp/file_{i}', 'w') for i in range(128+10)]
      ~~~~^^^^^^^^^^^^^^^^^^^^^^^
 OSError: [Errno 24] Too many open files: '/tmp/file_125'
 
@@ -12,17 +12,18 @@ OSError: [Errno 24] Too many open files: '/tmp/file_125'
 
 $ ulimit -u 200
 $ :(){ :|:& };:
-bash: fork: retry: Resource temporarily unavailable
-bash: fork: retry: Resource temporarily unavailable
-bash: fork: retry: Resource temporarily unavailable
-bash: fork: retry: Resource temporarily unavailable
-bash: fork: Interrupted system call
+[1] 2564
+-bash: fork: retry: Resource temporarily unavailable
+-bash: fork: retry: Resource temporarily unavailable
+-bash: fork: retry: Resource temporarily unavailable
+-bash: fork: retry: Resource temporarily unavailable
+…
 
 ===== Переполнение диска (-f) =====
 
 $ ulimit -f 10240
 $ dd if=/dev/urandom bs=11M count=1 of=/tmp/dd
-File size limit exceeded (core dumped)
+File size limit exceeded   (core dumped) dd if=/dev/urandom bs=11M count=1 of=/tmp/dd
 
 ===== Потребление памяти (-v) =====
 
@@ -40,6 +41,6 @@ dd: IO error: out of memory
 
 $ ulimit -t 5
 $ python3 -c 'while True: pass'
-Killed
+Killed                     python3 -c 'while True: pass'
 $ echo $?
 137

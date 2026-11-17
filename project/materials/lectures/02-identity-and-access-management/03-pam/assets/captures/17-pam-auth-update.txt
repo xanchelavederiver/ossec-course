@@ -1,7 +1,9 @@
 ===== Профили и шаблоны pam-auth-update =====
 
 # ls /usr/share/pam-configs/
+capability
 mkhomedir
+systemd
 unix
 # sed -n 1,8p /usr/share/pam-configs/unix
 Name: Unix authentication
@@ -35,6 +37,7 @@ session requisite                       pam_deny.so
 session required                        pam_permit.so
 session optional                        pam_umask.so
 session required        pam_unix.so
+session optional        pam_systemd.so
 session optional                        pam_mkhomedir.so
 # sed -i 's/pam_unix.so nullok/pam_unix.so/' /etc/pam.d/common-auth
 # pam-auth-update --disable mkhomedir

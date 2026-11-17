@@ -10,6 +10,7 @@ auth    [default=die]                   pam_faillock.so authfail
 auth    requisite                       pam_deny.so
 auth    required                        pam_permit.so
 auth    optional                        pam_faillock.so authsucc
+auth    optional                        pam_cap.so
 
 ===== Блокировка после пяти неудач =====
 
@@ -27,11 +28,11 @@ su: Authentication failure
 # faillock --user bob
 bob:
 When                Type  Source                                           Valid
-2026-10-25 19:15:42 TTY   /dev/pts/0                                           V
-2026-10-25 19:15:45 TTY   /dev/pts/0                                           V
-2026-10-25 19:15:49 TTY   /dev/pts/0                                           V
-2026-10-25 19:15:52 TTY   /dev/pts/0                                           V
-2026-10-25 19:15:56 TTY   /dev/pts/0                                           V
+2026-11-17 19:14:23 TTY   /dev/pts/1                                           V
+2026-11-17 19:14:27 TTY   /dev/pts/1                                           V
+2026-11-17 19:14:31 TTY   /dev/pts/1                                           V
+2026-11-17 19:14:35 TTY   /dev/pts/1                                           V
+2026-11-17 19:14:38 TTY   /dev/pts/1                                           V
 # faillock --user bob --reset
 $ su - bob -c id
 Password:

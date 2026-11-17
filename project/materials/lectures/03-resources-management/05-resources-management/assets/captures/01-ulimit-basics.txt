@@ -2,11 +2,11 @@
 
 $ ulimit -a
 real-time non-blocking time  (microseconds, -R) unlimited
-core file size              (blocks, -c) unlimited
+core file size              (blocks, -c) 0
 data seg size               (kbytes, -d) unlimited
 scheduling priority                 (-e) 0
 file size                   (blocks, -f) unlimited
-pending signals                     (-i) 128218
+pending signals                     (-i) 6283
 max locked memory           (kbytes, -l) 8192
 max memory size             (kbytes, -m) unlimited
 open files                          (-n) 1024
@@ -15,7 +15,7 @@ POSIX message queues         (bytes, -q) 819200
 real-time priority                  (-r) 0
 stack size                  (kbytes, -s) 8192
 cpu time                   (seconds, -t) unlimited
-max user processes                  (-u) unlimited
+max user processes                  (-u) 6283
 virtual memory              (kbytes, -v) unlimited
 file locks                          (-x) unlimited
 
@@ -29,7 +29,7 @@ $ ulimit -Sn 512      # понизить мягкий лимит разреше�
 $ ulimit -Sn
 512
 $ ulimit -Sn 1048576  # поднять мягкий выше жёсткого – отказ
-bash: ulimit: open files: cannot modify limit: Invalid argument
+-bash: ulimit: open files: cannot modify limit: Invalid argument
 $ ulimit -Hn 4096     # понизить жёсткий лимит разрешено
 $ ulimit -Hn 1048576  # поднять жёсткий – только привилегированному процессу
-bash: ulimit: open files: cannot modify limit: Operation not permitted
+-bash: ulimit: open files: cannot modify limit: Operation not permitted

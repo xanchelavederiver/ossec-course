@@ -12,8 +12,8 @@ session required        pam_securetty.so
 # pamtester demo-f bob open_session
 pamtester: Module is unknown
 # tail -n 2 /var/log/auth.log
-13:50:49 srv pamtester: PAM unable to resolve symbol: pam_sm_open_session
-13:50:49 srv pamtester: PAM unable to resolve symbol: pam_sm_close_session
+19:06:01 srv pamtester: PAM unable to resolve symbol: pam_sm_open_session
+19:06:01 srv pamtester: PAM unable to resolve symbol: pam_sm_close_session
 
 ===== module_unknown=ignore =====
 
@@ -56,7 +56,7 @@ auth    required        pam_unix.so use_first_pass
 # pamtester demo-h bob authenticate
 pamtester: Authentication failure  # пароль не запрошен
 # tail -n 1 /var/log/auth.log
-13:50:49 srv pamtester: pam_unix(demo-h:auth): auth could not identify password for [bob]
+19:06:03 srv pamtester: pam_unix(demo-h:auth): auth could not identify password for [bob]
 
 # cat /etc/pam.d/demo-h3
 auth    required        pam_unix.so try_first_pass
@@ -72,7 +72,7 @@ auth    required        pam_unix.so foo=bar
 Password:                          # верный пароль bob
 pamtester: successfully authenticated
 # tail -n 1 /var/log/auth.log
-13:50:49 srv pamtester: pam_unix(demo-i:auth): unrecognized option [foo=bar]
+19:06:05 srv pamtester: pam_unix(demo-i:auth): unrecognized option [foo=bar]
 
 # cat /etc/pam.d/demo-j
 auth    required        pam_unix.so debug
@@ -80,19 +80,19 @@ auth    required        pam_unix.so debug
 Password:                          # верный пароль bob
 pamtester: successfully authenticated
 # tail -n 1 /var/log/auth.log
-13:50:49 srv pamtester: pam_unix(demo-j:auth): username [bob] obtained
+19:06:06 srv pamtester: pam_unix(demo-j:auth): username [bob] obtained
 
 ===== nullok =====
 
 # passwd -S alice
-alice NP 2026-11-09 0 99999 7 -1
+alice NP 2026-11-17 0 99999 7 -1
 # cat /etc/pam.d/demo-k
 auth    required        pam_unix.so
 # pamtester demo-k alice authenticate
 Password:                          # пустой пароль
 pamtester: Authentication failure
 # tail -n 1 /var/log/auth.log
-13:50:49 srv pamtester: pam_unix(demo-k:auth): authentication failure; logname= uid=0 euid=0 tty= ruser= rhost=  user=alice
+19:06:08 srv pamtester: pam_unix(demo-k:auth): authentication failure; logname=ubuntu uid=0 euid=0 tty= ruser= rhost=  user=alice
 
 # cat /etc/pam.d/demo-k2
 auth    required        pam_unix.so nullok

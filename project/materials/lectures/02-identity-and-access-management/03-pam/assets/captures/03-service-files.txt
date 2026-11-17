@@ -40,7 +40,7 @@ session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_
 
 ===== gdm-password =====
 
-# grep -Ev '^#|^$' /etc/pam.d/gdm-password
+# dpkg-deb --fsys-tarfile gdm3_50.1-0ubuntu0.1_amd64.deb | tar -xO ./etc/pam.d/gdm-password | grep -Ev '^#|^$'
 auth    requisite       pam_nologin.so
 auth    required        pam_succeed_if.so user != root quiet_success
 @include common-auth

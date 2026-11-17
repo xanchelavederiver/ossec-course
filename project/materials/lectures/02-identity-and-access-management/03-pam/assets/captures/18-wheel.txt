@@ -25,7 +25,7 @@ uid=0(root) gid=0(root) groups=0(root)
 # su bob -c id
 uid=1001(bob) gid=1001(bob) groups=1001(bob)
 # grep -o 'su\[.*FAILED.*' /var/log/auth.log | tail -1
-su[1010]: FAILED SU (to root) bob on pts/1
+su[5184]: FAILED SU (to root) bob on pts/2
 
 ===== pam_wheel без аргумента group= =====
 

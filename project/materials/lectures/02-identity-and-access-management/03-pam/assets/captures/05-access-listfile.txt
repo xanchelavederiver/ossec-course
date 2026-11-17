@@ -3,7 +3,7 @@
 # echo '-:bob:ALL' >> /etc/security/access.conf
 # tail -1 /etc/security/access.conf
 -:bob:ALL
-# grep -v '^#' /etc/pam.d/sshd | head -3
+# grep -Ev '^#|^$' /etc/pam.d/sshd | head -3
 @include common-auth
 account    required     pam_nologin.so
 account  required     pam_access.so

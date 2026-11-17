@@ -14,4 +14,4 @@ Connection closed by 127.0.0.1 port 22
 
 $ ssh alice@127.0.0.1 id
 (alice@127.0.0.1) Password:
-uid=1003(alice) gid=1003(alice) groups=1003(alice)
+uid=1003(alice) gid=1003(alice) groups=1003(alice),1010(admins)

@@ -8,7 +8,7 @@ $ cat f/3.txt
 Hello
 $ chmod 0400 f
 $ ls -ld f
-dr-------- 2 bob bob 4096 Oct 25 22:31 f
+dr-------- 2 bob bob 4096 Nov 17 19:02 f
 $ ls -l f/
 total 0
 -????????? ? ? ? ?            ? 1.txt
@@ -23,7 +23,7 @@ $ mkdir f2
 $ echo "Hello!" > f2/file.txt
 $ chmod 0100 f2
 $ ls -ld f2
-d--x------ 2 bob bob 4096 Oct 25 22:31 f2
+d--x------ 2 bob bob 4096 Nov 17 19:02 f2
 $ ls -l f2/
 ls: cannot open directory 'f2/': Permission denied
 $ cat f2/file.txt
@@ -35,7 +35,7 @@ $ mkdir f3
 $ echo "Hello" > f3/1.txt
 $ chmod 0200 f3
 $ ls -ld f3
-d-w------- 2 bob bob 4096 Oct 25 22:31 f3
+d-w------- 2 bob bob 4096 Nov 17 19:02 f3
 $ touch f3/2.txt
 touch: setting times of 'f3/2.txt': Permission denied
 $ cp f3/1.txt f3/1-copy.txt

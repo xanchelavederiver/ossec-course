@@ -10,7 +10,7 @@ session    required     pam_limits.so
 
 $ ssh bob@127.0.0.1
 (bob@127.0.0.1) Password:
-Welcome to Ubuntu 26.04.1 LTS (GNU/Linux 6.8.0-147-generic x86_64)
+Welcome to Ubuntu 26.04.1 LTS (GNU/Linux 7.0.0-43-generic x86_64)
 bob@srv:~$ ulimit -f
 1024
 bob@srv:~$ cd /tmp && dd if=/dev/zero of=small bs=1k count=512 status=none && echo OK
@@ -18,17 +18,15 @@ OK
 bob@srv:/tmp$ dd if=/dev/zero of=big bs=1M count=2
 File size limit exceeded   (core dumped) dd if=/dev/zero of=big bs=1M count=2
 bob@srv:/tmp$ ls -l small big
--rw-rw-r-- 1 bob bob 1048576 Oct 25 19:12 big
--rw-rw-r-- 1 bob bob  524288 Oct 25 19:12 small
+-rw-rw-r-- 1 bob bob 1048576 Nov 17 19:13 big
+-rw-rw-r-- 1 bob bob  524288 Nov 17 19:13 small
 ===== pam_limits: число одновременных сеансов =====
 
 # echo 'bob    hard    maxlogins    2' >> /etc/security/limits.conf
-# loginctl list-sessions          # первый сеанс bob по ssh уже открыт
-SESSION  UID USER SEAT LEADER CLASS   TTY IDLE SINCE
-    c10 1001 bob  -    325    user    -   no   -
-    c11 1001 bob  -    332    manager -   no   -
-
-2 sessions listed.
+# loginctl list-sessions | grep -E 'SESSION|bob'   # первый сеанс bob по ssh уже открыт
+SESSION  UID USER   SEAT LEADER CLASS   TTY IDLE SINCE
+     26 1001 bob    -    4707   manager -   no   -
+     27 1001 bob    -    4832   user    -   no   -
 
 ===== Второй сеанс bob: отказ =====
 

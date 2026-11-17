@@ -6,7 +6,7 @@ $ ./3
 Hello!
 $ chmod ugo-x 3
 $ ls -l 3
--rw-r--r-- 1 bob bob 15952 Oct 25 22:35 3
+-rw-r--r-- 1 bob bob 15952 Nov 17 19:03 3
 $ sudo ./3
 sudo: cannot execute '/home/bob/demo14/3': Permission denied (os error 13)
 
@@ -29,7 +29,7 @@ $ echo "Hello" > 4.txt
 $ setfacl -m u:alice:r 4.txt
 $ chmod u-r 4.txt
 $ ls -l 4.txt
---w-r--r--+ 1 bob bob 6 Oct 25 22:35 4.txt
+--w-r--r--+ 1 bob bob 6 Nov 17 19:03 4.txt
 $ getfacl --omit-header 4.txt
 user::-w-
 user:alice:r--
@@ -63,7 +63,7 @@ $ echo "Hello" > 5.txt
 $ chmod ugo-r 5.txt
 $ setfacl -m u:alice:r 5.txt
 $ ls -l 5.txt
---w-r-----+ 1 bob bob 6 Oct 25 22:35 5.txt
+--w-r-----+ 1 bob bob 6 Nov 17 19:03 5.txt
 $ getfacl --omit-header 5.txt
 user::-w-
 user:alice:r--
@@ -154,8 +154,8 @@ $ printf "#!/bin/bash\n\necho \"Hello\"\n" > 8.sh
 $ chmod 0000 8 8.sh
 $ setfacl -m g:alice:r -m g:carol:w -m g:dave:x 8 8.sh
 $ ls -l 8 8.sh
-----rwx---+ 1 bob bob 15952 Oct 25 22:35 8
-----rwx---+ 1 bob bob    26 Oct 25 22:35 8.sh
+----rwx---+ 1 bob bob 15952 Nov 17 19:03 8
+----rwx---+ 1 bob bob    26 Nov 17 19:03 8.sh
 $ getfacl --omit-header 8.sh
 user::---
 group::---

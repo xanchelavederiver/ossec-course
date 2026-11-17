@@ -15,7 +15,8 @@ sudo env OSSEC_DEMO_VM=1 bash 01-file-perms.sh
 при ошибке посередине. Ожидаемые отказы (`Permission denied`,
 `Operation not permitted`) – часть демонстраций: сценарий продолжает работу.
 
-Требования: базовая система + `gcc`, `acl`, `attr`, `libcap2-bin`,
+Требования: базовая система + `gcc`, `acl`, `attr` (на сервере по умолчанию
+не установлены: `sudo apt-get install gcc acl attr`), `libcap2-bin`,
 `e2fsprogs`, `xxd`; для 09 – работающие `rsyslog` и `openssh-server`;
 для 11 – возможность создавать loop-устройства. Исходные тексты программ
 (`userinfo.c`, `groupinfo.c`, `hello.c`, `file_reader.c`) – в `../src/`.
@@ -38,6 +39,12 @@ sudo env OSSEC_DEMO_VM=1 bash 01-file-perms.sh
 | `15-acl-mask.sh` | раздел 7.3 | chmod и ACL_MASK |
 | `16-acl-default.sh` | раздел 7.4 | default ACL |
 
-Демонстрации 8–11 предполагают, что соответствующие пути лежат на ext4
-(в контейнере поверх overlayfs `chattr` и loop-устройства не работают –
-см. `../captures/README.md`).
+Сценарии проверены 17.11.2026 на установленном Ubuntu Server 26.04.1
+(эталонная ВМ, `project/scripts/vm/`): все 15 завершаются с кодом 0 и
+возвращают систему в исходное состояние. Особенности сервера: `/tmp` – tmpfs
+(демо 05, 10, 16 работают на нём: sticky-бит, `chattr +a/+i` и ACL
+поддерживаются; формат-атрибута `e` в `lsattr` там нет, поэтому демо 10
+снимает атрибут `chattr -i`, а не `chattr =e`); домашние каталоги создаются
+`0750`, поэтому сценарии, где программы владельца запускают другие
+пользователи, сами делают `chmod 755` домашнего каталога. В контейнере поверх
+overlayfs `chattr` и loop-устройства не работают – см. `../captures/README.md`.

@@ -23,7 +23,7 @@ defaults:
 номера по sources.json, клик ведёт на слайд routeAlias: refs и подсвечивает
 источник); упоминания man-страниц – ссылки (<Man p="name(sec)"/>).
 Демонстрационная среда – Ubuntu Server 26.04 LTS, Linux-PAM 1.7.0;
-захваты сняты в одноразовых контейнерах (assets/captures/README.md); раздел 4
+захваты сняты на эталонной ВМ – установленном сервере (assets/captures/README.md); раздел 4
 дополнительно показывает Rocky Linux 10, Arch Linux и Astra Linux SE 1.8.
 Фрагменты исходного кода – <CodeSnippet> по дословным выдержкам из
 assets/snippets (Linux-PAM v1.7.0 и программы демо; см. assets/snippets/README.md);
@@ -540,7 +540,7 @@ PAM представляет собой библиотеку `libpam.so` и си
 
 <div class="mt-2">
 
-В Ubuntu Server 26.04 предустановлены **45 модулей** – с ними работает большая часть примеров лекции.
+В Ubuntu Server 26.04 предустановлены **48 модулей** – с ними работает большая часть примеров лекции.
 Пакеты добавляют свои модули (`pam_pwquality.so`, `pam_google_authenticator.so` – разделы 6–7).
 
 </div>
@@ -552,7 +552,8 @@ PAM представляет собой библиотеку `libpam.so` и си
 в семействе Red Hat (и в РЕД ОС) – /usr/lib64/security, upstream-умолчание –
 /lib/security. Поэтому инструкции «положите модуль в /lib/security» из старых
 руководств на современных системах не работают – путь нужно проверять.
-45 модулей уже в базовой поставке Ubuntu Server 26.04; в правилах пишется
+48 модулей уже в базовой поставке Ubuntu Server 26.04 (в их числе pam_systemd и pam_cap
+из пакетов libpam-systemd и libpam-cap); в правилах пишется
 только имя .so, полный путь нужен лишь для модулей вне каталога по умолчанию.
 -->
 
@@ -580,9 +581,9 @@ layout: section
 
 <TerminalCapture src="captures/01-pam-locations.txt" section="3" title="Ubuntu Server 26.04 · конфигурация PAM" fontSize="0.5rem" class="!mt-0">
   <TCallout :line="1" :col="6" :span="11" :n="1" />
-  <TCallout :line="12" :col="41" :span="13" :n="2" />
-  <TCallout :line="13" :col="6" :span="15" :n="3" />
-  <TCallout :line="15" :col="6" :span="14" :n="4" />
+  <TCallout :line="7" :col="41" :span="13" :n="2" />
+  <TCallout :line="8" :col="6" :span="15" :n="3" />
+  <TCallout :line="10" :col="6" :span="14" :n="4" />
 </TerminalCapture>
 
 </div>
@@ -3911,6 +3912,7 @@ session-noninteractive для служб без терминала. Собира
   <TCallout :line="2" :col="41" :span="18" :n="2" />
   <TCallout :line="3" :col="41" :span="11" :n="3" />
   <TCallout :line="4" :col="41" :span="13" :n="4" />
+  <TCallout :line="5" :col="41" :span="10" :n="5" />
 </TerminalCapture>
 
 <div class="grid grid-cols-2 gap-2 mt-3 text-xs">
@@ -3935,6 +3937,7 @@ session-noninteractive для служб без терминала. Собира
 <div><span class="co-ball">2</span> <code>pam_unix</code> проверяет пароль по <code>/etc/shadow</code> (лекция 2)</div>
 <div><span class="co-ball">3</span> <code>pam_deny</code> всегда возвращает отказ</div>
 <div><span class="co-ball">4</span> <code>pam_permit</code> всегда возвращает успех – фиксирует итог</div>
+<div><span class="co-ball">5</span> <code>pam_cap</code> (пакет <code>libpam-cap</code>) задаёт наследуемые capabilities пользователя; на исход не влияет</div>
 </div>
 </div>
 
@@ -3956,7 +3959,8 @@ session-noninteractive для служб без терминала. Собира
 
 <!--
 Первый настоящий файл. Конструкция из трёх строк: pam_unix с прыжком, pam_deny,
-pam_permit. Зачем так сложно? Задел на расширение: доменный модуль pam_sss
+pam_permit; четвёртая строка установленного сервера – pam_cap из профиля capability
+(блок Additional): выполняется после решения и на исход стека не влияет. Зачем так сложно? Задел на расширение: доменный модуль pam_sss
 вставляется между pam_unix и pam_deny, прыжок становится success=2 – логика
 «любой из источников подтвердил – вход разрешён» собирается из прыжков.
 Два пути: верный пароль перепрыгивает deny и попадает на permit; неверный –
@@ -4025,7 +4029,7 @@ pam_unix, который сверяет срок действия пароля �
 shadow; new_authtok_reqd=done пропускает пользователя с истёкшим паролем,
 заставляя его сменить пароль. common-session: pam_umask задаёт маску прав,
 pam_unix пишет в журнал строки session opened/closed, pam_systemd регистрирует
-сеанс в logind (появился при установке openssh/gdm вместе с libpam-systemd).
+сеанс в logind (пакет libpam-systemd входит в установку сервера).
 Первые три строки common-session повторяют каркас common-auth: блок решающих
 модулей, pam_deny, pam_permit. В стеке auth решающий модуль – pam_unix с
 прыжком success=1 через pam_deny. В стеке session решающих модулей нет: pam_unix
@@ -4090,12 +4094,12 @@ common-password есть точка подключения парольной п
 
 <TerminalCapture src="captures/17-pam-auth-update.txt" section="Профили" title="Ubuntu Server 26.04 · профили и шаблон common-auth" fontSize="0.45rem" class="!mt-0">
   <TCallout :line="1" :col="6" :span="23" :n="1" />
-  <TCallout :line="6" :col="1" :span="12" :rows="2" :n="2" />
-  <TCallout :line="8" :col="1" :span="18" :n="3" />
-  <TCallout :line="10" :col="10" :span="11" :n="4" />
-  <TCallout :line="11" :col="1" :span="13" :n="5" />
-  <TCallout :line="17" :col="1" :span="24" :n="6" />
-  <TCallout :line="22" :col="1" :span="13" :n="7" />
+  <TCallout :line="8" :col="1" :span="12" :rows="2" :n="2" />
+  <TCallout :line="10" :col="1" :span="18" :n="3" />
+  <TCallout :line="12" :col="10" :span="11" :n="4" />
+  <TCallout :line="13" :col="1" :span="13" :n="5" />
+  <TCallout :line="19" :col="1" :span="24" :n="6" />
+  <TCallout :line="24" :col="1" :span="13" :n="7" />
 </TerminalCapture>
 
 </div>
@@ -4143,11 +4147,11 @@ pam_unix получил success=1 – прыжок через pam_deny.
 
 <TerminalCapture src="captures/17-pam-auth-update.txt" section="Включение" title="Ubuntu Server 26.04 · pam-auth-update --enable / --disable / --force" fontSize="0.45rem" class="!mt-0">
   <TCallout :line="1" :col="19" :span="18" :n="1" />
-  <TCallout :line="8" :col="41" :span="16" :n="2" />
-  <TCallout :line="12" :col="41" :span="11" :n="3" />
-  <TCallout :line="14" :col="10" :span="37" :n="4" />
-  <TCallout :line="17" :col="1" :span="1" :n="5" />
-  <TCallout :line="18" :col="19" :span="7" :n="6" />
+  <TCallout :line="9" :col="41" :span="16" :n="2" />
+  <TCallout :line="13" :col="41" :span="11" :n="3" />
+  <TCallout :line="15" :col="10" :span="37" :n="4" />
+  <TCallout :line="18" :col="1" :span="1" :n="5" />
+  <TCallout :line="19" :col="19" :span="7" :n="6" />
 </TerminalCapture>
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
@@ -4349,7 +4353,8 @@ UsePAM yes (умолчание Debian/Ubuntu, не upstream!), а диалог �
 <Refs ids="man-pam-conf man-pam-rootok" />
 
 <!--
-Третий путь входа – графический. У GDM семейство файлов gdm-*: password –
+Третий путь входа – графический. На сервере GDM не установлен, поэтому файл показан
+прямо из пакета gdm3 (dpkg-deb), без установки. У GDM семейство файлов gdm-*: password –
 обычный вход по паролю, autologin – вход без пароля, fingerprint и smartcard –
 другие факторы. В gdm-password: succeed_if запрещает графический вход root –
 политика Ubuntu; проверка пароля – всё тот же common-auth; gnome_keyring с
@@ -5350,7 +5355,7 @@ nproc защищает от fork-бомбы, nofile – от исчерпани�
 
 <TerminalCapture src="captures/07-limits.txt" section="3" title="demo 04 · лимит и открытые сеансы" fontSize="0.5rem">
   <TCallout :line="1" :col="9" :span="29" :n="1" />
-  <TCallout :line="4" :col="31" :span="7" :rows="2" :n="2" />
+  <TCallout :line="4" :col="33" :span="7" :rows="2" :n="2" />
 </TerminalCapture>
 
 <div class="mt-2" />
@@ -5393,7 +5398,7 @@ nproc защищает от fork-бомбы, nofile – от исчерпани�
 
 <SrcRef>
 См. <code>demos/04-limits.sh</code>. Для демонстрации необходим работающий
-<code>systemd-logind</code>: захват снят в контейнере с systemd.
+<code>systemd-logind</code> (в контейнере без systemd ограничение не действует).
 </SrcRef>
 
 <!--
@@ -6252,8 +6257,8 @@ HMAC(секрет, текущее 30-секундное окно). Совпад�
 </div>
 
 <SrcRef>
-См. <code>demos/11-totp-ssh.sh</code>; секрет и коды – из одноразового
-демо-контейнера.
+См. <code>demos/11-totp-ssh.sh</code>; секрет и коды – из одноразовой
+учебной ВМ.
 </SrcRef>
 
 <!--
@@ -7122,7 +7127,7 @@ pam_error, pam_info – обёртки над функцией диалога; p
 <TerminalCapture src="captures/12-pam-math.txt" section="2" title="demo 13 · служба mathtest: клиент – authprint" fontSize="0.5rem">
   <TCallout :line="2" :col="21" :span="18" :n="3" />
   <TCallout :line="6" :col="1" :span="26" :n="4" />
-  <TCallout :line="10" :col="24" :span="1" :n="5" />
+  <TCallout :line="10" :col="25" :span="1" :n="5" />
 </TerminalCapture>
 
 </div>

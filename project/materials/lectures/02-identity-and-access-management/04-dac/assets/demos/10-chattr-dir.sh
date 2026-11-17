@@ -6,7 +6,7 @@ demo_init "$@"
 need chattr lsattr
 D=/tmp/ossec-experiments
 cleanup() {
-  chattr =e "$D" 2>/dev/null
+  chattr -a -i "$D" 2>/dev/null
   rm -r -f "$D"
   remove_users
 }
@@ -35,6 +35,9 @@ as "$U1" "touch $D/newer.txt"
 tryrun mkdir "$D/newer"
 
 echo; echo '===== Сброс ====='
-run chattr =e "$D"
+# /tmp на Ubuntu Server 26.04 – tmpfs: флага e (extents) там нет, «chattr =e» даёт
+# Operation not supported; снимаем сам атрибут.
+run chattr -i "$D"
+run lsattr -d "$D"
 run rm -r "$D"
 tryrun ls -ld "$D"

@@ -67,20 +67,26 @@ restore_files() {
 U1=ossec-bob U2=ossec-alice U3=ossec-carol U4=ossec-dave
 new_users() {
   local u
+  DEMO_USERS=()
   for u in "$@"; do
     ! getent passwd "$u" >/dev/null || die "$u already exists"
+    ! getent group "$u" >/dev/null || die "group $u already exists"
     run useradd -m -U -s /bin/bash "$u"
+    DEMO_USERS+=("$u")   # registered one by one: cleanup works after a mid-way failure
   done
-  DEMO_USERS=("$@")
 }
 remove_users() {
-  local u status=0
-  for u in "${DEMO_USERS[@]:-}"; do
+  local u i status=0
+  # Reverse order: users added later (e.g. a member of the others' groups) go
+  # first, otherwise userdel keeps a private group that still has members.
+  for (( i=${#DEMO_USERS[@]}-1; i>=0; i-- )); do
+    u=${DEMO_USERS[i]}
     [[ -n $u ]] || continue
     userdel -r "$u" 2>/dev/null || userdel "$u" || {
       printf 'Cleanup failed: remove %s manually before reusing VM\n' "$u" >&2
       status=1
     }
+    ! getent group "$u" >/dev/null || groupdel "$u" 2>/dev/null || true
   done
   return "$status"
 }

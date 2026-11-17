@@ -2,7 +2,8 @@
 
 $ gcc -Wall authprint.c -o authprint -lpam -lpam_misc
 $ ls -l authprint
--rwxrwxr-x 1 bob bob 16560 Oct 25 19:12 authprint
+-rwxrwxr-x 1 bob bob 16560 Nov 17 19:15 authprint
+# install -m 755 /home/bob/authprint /usr/local/bin/authprint
 
 ===== Запуск: служба other =====
 
@@ -26,9 +27,9 @@ $ ./authprint authprint      # запускает bob
 Password:
 Authenticated printf :-)
 
-$ ./authprint authprint      # запускает carol
+$ authprint authprint        # запускает carol
 Password:
 authprint failed: Authentication failure
 
 # grep authprint /var/log/auth.log | tail -1
-19:13:37 srv authprint: pam_listfile(authprint:auth): Refused user carol for service authprint
+19:15:35 srv authprint: pam_listfile(authprint:auth): Refused user carol for service authprint

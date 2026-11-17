@@ -8,7 +8,7 @@ pamtester: Authentication failure
 # pamtester sshd bob acct_mgmt
 pamtester: account management done.
 
-$ ssh -i ~/.ssh/id_ed25519 bob@127.0.0.1 id
+$ ssh -i ~/.ssh/lab_ed25519 bob@127.0.0.1 id
 uid=1001(bob) gid=1001(bob) groups=1001(bob)
 
 ===== То же правило в стеке account =====
@@ -18,7 +18,7 @@ account  required     pam_listfile.so onerr=fail item=user sense=deny file=/etc/
 # pamtester sshd bob acct_mgmt
 pamtester: Authentication failure
 
-$ ssh -i ~/.ssh/id_ed25519 bob@127.0.0.1 id
+$ ssh -i ~/.ssh/lab_ed25519 bob@127.0.0.1 id
 Connection closed by 127.0.0.1 port 22
 
 $ ssh bob@127.0.0.1 id

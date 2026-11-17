@@ -13,7 +13,8 @@ grep -qw pids /sys/fs/cgroup/cgroup.controllers || die 'Контроллер pid
 run mkdir "$CG"
 run ls "$CG"
 run cat "$CG/cgroup.controllers"
-run cat "$CG/cgroup.stat"
+# cgroup.stat also carries per-subsystem counters; show the descendant lines.
+run grep descendants "$CG/cgroup.stat"
 
 # Добавление текущей оболочки; потомок (cat) наследует группу.
 echo $$ > "$CG/cgroup.procs"
@@ -21,12 +22,16 @@ run cat "$CG/cgroup.procs"
 run cat "$CG/pids.current"
 run cat "/proc/$$/cgroup"
 
-# Лимит числа процессов в группе: четыре запускаются, пятый – отказ.
+# Лимит числа процессов в группе. Цикл выполняется в подоболочке: исчерпав
+# повторы fork, неинтерактивный bash завершается («Interrupted system call»),
+# и это не должно обрывать сценарий. В группе уже два процесса (сценарий и
+# подоболочка), поэтому запускаются три sleep, четвёртый – отказ (на слайде
+# интерактивная оболочка одна, и запускаются четыре).
 echo 5 > "$CG/pids.max"
 run cat "$CG/pids.max"
 printf '\n$ for a in $(seq 1 5); do sleep 10 & done\n'
-for a in $(seq 1 5); do sleep 10 & done || true
-wait 2>/dev/null || true
+( for a in $(seq 1 5); do sleep 10 & done ) || true
+sleep 11
 
 # Удаление: непустую группу удалить нельзя; выводим оболочку и удаляем.
 tryrun rmdir "$CG"

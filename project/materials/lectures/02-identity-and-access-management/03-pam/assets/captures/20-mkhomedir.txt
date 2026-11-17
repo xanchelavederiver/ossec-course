@@ -31,7 +31,7 @@ $ ssh dave@127.0.0.1 pwd
 /home/dave
 
 # ls -ld /home/dave
-drwxr-x--- 3 dave dave 4096 Nov 17 05:46 /home/dave
+drwxr-x--- 3 dave dave 4096 Nov 17 19:13 /home/dave
 # grep '^HOME_MODE' /etc/login.defs
 HOME_MODE       0750
 # ls -A /home/dave

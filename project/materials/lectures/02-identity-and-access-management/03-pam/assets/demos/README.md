@@ -17,6 +17,13 @@ sudo apt-get install openssh-server gcc libpam0g-dev libpam-pwquality \
   libpam-google-authenticator oathtool pamtester binutils shellcheck
 ~~~
 
+Для проверок по ssh с приглашением `(user@host) Password:` (keyboard-interactive,
+через PAM) на учебной VM включается `KbdInteractiveAuthentication yes` в
+`/etc/ssh/sshd_config` (демо 11 делает это само), для входа root –
+`PermitRootLogin yes`; после правки – `systemctl reload ssh`. Сценарии проверены
+17.11.2026 на установленной Ubuntu Server 26.04.1 (эталонная ВМ
+`project/scripts/vm/`).
+
 Запуск:
 
 ~~~bash

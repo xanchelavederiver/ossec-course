@@ -14,7 +14,8 @@ $ sudo mkdir demo-cgroup/child
 $ cat demo-cgroup/child/cgroup.controllers
 cpu memory
 $ echo "+pids" | sudo tee demo-cgroup/child/cgroup.subtree_control
-tee: demo-cgroup/child/cgroup.subtree_control: No such file or directory
++pids
+demo-cgroup/child/cgroup.subtree_control: No such file or directory (os error 2)
 
 ===== Уведомление о населённости поддерева =====
 
@@ -22,7 +23,8 @@ $ cat demo-cgroup/cgroup.events
 populated 0
 frozen 0
 $ sleep 200 & echo $! | sudo tee demo-cgroup/child/cgroup.procs
-17431
+[1] 4393
+4393
 $ cat demo-cgroup/cgroup.events
 populated 1
 frozen 0

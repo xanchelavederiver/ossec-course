@@ -22,9 +22,9 @@ defaults:
 внизу каждого слайда (кроме демо) – блок «Источники: [n]» (<Refs ids="…"/>,
 номера по sources.json, клик ведёт на слайд routeAlias: refs и подсвечивает
 источник); упоминания man-страниц – ссылки (<Man p="name(sec)"/>).
-Демонстрационная среда – Ubuntu Server 26.04 LTS (одноразовый контейнер,
-hostname srv, пользователи bob 1001 и x 1002); механизм cgroup2
-делегирован контейнеру целиком. См. assets/captures/README.md.
+Демонстрационная среда – Ubuntu Server 26.04 LTS (эталонная ВМ, установленная
+с ISO; hostname srv, 2 CPU, 2 ГБ; пользователи bob 1001 и x 1002); иерархией
+cgroup2 управляет systemd. См. assets/captures/README.md.
 -->
 
 ---
@@ -352,8 +352,8 @@ limits.conf, потому что это ограничения на сессию
 <TerminalCapture src="captures/01-ulimit-basics.txt" section="Мягкий и жёсткий лимиты" title="bob@srv · soft и hard для -n" fontSize="0.52rem">
   <TCallout :line="2" :col="1" :span="4" :n="1" />
   <TCallout :line="4" :col="1" :span="6" :n="2" />
-  <TCallout :line="9" :col="1" :span="63" :n="3" />
-  <TCallout :line="12" :col="1" :span="70" :n="4" />
+  <TCallout :line="9" :col="1" :span="64" :n="3" />
+  <TCallout :line="12" :col="1" :span="71" :n="4" />
 </TerminalCapture>
 
 </div>
@@ -479,7 +479,7 @@ limits.conf или bashrc.
 <div class="mt-1 space-y-1.5">
 <div><span class="co-ball">1</span> <code>open files</code> (<code>-n</code>) = 1024 – предел числа дескрипторов</div>
 <div><span class="co-ball">2</span> <code>cpu time</code> (<code>-t</code>) – не ограничено</div>
-<div><span class="co-ball">3</span> <code>max user processes</code> (<code>-u</code>) – не ограничено</div>
+<div><span class="co-ball">3</span> <code>max user processes</code> (<code>-u</code>) = 6283 – умолчание ядра, зависит от объёма памяти (здесь 2 ГБ)</div>
 </div>
 </div>
 
@@ -499,9 +499,12 @@ limits.conf или bashrc.
 <!--
 ulimit -a – инвентаризация всех пределов процесса с указанием ключа каждого
 в скобках. Обратить внимание слушателей: по умолчанию nofile=1024
-(ограничен), а cpu и nproc – unlimited; именно поэтому fork bomb и
-бесконечный цикл по умолчанию ничем не сдержаны – к этому вернёмся в
-демонстрациях раздела 2.4. Значения – из того же контейнера, что и
+(ограничен), cpu – unlimited, а nproc = 6283: это умолчание ядро вычисляет из
+объёма памяти (на сервере с большей памятью оно выше). От fork bomb оно спасает лишь
+отчасти: проверка на этом сервере показала, что бомба упирается в предел (fork: retry),
+но к тому моменту около 6 тысяч процессов уже перегружают двухъядерную машину (load
+average – тысячи); бесконечный цикл по умолчанию не сдержан ничем – к этому
+вернёмся в демонстрациях раздела 2.4. Значения – с того же сервера (ВМ, 2 ГБ), что и
 последующие демо.
 -->
 
@@ -598,7 +601,7 @@ layout: section
 <TerminalCapture class="mt-2" src="captures/02-ulimit-examples.txt" section="Форк-бомба (-u)" title="bob@srv · ulimit -u 200" fontSize="0.5rem" padBottom="0.4em">
   <TCallout :line="1" :col="3" :span="13" :n="3" />
   <TCallout :line="2" :col="3" :span="13" :n="4" />
-  <TCallout :line="3" :col="1" :span="51" :rows="2" :n="5" />
+  <TCallout :line="4" :col="1" :span="52" :rows="2" :n="5" />
 </TerminalCapture>
 
 </div>
@@ -628,7 +631,8 @@ stdin/stdout/stderr) с OSError Errno 24 (EMFILE). nproc: предел 200,
 («Resource temporarily unavailable»), система остаётся управляемой. Это
 иллюстрирует разницу «на процесс»: лимит -u считает процессы пользователя,
 поэтому он здесь и спасает – но если бы атакующий работал от многих
-пользователей, нужен был бы cgroup (раздел 3). Демо выполнены в контейнере.
+пользователей, нужен был бы cgroup (раздел 3). Сообщения fork: retry продолжаются,
+пока живы процессы бомбы, – вывод сокращён многоточием.
 -->
 
 ---
@@ -638,8 +642,8 @@ stdin/stdout/stderr) с OSError Errno 24 (EMFILE). nproc: предел 200,
 <div class="grid grid-cols-2 gap-4 mt-2 items-start">
 <div>
 
-<TerminalCapture src="captures/02-ulimit-examples.txt" section="Переполнение диска (-f)" title="bob@srv · ulimit -f 10240" fontSize="0.5rem">
-  <TCallout :line="3" :col="1" :span="38" :n="1" />
+<TerminalCapture src="captures/02-ulimit-examples.txt" section="Переполнение диска (-f)" title="bob@srv · ulimit -f 10240" fontSize="0.43rem">
+  <TCallout :line="3" :col="1" :span="40" :n="1" />
 </TerminalCapture>
 
 <TerminalCapture class="mt-1" src="captures/02-ulimit-examples.txt" section="Потребление памяти (-v)" title="bob@srv · ulimit -v 102400" fontSize="0.48rem">
@@ -689,12 +693,12 @@ SIGKILL; код возврата 137 = 128+9 канонически читает
 <div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-2 items-start">
 <div>
 
-<TerminalCapture src="captures/03-pam-limits.txt" section="Применение лимита при входе по ssh" title="x@srv · hard fsize 1024 (КБ)" fontSize="0.48rem">
+<TerminalCapture src="captures/03-pam-limits.txt" section="Применение лимита при входе по ssh" title="x@srv · hard fsize 1024 (КБ)" fontSize="0.46rem">
   <TCallout :line="3" :col="1" :span="19" :n="1" />
   <TCallout :line="4" :col="1" :span="4" :n="2" />
   <TCallout :line="11" :col="1" :span="1" :n="3" />
-  <TCallout :line="16" :col="1" :span="34" :n="4" />
-  <TCallout :line="18" :col="1" :span="54" :rows="2" :n="5" />
+  <TCallout :line="17" :col="1" :span="34" :n="4" />
+  <TCallout :line="19" :col="1" :span="54" :rows="2" :n="5" />
 </TerminalCapture>
 
 </div>
@@ -1061,9 +1065,9 @@ layout: section
 
 <TerminalCapture src="captures/04-cgroup-basics.txt" section="Создание группы управления" title="bob@srv · mkdir demo-cgroup" fontSize="0.44rem">
   <TCallout :line="1" :col="14" :span="26" :n="1" />
-  <TCallout :line="3" :col="1" :span="22" :rows="16" :n="2" />
-  <TCallout :line="21" :col="1" :span="15" :n="3" />
-  <TCallout :line="23" :col="1" :span="16" :rows="2" :n="4" />
+  <TCallout :line="3" :col="1" :span="22" :rows="17" :n="2" />
+  <TCallout :line="22" :col="1" :span="15" :n="3" />
+  <TCallout :line="24" :col="1" :span="22" :rows="2" :n="4" />
 </TerminalCapture>
 
 </div>
@@ -1090,7 +1094,8 @@ layout: section
 внимание на соглашение об именах из 3.2: cgroup.* – общие, cpu/memory/pids.*
 – контроллеры. cgroup.controllers = «cpu memory pids» – это те контроллеры,
 что родитель (корень) сделал доступными через свой subtree_control.
-cgroup.stat показывает нулевых потомков. Группа пуста – cgroup.procs ничего
+cgroup.stat (из него grep-ом выбраны две строки о потомках; остальные – счётчики
+по подсистемам) показывает нулевых потомков. Группа пуста – cgroup.procs ничего
 не выводит. Какие именно контроллеры доступны, зависит от настройки
 родителя – к этому вернёмся в 3.4.
 -->
@@ -1103,7 +1108,7 @@ cgroup.stat показывает нулевых потомков. Группа �
 <div>
 
 <TerminalCapture src="captures/04-cgroup-basics.txt" section="Добавление процесса в группу" title="bob@srv · echo $$ > cgroup.procs" fontSize="0.47rem">
-  <TCallout :line="4" :col="1" :span="46" :n="1" />
+  <TCallout :line="4" :col="1" :span="47" :n="1" />
   <TCallout :line="5" :col="1" :span="62" :n="2" />
   <TCallout :line="8" :col="1" :span="4" :rows="2" :n="3" />
   <TCallout :line="11" :col="1" :span="1" :n="4" />
@@ -1136,7 +1141,8 @@ write(2) – один процесс). Поучительная деталь: в
 выполняется командой cat, которую bash порождает уже внутри demo-cgroup,
 поэтому cat тоже попадает в группу. pids.current = 2. /proc/$$/cgroup для
 cgroup2 – одна строка 0::/путь; показывает, что bash покинул исходную
-группу сессии (добавление в новую группу автоматически удаляет из прежней).
+группу сессии (добавление в новую группу автоматически удаляет из прежней); последняя
+команда подтверждает это: в группе сессии остались только два процесса sshd этого входа.
 Это прямая иллюстрация правил из 3.2.
 -->
 
@@ -1162,7 +1168,7 @@ cgroup2 – одна строка 0::/путь; показывает, что bas
 
 <TerminalCapture src="captures/04-cgroup-basics.txt" section="Удаление группы" title="bob@srv · rmdir" fontSize="0.46rem">
   <TCallout :line="2" :col="1" :span="77" :n="1" />
-  <TCallout :line="3" :col="1" :span="94" :n="2" />
+  <TCallout :line="3" :col="1" :span="95" :n="2" />
   <TCallout :line="5" :col="1" :span="40" :n="3" />
 </TerminalCapture>
 
@@ -1330,7 +1336,7 @@ layout: section
 
 <TerminalCapture class="mt-2" src="captures/05-cgroup-controllers.txt" section="Ограничение сверху вниз" title="bob@srv · top-down" fontSize="0.46rem">
   <TCallout :line="3" :col="1" :span="10" :n="1" />
-  <TCallout :line="5" :col="1" :span="72" :n="2" />
+  <TCallout :line="6" :col="1" :span="80" :n="2" />
 </TerminalCapture>
 
 </div>
@@ -1389,8 +1395,8 @@ layout: section
 
 <TerminalCapture src="captures/05-cgroup-controllers.txt" section="Уведомление о населённости поддерева" title="bob@srv · cgroup.events populated" fontSize="0.48rem">
   <TCallout :line="2" :col="1" :span="11" :n="1" />
-  <TCallout :line="7" :col="1" :span="11" :n="2" />
-  <TCallout :line="11" :col="1" :span="11" :n="3" />
+  <TCallout :line="8" :col="1" :span="11" :n="2" />
+  <TCallout :line="12" :col="1" :span="11" :n="3" />
 </TerminalCapture>
 
 </div>
@@ -1568,9 +1574,9 @@ cpu включён в subtree_control корня, A и P/Q/R (иначе фай�
 **По одному процессу в P, Q, R:**
 
 <TerminalCapture src="captures/06-cgroup-cpu-quota.txt" section="По одному процессу в P, Q, R" title="bob@srv · pidstat" fontSize="0.46rem">
-  <TCallout :line="6" :col="47" :span="5" :n="1" />
-  <TCallout :line="7" :col="47" :span="5" :n="2" />
-  <TCallout :line="8" :col="47" :span="5" :n="3" />
+  <TCallout :line="10" :col="63" :span="5" :n="1" />
+  <TCallout :line="11" :col="63" :span="5" :n="2" />
+  <TCallout :line="12" :col="63" :span="5" :n="3" />
 </TerminalCapture>
 
 </div>
@@ -1579,7 +1585,7 @@ cpu включён в subtree_control корня, A и P/Q/R (иначе фай�
 **Три процесса в одной группе R:**
 
 <TerminalCapture src="captures/06-cgroup-cpu-quota.txt" section="Три процесса в одной группе R (делят 25%)" title="bob@srv · pidstat" fontSize="0.46rem">
-  <TCallout :line="3" :col="48" :span="4" :rows="3" :n="4" />
+  <TCallout :line="3" :col="63" :span="5" :rows="3" :n="4" />
 </TerminalCapture>
 
 </div>
@@ -1592,7 +1598,7 @@ cpu включён в subtree_control корня, A и P/Q/R (иначе фай�
 <b>его</b> группы
 </div>
 <div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
-<span class="co-ball">4</span> три процесса в <code>R</code> делят её 25 % поровну (≈8 % каждому):
+<span class="co-ball">4</span> три процесса в <code>R</code> делят её 25 % между собой (6 + 13 + 6):
 лимит применяется к <b>совокупному</b> потреблению группы
 </div>
 </div>
@@ -1612,12 +1618,15 @@ cpu включён в subtree_control корня, A и P/Q/R (иначе фай�
 <!--
 Измерение pidstat подтверждает квоты. Сценарий 1: по процессу в P/Q/R – 10,
 15, 25% соответственно, ровно как задано cpu.max. Сценарий 2: три процесса
-в одной R – делят её 25% примерно поровну (~7.8/8.2/8.8, сумма ≈25%). Это
+в одной R – делят её 25% между собой (6.2/12.6/6.2, сумма ≈25%). Неравные доли устойчивы: в пяти
+запусках подряд один процесс получал ≈12,5%, два других – по ≈6%; вероятное объяснение –
+на двух ядрах ВМ два процесса из трёх делят одно ядро. В выводе pidstat
+показан итоговый блок Average. Это
 кульминация раздела и всей лекции: cgroup ограничивает СОВОКУПНОЕ
 потребление группы вне зависимости от числа процессов, тогда как ulimit
 ограничил бы каждый процесс по отдельности и три процесса потребили бы
 втрое больше. Замыкает сюжет, начатый в разделе 1 (таблица двух уровней).
-Стенд: контейнер, stress-ng --cpu, 16 CPU, квота считается от одного ядра.
+Стенд: ВМ Ubuntu Server 26.04, 2 CPU, stress-ng --cpu; квота считается от одного ядра.
 -->
 
 ---
@@ -1677,7 +1686,7 @@ routeAlias: refs
 <div class="text-xs opacity-70 mt-3">
 Нумерация сквозная для всей лекции; ссылки «[n]» внизу слайдов ведут сюда и
 подсвечивают источник. Демонстрации выполнены на Ubuntu Server 26.04 LTS
-(одноразовый контейнер, механизм <code>cgroup2</code> делегирован целиком);
+(эталонная ВМ, установленная с ISO; иерархией <code>cgroup2</code> управляет <code>systemd</code>);
 подробности – в <code>assets/captures/README.md</code>.
 </div>
 

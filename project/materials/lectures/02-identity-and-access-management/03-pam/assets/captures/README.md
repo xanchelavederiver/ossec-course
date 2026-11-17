@@ -1,5 +1,50 @@
 # Захваченные выводы (captures)
 
+> **17.11.2026: захваты 01–14 и 16–21 перезаписаны на эталонной ВМ** – Ubuntu Server
+> 26.04.1 LTS, установленной с ISO (`project/scripts/vm/`, чистый оверлей; ядро
+> 7.0.0-43, Linux-PAM 1.7.0-5ubuntu3.2, OpenSSH 10.2p1, systemd 259), а не в
+> контейнерах `ubuntu:26.04`. Описания ниже, упоминающие контейнеры и прежние даты,
+> относятся к первой записи и сохранены как история; захват 15 (другие
+> дистрибутивы) по-прежнему снят в контейнерах Rocky/Arch/Astra.
+>
+> Состояние стенда: имя узла `srv` (`hostnamectl`), пользователи `bob` 1001,
+> `carol` 1002, `alice` 1003, администратор `ubuntu` 1000 (от его имени идут
+> клиентские команды `$ ssh …`); пароль root задан. В sshd: `PermitRootLogin yes`,
+> `PerSourcePenalties no` (drop-in `sshd_config.d/10-lab.conf`) и
+> `KbdInteractiveAuthentication yes` в `sshd_config` – отсюда приглашения вида
+> `(bob@127.0.0.1) Password:`. Доустановлены `pamtester`, `gcc`, `libpam0g-dev`,
+> `binutils`, `oathtool`, по ходу демо – `libpam-pwquality`,
+> `libpam-google-authenticator`. Запись шла в порядке лекции, членство в группах
+> накапливается: `operators` (GID 1004, bob) существует только в захвате 14;
+> `admins` (GID 1010, alice) – с секции 4 захвата 05; `sudo` (alice) – с захвата 18.
+> Конфигурация PAM после каждого демо восстанавливалась из копии.
+> Интерактивный ввод – через `pexpect`; пароли не отображаются.
+>
+> Что на сервере оказалось иначе, чем в контейнере:
+> - в каталоге модулей 48 файлов (добавились `pam_cap`, `pam_systemd`,
+>   `pam_systemd_loadkey`); в `/etc/pam.d/` есть `cron`, `sudo`, `sudo-i`,
+>   `vmtoolsd` и нет файлов `gdm-*` (GDM на сервере не установлен), в
+>   `/etc/security/` – `capability.conf`;
+> - `common-auth` заканчивается строкой `auth optional pam_cap.so` (профиль
+>   `capability` пакета libpam-cap); она же видна в демо 10 (faillock);
+> - в `/usr/share/pam-configs/` четыре профиля (`capability`, `mkhomedir`,
+>   `systemd`, `unix`), а `common-session` содержит `pam_systemd` сразу после
+>   установки системы;
+> - `gdm-password` (захват 03) показан из пакета: `apt-get download gdm3`, затем
+>   `dpkg-deb --fsys-tarfile … | tar -xO ./etc/pam.d/gdm-password`;
+> - `loginctl list-sessions` показывает и сеансы администратора, поэтому в
+>   захвате 07 вывод отфильтрован `grep -E 'SESSION|bob'`; идентификаторы сеансов
+>   числовые;
+> - листинги файлов PAM сняты через `grep -Ev '^#|^$'` (в файле `sshd` есть пустые
+>   строки);
+> - carol не может запустить `./authprint` из домашнего каталога bob (права
+>   0750), поэтому программа установлена в `/usr/local/bin` (захват 11);
+> - ключ для демо 08 назван `~/.ssh/lab_ed25519`, чтобы он не предлагался серверу
+>   при обычных входах по паролю.
+> Строки журнала `/var/log/auth.log` (rsyslog) показаны с меткой времени,
+> сокращённой до часов; приветствие Ubuntu при входе сокращено до первой строки,
+> строки `Last login` и `Connection to 127.0.0.1 closed.` опущены.
+
 Курируемые транскрипты терминальных сессий для слайдов лекции 3 (PAM); показываются
 компонентом `TerminalCapture` (секции разделены строками `===== Заголовок =====`).
 

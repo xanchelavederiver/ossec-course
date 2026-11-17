@@ -3,13 +3,13 @@
 
 # cd /etc/pam.d
 # lsattr . | grep common
---------------e------- ./common-session-noninteractive
---------------e------- ./common-password
 --------------e------- ./common-session
+--------------e------- ./common-password
 --------------e------- ./common-account
+--------------e------- ./common-session-noninteractive
 --------------e------- ./common-auth
 # ls -l common-password
--rw-r--r-- 1 root root 1620 Oct 25 22:27 common-password
+-rw-r--r-- 1 root root 1620 Nov 17 17:41 common-password
 # echo "# edited by root" >> common-password
 # tail -n 1 common-password
 # edited by root
@@ -18,10 +18,10 @@
 
 # chattr +i common-*
 # lsattr . | grep common
-----i---------e------- ./common-session-noninteractive
-----i---------e------- ./common-password
 ----i---------e------- ./common-session
+----i---------e------- ./common-password
 ----i---------e------- ./common-account
+----i---------e------- ./common-session-noninteractive
 ----i---------e------- ./common-auth
 
 # cp common-password /tmp/common-password
@@ -36,10 +36,10 @@ mv: cannot move 'common-password' to 'common-password.moved': Operation not perm
 
 # chattr -i common-*
 # lsattr . | grep common
---------------e------- ./common-session-noninteractive
---------------e------- ./common-password
 --------------e------- ./common-session
+--------------e------- ./common-password
 --------------e------- ./common-account
+--------------e------- ./common-session-noninteractive
 --------------e------- ./common-auth
 # echo "# edited again" >> common-password
 # tail -n 1 common-password
