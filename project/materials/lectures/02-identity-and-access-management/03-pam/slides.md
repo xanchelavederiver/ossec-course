@@ -2678,6 +2678,12 @@ session – две строки в журнале. Карточка слева: 
 закрепления нарушителя (<MitreAttack t="T1556.003" />).
 </div>
 
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<b>Аналогия.</b> <code>pam_permit</code> можно воспринимать как <code>return 0;</code> в типичной программе на C –
+признак успешного выполнения функции; соответственно <code>pam_deny</code> – как <code>return 1;</code>
+(либо же как <code>return true;</code> и <code>return false;</code>, соответственно).
+</div>
+
 </div>
 <div class="text-xs space-y-2">
 
@@ -2709,7 +2715,9 @@ session – две строки в журнале. Карточка слева: 
 
 <!--
 Два модуля без логики. pam_deny всегда отказывает – код зависит от типа;
-pam_permit всегда успешен. Смысл им придаёт положение в стеке. pam_deny стоит в
+pam_permit всегда успешен. Аналогия для программиста: pam_permit – функция из
+одной строки return 0, pam_deny – return 1; значение возвращается, а вычислений
+за ним нет. Смысл им придаёт положение в стеке. pam_deny стоит в
 конце цепочки sufficient или после прыжков: если ни один источник не подтвердил
 пользователя, отказ обеспечен; он же закрывает службу other, а pam_warn рядом
 оставляет запись в журнале. pam_permit нужен в двух случаях: дать стеку
@@ -2718,6 +2726,93 @@ pam_permit всегда успешен. Смысл им придаёт поло�
 auth sufficient pam_permit.so в начале стека превращает службу в открытую
 дверь; именно так закрепляются в системе после взлома – техника T1556.003,
 к которой вернёмся в разделе 9.
+-->
+
+---
+
+# pam_succeed_if: условие в стеке
+
+<div>
+
+Модуль <Man p="pam_succeed_if(8)" /> проверяет некоторые характеристики учётной записи пользователя.
+Условия проверки (предикаты) задаются аргументами модуля; успех возвращается в случае выполнения 
+**всех** условий.
+
+</div>
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<CodeSnippet src="snippets/mod-succeed-if.txt" lang="text" title="три роли модуля" tag="примеры" :numbers="false" fontSize="0.5rem" class="!mt-0">
+  <TCallout :line="2" :col="56" :span="12" :n="1" />
+  <TCallout :line="5" :col="10" :span="26" :n="2" />
+  <TCallout :line="5" :col="62" :span="19" :n="3" />
+  <TCallout :line="9" :col="56" :span="16" :n="4" />
+  <TCallout :line="9" :col="79" :span="7" :n="5" />
+</CodeSnippet>
+
+<div class="t-table text-xs mt-2">
+
+| Часть условия | Допустимые значения |
+|---|---|
+| поле | `user`, `uid`, `gid`, `shell`, `home`, `ruser`, `rhost`, `tty`, `service` |
+| числа | `<`, `<=`, `eq`, `>=`, `>`, `ne` |
+| строки | `=`, `!=`; по шаблону – `=~`, `!~`; по списку – `in a:b:c`, `notin a:b:c` |
+| группы | `user ingroup группа`, `user notingroup группа` |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
+<b>Аналогия</b>: подобно флагу перехода на N правил, модуль <code>pam_succeed_if</code> позволяет реализовать
+<b>оператор ветвления</b> – наподобие тернарного оператора.
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1">
+<div><span class="co-ball">1</span> условие – три слова: поле, оператор, значение; здесь проверяется, является ли пользователь root</div>
+<div><span class="co-ball">2</span> условие (пользователь состоит в группе admins) не выполнено – перейти через одно правило: проверка второго фактора аутентификации не требуется</div>
+<div><span class="co-ball">3</span> членство в группе – самое частое условие</div>
+<div><span class="co-ball">4</span> проверяется имя службы, а не пользователь</div>
+<div><span class="co-ball">5</span> <code>use_uid</code> – брать атрибуты пользователя, от имени которого работает приложение, а не того, кто входит</div>
+</div>
+</div>
+
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Типы – все четыре. Аргументы журнала: <code>quiet</code> – не записывать результат,
+<code>quiet_success</code> и <code>quiet_fail</code> – только успех или только отказ; <code>audit</code> – записывать имя неизвестного пользователя.
+</div>
+
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
+<b>Условие – не аутентификация.</b> Правило <code>auth sufficient pam_succeed_if.so user = bob</code>
+впускает <code>bob</code> без пароля: модуль уместен как предусловие или переход, но не как решающая проверка.
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-succeed-if man-pam-conf pam-sag" />
+
+<style>
+.t-table code, .text-xs code { font-variant-ligatures: none; }
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+pam_succeed_if мы уже встречали в примере C раздела 2.5; теперь – полностью.
+Модуль не ведёт диалог и не обращается к паролям: он сравнивает атрибуты
+учётной записи или элементы транзакции с заданными значениями. Условие всегда
+состоит из трёх слов; несколько условий подряд объединяются по И. Три роли в
+примере. Первая – предусловие: gdm-password в Ubuntu запрещает графический вход
+root. Вторая – ветвление: с флагом success=ignore default=1 невыполненное
+условие перепрыгивает следующее правило, и второй фактор требуется только от
+членов группы. Третья – исключение по службе: в system-auth RHEL запись о
+сеансе не делается для cron. Красная карточка: модуль проверяет свойства
+учётной записи, а не личность – с флагом sufficient в стеке auth он становится
+обходом пароля.
 -->
 
 ---
@@ -2794,6 +2889,158 @@ root не блокируется – иначе блокировка стала 
 обслуживании администратора. Каталог записей лежит в /run, поэтому
 перезагрузка снимает блокировки. Подключение к стекам Ubuntu, где прыжки
 придётся пересчитать, – демонстрация раздела 6.
+-->
+
+---
+
+# pam_faildelay: задержка после неудачной попытки аутентификации
+
+<div>
+
+Модуль <Man p="pam_faildelay(8)" /> задаёт для службы время, которое libpam выжидает после **неудачной** аутентификации,
+прежде чем вернуть управление приложению. Задержка ограничивает скорость подбора пароля.
+
+</div>
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<CodeSnippet src="snippets/mod-faildelay.txt" lang="text" title="правила с pam_faildelay" tag="примеры" :numbers="false" fontSize="0.5rem" class="!mt-0">
+  <TCallout :line="2" :col="7" :span="8" :n="1" />
+  <TCallout :line="2" :col="34" :span="13" :n="2" />
+  <TCallout :line="5" :col="7" :span="8" :n="3" />
+  <TCallout :line="8" :col="17" :span="16" :n="4" />
+</CodeSnippet>
+
+<div class="t-table text-xs mt-2">
+
+| Аргумент | Действие |
+|---|---|
+| `delay=N` | задержка в **микросекундах**; без аргумента – `FAIL_DELAY` из `/etc/login.defs` |
+| `debug` | подробные сообщения в журнал |
+
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1">
+<div><span class="co-ball">1</span> модуль не принимает решений и возвращает <code>PAM_IGNORE</code> – отсюда флаг <code>optional</code></div>
+<div><span class="co-ball">2</span> три секунды; значение лишь <b>регистрируется</b> вызовом <Man p="pam_fail_delay(3)" /></div>
+<div><span class="co-ball">3</span> с <code>required</code> результат тот же: <code>PAM_IGNORE</code> на итог не влияет</div>
+<div><span class="co-ball">4</span> значение из <Man p="login.defs(5)" /> задаётся в секундах</div>
+</div>
+</div>
+
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+<b>Механизм.</b> Модули сообщают libpam желаемую задержку; при неудаче <Man p="pam_authenticate(3)" /> библиотека
+выжидает <b>наибольшую</b> из заявленных, случайно изменённую в пределах 50 %. При успехе задержки нет.
+<code>pam_unix</code> сам заявляет около двух секунд.
+</div>
+
+<div class="p-2 border-l-4 border-teal-500 bg-teal-500/10">
+Тип – только auth. Модуль дополняет <code>pam_faillock</code>: задержка замедляет каждую попытку,
+блокировка ограничивает их число.
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-faildelay man-pam-fail-delay man-pam-conf" />
+
+<style>
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+Маленький модуль с одной задачей. pam_faildelay ничего не проверяет: он
+вызывает библиотечную функцию pam_fail_delay и тем самым сообщает libpam, какую
+паузу сделать, если аутентификация окажется неудачной. Саму паузу выдерживает
+библиотека – после того как стек auth вернул отказ и перед возвратом в
+приложение; из всех заявленных модулями значений берётся наибольшее и
+случайно изменяется в пределах половины, чтобы по времени ответа нельзя было
+судить о причине отказа. Единицы измерения – источник ошибок: аргумент delay
+задаётся в микросекундах, а FAIL_DELAY в login.defs – в секундах. Модуль
+возвращает PAM_IGNORE, поэтому флаг не важен: в Ubuntu стоит optional, в RHEL –
+required. Задержка и блокировка дополняют друг друга: первая делает подбор
+медленным, вторая – конечным.
+-->
+
+---
+
+# pam_lastlog и pam_lastlog2: последний вход
+
+<div>
+
+Модуль записывает время, терминал и удалённый узел каждого входа и при следующем входе показывает их пользователю:
+`Last login: …`. Исходный <Man p="pam_lastlog(8)" /> заменяется модулем <Man p="pam_lastlog2(8)" />.
+
+</div>
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-4 mt-2 items-start">
+<div>
+
+<CodeSnippet src="snippets/mod-lastlog.txt" lang="text" title="правила с pam_lastlog2 и pam_lastlog" tag="примеры" :numbers="false" fontSize="0.5rem" class="!mt-0">
+  <TCallout :line="2" :col="20" :span="15" :n="1" />
+  <TCallout :line="5" :col="36" :span="6" :n="2" />
+  <TCallout :line="8" :col="20" :span="14" :n="3" />
+  <TCallout :line="11" :col="35" :span="11" :n="4" />
+</CodeSnippet>
+
+<div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<div class="space-y-1">
+<div><span class="co-ball">1</span> в Ubuntu 26.04 прежнего модуля нет; профиль пакета <code>libpam-lastlog2</code> включается при установке</div>
+<div><span class="co-ball">2</span> <code>silent</code> – обновить запись, сообщение не выводить</div>
+<div><span class="co-ball">3</span> системы с Linux-PAM до 1.5.3 используют прежний модуль</div>
+<div><span class="co-ball">4</span> только у <code>pam_lastlog</code>: отказ, если последний вход был более N дней назад; root не блокируется</div>
+</div>
+</div>
+
+</div>
+<div class="text-xs">
+
+<div class="t-table">
+
+| | `pam_lastlog` | `pam_lastlog2` |
+|---|---|---|
+| Хранилище | `/var/log/lastlog` – двоичный файл, запись по номеру UID | `/var/lib/lastlog/lastlog2.db` – база SQLite |
+| Время после 2038 года | не представимо | представимо |
+| Типы | auth, account, session | session |
+| Аргументы | `silent`, `never`, `nodate`, `noterm`, `nohost`, `noupdate`, `showfailed`, `inactive=N` | `silent`, `silent_if=службы`, `database=файл` |
+| Просмотр | <Man p="lastlog(8)" /> | <Man p="lastlog2(8)" /> |
+| Состояние | устарел: с Linux-PAM 1.5.3 по умолчанию не собирается | входит в util-linux |
+
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10">
+<b>Назначение – обнаружение.</b> Сообщение о последнем входе позволяет пользователю заметить вход, которого он
+не совершал; правило обычно имеет флаг <code>optional</code>, чтобы сбой журнала не закрывал вход.
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-lastlog man-pam-lastlog2 linux-pam-news" />
+
+<style>
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+Модуль учёта последнего входа существует в двух поколениях. Прежний pam_lastlog
+хранит записи в двоичном файле /var/log/lastlog, где место записи определяется
+номером UID, а время занимает 32 разряда и после 2038 года не представимо. По
+этой причине в Linux-PAM 1.5.3 модуль объявлен устаревшим и по умолчанию не
+собирается; в Ubuntu 26.04 его нет. Замена – pam_lastlog2 из util-linux: база
+SQLite и только тип session. В примерах – четыре строки из реальных систем:
+профиль Ubuntu, system-login Arch Linux с аргументом silent, файл login Astra
+Linux с прежним модулем и возможность, которой у нового модуля нет, –
+блокировка учётной записи, не использовавшейся заданное число дней. Смысл
+модуля для защиты – обнаружение: строка Last login показывает пользователю
+время и адрес предыдущего входа.
 -->
 
 ---
@@ -2880,6 +3127,15 @@ auth, обходилось бы ключом. Файл создаёт не то�
 
 </div>
 
+<FieldRecord class="mt-2 fr-center" sep=":" size="0.85rem" legendSize="0.68rem" :cols="3"
+  :fields="['право', 'пользователи', 'источники']"
+  :legend="[
+    'право – `+` разрешить или `-` запретить',
+    'пользователи – имена, группы `(имя)`, `ALL`; список через пробел, исключения – `EXCEPT`',
+    'источники – терминалы, имена узлов, адреса и сети, `LOCAL`, `ALL`',
+  ]"
+/>
+
 <div class="grid grid-cols-[1fr_1.1fr] gap-4 mt-2 items-start">
 <div>
 
@@ -2930,6 +3186,7 @@ auth, обходилось бы ключом. Файл создаёт не то�
 <Refs ids="man-pam-access pam-sag man-pam-conf" />
 
 <style>
+.fr-center :deep(.fr-row) { justify-content: center; }
 .t-table { font-size: 0.64rem !important; }
 .t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
 </style>
@@ -3023,6 +3280,16 @@ pam_listfile – самый универсальный из простых мо�
 
 </div>
 
+<FieldRecord class="mt-2 fr-center" sep=";" size="0.85rem" legendSize="0.68rem" :cols="4"
+  :fields="['службы', 'терминалы', 'пользователи', 'время']"
+  :legend="[
+    'службы – имена PAM-служб',
+    'терминалы – имена терминалов; `*` – любой',
+    'пользователи – имена или `@сетевая-группа`',
+    'время – дни и интервал `ЧЧММ-ЧЧММ`, в который доступ разрешён',
+  ]"
+/>
+
 <div class="grid grid-cols-[1fr_1.1fr] gap-4 mt-2 items-start">
 <div>
 
@@ -3062,16 +3329,13 @@ pam_listfile – самый универсальный из простых мо�
 модуль ограничивает начало работы, а не её продолжительность.
 </div>
 
-<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
-Решение опирается на системные часы и часовой пояс узла, а не клиента.
-</div>
-
 </div>
 </div>
 
 <Refs ids="man-pam-time pam-sag man-pam-conf" />
 
 <style>
+.fr-center :deep(.fr-row) { justify-content: center; }
 .t-table { font-size: 0.64rem !important; }
 .t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
 </style>
@@ -3085,8 +3349,87 @@ pam_time отвечает на вопрос «когда». Строка time.co
 для одного пользователя, ночной запрет консоли для всех, кроме root, запрет
 выходных для carol в двух службах. Два ограничения. Во-первых, тип только account –
 правило auth pam_time.so даст PAM_MODULE_UNKNOWN (раздел 3.2). Во-вторых,
-проверка однократна: открытый сеанс модуль не прерывает. Демонстрация –
-раздел 5.3.
+проверка однократна: открытый сеанс модуль не прерывает. Решение опирается на
+системные часы и часовой пояс узла, а не клиента. Демонстрация – раздел 5.3.
+-->
+
+---
+
+# pam_env: переменные окружения сеанса
+
+<div>
+
+Модуль <Man p="pam_env(8)" /> задаёт переменные окружения, с которыми будет запущен сеанс пользователя: значения помещаются
+в окружение PAM-транзакции, откуда приложение передаёт их запускаемой оболочке.
+
+</div>
+
+<div class="grid grid-cols-[1.15fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<CodeSnippet src="snippets/mod-env.txt" lang="text" title="правила и файлы pam_env" tag="пример" :numbers="false" fontSize="0.5rem" class="!mt-0">
+  <TCallout :line="2" :col="31" :span="9" :n="1" />
+  <TCallout :line="3" :col="41" :span="27" :n="2" />
+  <TCallout :line="6" :col="1" :span="5" :n="3" />
+  <TCallout :line="9" :col="13" :span="17" :n="4" />
+  <TCallout :line="9" :col="32" :span="21" :n="5" />
+</CodeSnippet>
+
+<div class="t-table text-xs mt-2">
+
+| Аргумент | Действие |
+|---|---|
+| `conffile=/путь` | другой файл правил вместо `/etc/security/pam_env.conf` (<Man p="pam_env.conf(5)" />) |
+| `envfile=/путь`, `readenv=0\|1` | файл пар `ИМЯ=значение` (по умолчанию `/etc/environment`) и признак его чтения |
+| `user_readenv=0\|1`, `user_envfile=имя` | читать файл пользователя `~/.pam_environment`; по умолчанию выключено |
+| `debug` | подробные сообщения в журнал |
+
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+
+<div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
+<div class="space-y-1">
+<div><span class="co-ball">1</span> читать файл формата <code>ИМЯ=значение</code>, заданный <code>envfile</code>; сначала всегда разбирается <Man p="pam_env.conf(5)" /></div>
+<div><span class="co-ball">2</span> второй вызов: <code>envfile</code> подставляет другой файл пар вместо <code>/etc/environment</code> – язык и региональные настройки</div>
+<div><span class="co-ball">3</span> строка <code>/etc/environment</code>: без подстановок и условий</div>
+<div><span class="co-ball">4</span> формат <Man p="pam_env.conf(5)" />: <code>ПЕРЕМЕННАЯ [DEFAULT=значение] [OVERRIDE=значение]</code>; <code>DEFAULT</code> – значение по умолчанию</div>
+<div><span class="co-ball">5</span> <code>OVERRIDE</code> применяется, если его значение непусто; <code>@{…}</code> – элемент транзакции, <code>${…}</code> – переменная окружения</div>
+</div>
+</div>
+
+<div class="p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Типы – auth и session; в стеке auth модуль действует при вызове <Man p="pam_setcred(3)" />.
+</div>
+
+<div class="p-2 border-l-4 border-red-500 bg-red-500/10">
+<b><code>user_readenv=1</code> небезопасен.</b> Файл пользователя изменяет окружение, в котором исполняются следующие
+модули и сама служба; возможность объявлена устаревшей в Linux-PAM 1.5.0.
+</div>
+
+</div>
+</div>
+
+<Refs ids="man-pam-env man-pam-env-conf man-pam-conf" />
+
+<style>
+.t-table { font-size: 0.64rem !important; }
+.t-table td, .t-table th { padding-top: 0.15em !important; padding-bottom: 0.15em !important; }
+</style>
+
+<!--
+pam_env – модуль обустройства сеанса: он ничего не разрешает и не запрещает, а
+готовит переменные окружения. Источников три, читаются в таком порядке: файл
+правил pam_env.conf, файл простых пар – по умолчанию /etc/environment, – и
+файл пользователя, чтение которого выключено. В login Ubuntu модуль вызывается
+дважды: второй раз – для файла локали. Формат pam_env.conf богаче простых пар:
+у переменной есть значение по умолчанию и значение-замена, в которых допустимы
+ссылки на элементы транзакции – так переменная REMOTEHOST получает имя
+удалённого узла. Важная деталь механизма: модуль пишет не в окружение процесса,
+а в окружение транзакции; в окружение оболочки значения переносит приложение.
+Красная карточка: чтение файла пользователя даёт ему влияние на окружение
+привилегированного процесса – возможность признана устаревшей.
 -->
 
 ---

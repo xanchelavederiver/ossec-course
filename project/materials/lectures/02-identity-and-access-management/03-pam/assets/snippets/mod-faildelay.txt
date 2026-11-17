@@ -1,0 +1,8 @@
+# /etc/pam.d/login (Ubuntu 26.04): 3 секунды, значение – в микросекундах
+auth  optional  pam_faildelay.so delay=3000000
+
+# system-auth (RHEL 10): 2 секунды, первое правило общего стека
+auth  required  pam_faildelay.so delay=2000000
+
+# без аргумента – FAIL_DELAY из /etc/login.defs (в секундах)
+auth  optional  pam_faildelay.so

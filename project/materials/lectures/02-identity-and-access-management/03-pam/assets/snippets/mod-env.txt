@@ -1,0 +1,10 @@
+# /etc/pam.d/login, su (Ubuntu 26.04)
+session  required  pam_env.so readenv=1
+session  required  pam_env.so readenv=1 envfile=/etc/default/locale
+
+# /etc/environment: пары ИМЯ=значение
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# /etc/security/pam_env.conf
+REMOTEHOST  DEFAULT=localhost  OVERRIDE=@{PAM_RHOST}
+PAGER       DEFAULT=less

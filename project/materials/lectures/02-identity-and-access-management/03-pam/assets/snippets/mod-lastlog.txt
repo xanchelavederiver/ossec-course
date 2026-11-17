@@ -1,0 +1,11 @@
+# Ubuntu 26.04: строка профиля пакета libpam-lastlog2 в common-session
+session  optional  pam_lastlog2.so
+
+# Arch Linux, system-login: только запись в базу, без сообщения
+session  optional  pam_lastlog2.so silent
+
+# прежний модуль – Astra Linux SE 1.8, login
+session  optional  pam_lastlog.so
+
+# прежний модуль в стеке account: блокировка после 90 дней без входа
+account  required  pam_lastlog.so inactive=90

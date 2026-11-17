@@ -1,0 +1,10 @@
+# предусловие: графический вход root запрещён (gdm-password, Ubuntu 26.04)
+auth     required                    pam_succeed_if.so user != root quiet_success
+
+# ветвление: второй фактор только для членов группы admins
+auth     [success=ignore default=1]  pam_succeed_if.so quiet user ingroup admins
+auth     required                    pam_google_authenticator.so
+
+# исключение службы: сеансы cron не журналируются (system-auth, RHEL)
+session  [success=1 default=ignore]  pam_succeed_if.so service in crond quiet use_uid
+session  required                    pam_unix.so

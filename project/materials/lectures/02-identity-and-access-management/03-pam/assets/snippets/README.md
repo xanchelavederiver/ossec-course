@@ -81,3 +81,7 @@ as in Ubuntu 26.04):
 | `mod-listfile.txt` | deny list and allow list with `pam_listfile` |
 | `mod-time.txt` | `pam_time` rule and `time.conf` entries |
 | `mod-limits.txt` | `pam_limits` rule and `limits.conf` entries |
+| `mod-succeed-if.txt` | `pam_succeed_if` as a precondition (gdm-password, Ubuntu 26.04), a branch and a service exception (system-auth, RHEL) |
+| `mod-faildelay.txt` | `pam_faildelay` lines of Ubuntu `login` and RHEL 10 `system-auth` (captures 03, 15) |
+| `mod-lastlog.txt` | `pam_lastlog2` (Ubuntu profile, Arch `system-login`) and the deprecated `pam_lastlog` (Astra `login`, `inactive=`) |
+| `mod-env.txt` | `pam_env` rules of Ubuntu `login`, `/etc/environment`, `pam_env.conf` entries |

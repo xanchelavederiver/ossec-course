@@ -313,5 +313,35 @@
     "id": "opensuse-pam-changes",
     "text": "openSUSE Factory: pam.changes – история каталога поставщика: /usr/etc/pam.d (2019), перенос политик в /usr/lib/pam.d (2022), удаление /usr/etc/pam.d (2024); сборка с vendordir=/usr/etc.",
     "url": "https://github.com/bmwiedemann/openSUSE/blob/master/packages/p/pam/pam.changes"
+  },
+  {
+    "id": "man-pam-faildelay",
+    "text": "pam_faildelay(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_faildelay.8.html"
+  },
+  {
+    "id": "man-pam-fail-delay",
+    "text": "pam_fail_delay(3) – Linux-PAM Manual: задержка после неудачной аутентификации.",
+    "url": "https://man7.org/linux/man-pages/man3/pam_fail_delay.3.html"
+  },
+  {
+    "id": "man-pam-lastlog",
+    "text": "pam_lastlog(8) – Linux-PAM Manual.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_lastlog.8.html"
+  },
+  {
+    "id": "man-pam-lastlog2",
+    "text": "pam_lastlog2(8) – util-linux: модуль учёта последнего входа с базой SQLite.",
+    "url": "https://man7.org/linux/man-pages/man8/pam_lastlog2.8.html"
+  },
+  {
+    "id": "linux-pam-news",
+    "text": "Linux-PAM: NEWS – выпуск 1.5.3: модуль pam_lastlog объявлен устаревшим и не собирается по умолчанию.",
+    "url": "https://github.com/linux-pam/linux-pam/blob/v1.7.0/NEWS"
+  },
+  {
+    "id": "man-pam-env-conf",
+    "text": "pam_env.conf(5), environment(5) – Linux-PAM Manual: файлы переменных окружения модуля pam_env.",
+    "url": "https://man7.org/linux/man-pages/man5/pam_env.conf.5.html"
   }
 ]
