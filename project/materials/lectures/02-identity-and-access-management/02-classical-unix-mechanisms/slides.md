@@ -2240,12 +2240,12 @@ layout: section
 
 </div>
 
-<FieldRecord class="mt-3" size="1rem" legendSize="0.78rem" :cols="2"
+<FieldRecord class="mt-2" size="1rem" legendSize="0.78rem" :cols="2"
   :fields="['project', { t: '!', hot: true }, '', 'bob,alice']"
   :legend="[
     'имя группы – ссылка на значения в `/etc/group`',
     { t: 'хеш пароля группы или спец. значение', hot: true },
-    'администраторы группы: меняют пароль и состав (`gpasswd -A`)',
+    'администраторы группы (`gpasswd -A`)',
     'члены группы – дублирует 4-е поле `/etc/group`',
   ]"
 />
@@ -2265,8 +2265,7 @@ layout: section
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
 <b>На практике</b> пароли групп применяются редко: членство (раздел 2.3) надёжнее
-общего секрета – его нельзя выдать одному пользователю и отозвать у другого.
-Пример использования <code>newgrp</code> – в разделе 3.4.
+общего секрета, который нельзя отозвать у одного пользователя. Пример <code>newgrp</code> – раздел 3.4.
 </div>
 
 </v-click>
@@ -2274,16 +2273,16 @@ layout: section
 </div>
 <div>
 
-<TerminalCapture src="captures/17-etc-shadow.txt" section="2" title="Ubuntu Server 26.04 · строки /etc/gshadow">
+<TerminalCapture src="captures/17-etc-shadow.txt" section="2" title="Ubuntu Server 26.04 · строки /etc/gshadow" fontSize="0.5rem">
   <TCallout :line="9" :col="9" :span="1" :n="1" />
   <TCallout :line="9" :col="12" :span="9" :n="2" />
   <TCallout :line="3" :col="6" :span="2" :n="3" />
 </TerminalCapture>
 
 <div class="text-xs opacity-70 mt-1">
-<span class="co-ball">1</span> пароль группы не задан ·
+<span class="co-ball">1</span> пароль не задан ·
 <span class="co-ball">2</span> члены – как в <code>/etc/group</code> ·
-<span class="co-ball">3</span> поле администраторов у всех групп пусто
+<span class="co-ball">3</span> администраторов нет
 </div>
 
 </div>
