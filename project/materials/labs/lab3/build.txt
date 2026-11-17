@@ -1,0 +1,90 @@
+0. Зависимости
+
+  $ apt install sudo
+  $ apt install libpam-pwquality
+
+
+1. Залить .rar в /home/user
+
+  > scp flag.rar user@127.0.0.23:/home/user/secret.txt
+  # chmod 0000 /home/user/secret.txt
+  # chattr +i /home/user/secret.txt
+
+
+2. Зарезать шелл и изменить права chown/chmod
+
+  # mkdir -p /home/user/.bin
+  # chmod 0755 /home/user/.bin
+  # cd /home/user/.bin
+  # 
+  # ln -s /usr/bin/nano .
+  # ln -s /usr/bin/echo .
+  # ln -s /usr/bin/cat .
+  # ln -s /usr/bin/pwd .
+  # ln -s /usr/bin/clear .
+  # ln -s /bin/ls .
+  # ln -s /usr/bin/passwd .
+  # ln -s /usr/bin/whoami .
+  # ln -s /usr/bin/env .
+  # ln -s /usr/bin/id .
+  # ln -s /usr/bin/file .
+  # ln -s /usr/bin/gcc .
+  # ln -s /usr/bin/as .
+  # ln -s /usr/bin/ld .
+  # ln -s /usr/bin/gdb .
+  # 
+  # ln -s /usr/sbin/getcap .
+  # ln -s /usr/sbin/setcap .
+  # ln -s /usr/sbin/capsh .
+  # ln -s /usr/bin/getfattr .
+  # 
+  # ln -s /usr/bin/top .
+  # ln -s /usr/bin/ps .
+  # ln -s /usr/bin/kill .
+  # ln -s /usr/bin/printf .
+  # ln -s /usr/bin/uptime .
+  # ln -s /usr/bin/pinky .
+  # 
+  # rm -rf .bashrc
+  # chown root:root /home/user/.profile
+  # chmod 755 /home/user/.profile
+  # nano /home/user/.profile
+  PATH=$HOME:$HOME/.bin
+  alias alias="printf 'alias is restricted'"
+  
+  # chattr +i /home/user/.profile
+  # usermod -s /bin/rbash user
+  #
+  # chmod 0700 /bin/chown
+  # chmod 0700 /bin/chmod
+
+
+2. Пароли и ограничения на логин
+
+  # passwd user
+  ; laysalmon
+  # passwd root
+  ; #fR08
+  #
+  # nano /etc/security/pwquality.conf
+  minlen = 8
+  dcredit = -2
+  ucredit = -2
+  ocredit = -2
+  maxrepeat = 1
+  retry = 5
+
+  # nano /etc/pam.d/common-auth
+  ...
+  account	requisite		pam_time.so
+  auth	requisite			pam_listfile.so item=user sense=deny file=/root/bannedusers onerr=fail
+  ...
+  # echo "user" > /root/bannedusers
+  # nano /etc/security/time.conf
+  ...
+  *;*;root;!Al0000-2400
+
+
+3. Зачистка
+
+  # cat /dev/null > ~/.bash_history && history -c && exit

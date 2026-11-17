@@ -1,0 +1,37 @@
+## task 1
+
+```console
+$ python3 task1.py
+$ ./task1 task1.exp
+```
+
+## task 2
+
+```console
+$ python3 task2.py
+$ ./task2 task2.exp
+```
+
+## task 3
+
+In a first console:
+```console
+$ ./task3
+Tell me your name:
+%13$016llx
+3f7bb3092abbb400, enter a file to read:
+
+```
+In second console:
+```console
+$ python3 task3.py 3f7bb3092abbb400
+```
+
+Back in the first console:
+```console
+...
+3f7bb3092abbb400, enter a file to read:
+task3.exp
+Reading task3.exp
+$
+```
