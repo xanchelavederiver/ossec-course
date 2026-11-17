@@ -1,0 +1,56 @@
+===== Правило в стеке auth: проверка обоих путей входа =====
+
+# cp -a /etc/pam.d/sshd /root/sshd.pam.bak
+# head -1 /etc/pam.d/sshd
+auth     requisite    pam_listfile.so onerr=fail item=user sense=deny file=/etc/denyusers
+# pamtester sshd bob authenticate
+pamtester: Authentication failure
+# pamtester sshd bob acct_mgmt
+pamtester: account management done.
+
+$ ssh -i ~/.ssh/id_ed25519 bob@127.0.0.1 id
+uid=1001(bob) gid=1001(bob) groups=1001(bob)
+
+===== То же правило в стеке account =====
+
+# grep pam_listfile /etc/pam.d/sshd
+account  required     pam_listfile.so onerr=fail item=user sense=deny file=/etc/denyusers
+# pamtester sshd bob acct_mgmt
+pamtester: Authentication failure
+
+$ ssh -i ~/.ssh/id_ed25519 bob@127.0.0.1 id
+Connection closed by 127.0.0.1 port 22
+
+$ ssh bob@127.0.0.1 id
+(bob@127.0.0.1) Password:
+Connection closed by 127.0.0.1 port 22
+
+# pamtester sshd alice authenticate acct_mgmt
+Password:
+pamtester: successfully authenticated
+pamtester: account management done.
+
+===== Опечатка в имени модуля =====
+
+# grep listfl /etc/pam.d/sshd
+account  required     pam_listflie.so onerr=fail item=user sense=deny file=/etc/denyusers
+
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+Connection closed by 127.0.0.1 port 22
+
+$ ssh root@127.0.0.1 id
+(root@127.0.0.1) Password:
+Connection closed by 127.0.0.1 port 22
+
+# pamtester sshd alice acct_mgmt
+pamtester: Module is unknown
+# grep -o 'PAM adding.*' /var/log/auth.log | tail -1
+PAM adding faulty module: pam_listflie.so
+
+===== Откат из открытого сеанса root =====
+
+# cp -a /root/sshd.pam.bak /etc/pam.d/sshd
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+uid=1003(alice) gid=1003(alice) groups=1003(alice),27(sudo),1010(admins)

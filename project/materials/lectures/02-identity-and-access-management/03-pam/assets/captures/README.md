@@ -8,7 +8,7 @@
 `bob` (UID 1001), `carol` (1002), `alice` (1003). Дополнительно установлены:
 `openssh-server` (PermitRootLogin yes, KbdInteractiveAuthentication yes – для
 демо), `gdm3` (--no-install-recommends, ради файлов `/etc/pam.d/gdm-*`),
-`libpam-google-authenticator`, `oathtool`, `libpam-pwquality` (по ходу демо 05),
+`libpam-google-authenticator`, `oathtool`, `libpam-pwquality` (по ходу демо 09),
 `rsyslog`, `gcc`, `libpam-dev`. Интерактивные сессии записаны через expect;
 пароли при вводе не отображаются и перечислены в комментариях `# …`.
 Табуляция развёрнута (`expand -t 8`), иначе колонки TCallout съезжают.
@@ -25,23 +25,28 @@
 - `04-nologin.txt` – демо 01: `/etc/nologin`, отказ bob, вход root.
 - `05-access-listfile.txt` – демо 02: pam_access (`-:bob:ALL`) и pam_listfile;
   в секции 2 пять одинаковых попыток сведены к показанным.
+  Секции 4–5 (разрешающий список `+:(admins):ALL` / `+:root:LOCAL` / `-:ALL:ALL`,
+  alice – член группы `admins`, GID 1010) дозаписаны 17.11.2026.
 - `06-time.txt` – демо 03: правило `sshd;*;bob;!Al0000-2400`.
 - `07-limits.txt` – демо 04: `hard fsize 1024`, сеанс bob снят целиком
   (приветствие Ubuntu сокращено до первой строки).
-- `08-password-policy.txt` – демо 05: установка libpam-pwquality (вывод apt
+  Секции 3–5 (`maxlogins`) дозаписаны 17.11.2026 в контейнере с systemd
+  (см. ниже): подсчёт сеансов ведёт systemd-logind, сеанс менеджера
+  `systemd --user` учитывается, значение 1 модуль отвергает.
+- `08-password-policy.txt` – демо 09: установка libpam-pwquality (вывод apt
   сокращён до строки Setting up), политика из PAM.pptx (retry=7 minlen=10
   d/u/l/ocredit=-2 dictcheck=0), диалог passwd, pam_pwhistory remember=3,
   `/etc/security/opasswd` (хэши заменены на `<хэши>`).
-- `09-faillock.txt` – демо 06: deny=5/unlock_time=900, прыжок pam_unix
+- `09-faillock.txt` – демо 10: deny=5/unlock_time=900, прыжок pam_unix
   исправлен на success=2; пять одинаковых неудачных попыток свёрнуты в одну
   с ремаркой.
-- `10-totp.txt` – демо 07: google-authenticator для alice (QR-код заменён
+- `10-totp.txt` – демо 11: google-authenticator для alice (QR-код заменён
   ремаркой; секрет и scratch-коды одноразового контейнера показаны как есть),
   подключение к sshd, вход с верным и неверным кодом.
-- `11-authprint.txt` – демо 08: сборка `src/authprint.c`, запуск через other,
+- `11-authprint.txt` – демо 12: сборка `src/authprint.c`, запуск через other,
   собственная служба с pam_listfile (bob разрешён, carol отклонена), строка
   syslog (timestamp сокращён).
-- `12-pam-math.txt` – демо 09: сборка/установка `src/pam_math.c`, служба
+- `12-pam-math.txt` – демо 13: сборка/установка `src/pam_math.c`, служба
   mathtest (клиент – authprint), подключение модуля вторым фактором в sshd.
 - `13-login-paths.txt` – `sshd -V` и `sshd -T` (UsePAM и методы аутентификации
   OpenSSH 10.2p1 по умолчанию); снято 09.11.2026 в свежем контейнере ubuntu:26.04
@@ -74,3 +79,25 @@
   (в неинтерактивном режиме – без сообщения) и пересборка `--force`; снято
   16.11.2026 в свежем контейнере `ubuntu:26.04` (libpam-runtime 1.7.0-5ubuntu3.2,
   `DEBIAN_FRONTEND=noninteractive`).
+- `18-wheel.txt` – демо 05: pam_wheel в `/etc/pam.d/su` (`group=sudo`; alice – член
+  группы sudo, bob – нет), отказ при верном пароле root, запись `FAILED SU`,
+  поведение без `group=` (группы wheel в Ubuntu нет). Пароли перечислены в ремарках.
+- `19-exec-hook.txt` – демо 06: сценарий `/usr/local/sbin/login-hook`, вызываемый
+  pam_exec в стеке session службы sshd, запись в auth.log; вариант с флагом
+  `required` и сценарием, завершающимся с кодом 1.
+- `20-mkhomedir.txt` – демо 07: пользователь `dave` (UID 1004, создан `useradd -M`),
+  профиль `mkhomedir`, `pam-auth-update --enable mkhomedir` (сообщения debconf об
+  отсутствии терминала опущены), каталог после первого входа.
+- `21-safe-edit.txt` – демо 08: правило pam_listfile в стеке auth и в стеке account,
+  проверки `pamtester` и вход bob по ключу ed25519; опечатка в имени модуля
+  (`pam_listflie.so`), записи журнала, откат из копии.
+
+Захваты 18–21 и дозаписанные секции 05/07 сняты 17.11.2026 в контейнерах
+`ubuntu:26.04` (libpam 1.7.0-5ubuntu3.2, openssh-server 1:10.2p1-2ubuntu3.8,
+pamtester 0.1.2-4build1): разрешающий список pam_access – в обычном контейнере,
+остальное – в контейнере с systemd в роли PID 1 (`--privileged`, `/sbin/init`;
+работают systemd-logind и pam_systemd). В sshd дополнительно задано
+`PerSourcePenalties no`: иначе после серии неудачных входов с 127.0.0.1 сервер
+временно отклоняет новые соединения с этого адреса. Строки журнала выведены
+через `grep -o`, поэтому показаны без метки времени и имени узла; приветствие
+Ubuntu сокращено до первой строки, строка `Last login` опущена.

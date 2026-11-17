@@ -1,0 +1,39 @@
+===== pam_wheel: правило в /etc/pam.d/su =====
+
+# id alice
+uid=1003(alice) gid=1003(alice) groups=1003(alice),27(sudo),1010(admins)
+# id bob
+uid=1001(bob) gid=1001(bob) groups=1001(bob)
+# grep pam_wheel /etc/pam.d/su | head -1
+# auth       required   pam_wheel.so
+# grep -v '^#' /etc/pam.d/su | grep -v '^$' | head -2
+auth       sufficient pam_rootok.so
+auth       required   pam_wheel.so group=sudo
+
+===== su: посторонний, член группы, root =====
+
+$ ssh -t bob@127.0.0.1 'su -c id'          # пароли: bob, затем верный пароль root
+(bob@127.0.0.1) Password:
+Password:
+su: Permission denied
+
+$ ssh -t alice@127.0.0.1 'su -c id'        # пароли: alice, затем пароль root
+(alice@127.0.0.1) Password:
+Password:
+uid=0(root) gid=0(root) groups=0(root)
+
+# su bob -c id
+uid=1001(bob) gid=1001(bob) groups=1001(bob)
+# grep -o 'su\[.*FAILED.*' /var/log/auth.log | tail -1
+su[1010]: FAILED SU (to root) bob on pts/1
+
+===== pam_wheel без аргумента group= =====
+
+# grep '^auth.*pam_wheel' /etc/pam.d/su
+auth       required   pam_wheel.so
+# getent group wheel; echo rc=$?
+rc=2
+$ ssh -t alice@127.0.0.1 'su -c id'        # пароли: alice, затем верный пароль root
+(alice@127.0.0.1) Password:
+Password:
+su: Permission denied

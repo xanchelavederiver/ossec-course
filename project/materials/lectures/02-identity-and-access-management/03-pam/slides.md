@@ -43,7 +43,7 @@ layout: default
 2. **Устройство PAM** – библиотека и модули, конфигурация, типы правил и стек, флаги, примеры исполнения, `include` и `substack`
 3. **Распространённые модули** – назначение, основные модули, предоставляемые типы, аргументы
 4. **Типичные конфигурации PAM** – Debian/Ubuntu (`common-*`, `pam-auth-update`), семейство RHEL (`system-auth`, `authselect`), Arch Linux, Astra Linux
-5. **Административные задачи** – `pam_nologin`, `pam_access`, `pam_listfile`, `pam_time`, `pam_limits`
+5. **Административные задачи** – `pam_nologin`, `pam_access`, `pam_listfile`, `pam_time`, `pam_limits`, `pam_wheel`, `pam_exec`, `pam_mkhomedir`, безопасная правка
 
 </div>
 <div>
@@ -60,7 +60,7 @@ layout: default
 <div class="mt-4 p-2 border-l-4 border-sky-500 bg-sky-500/10 text-xs">
 Сквозной пример: сервер Ubuntu 26.04, пользователи <code>bob</code>, <code>alice</code>,
 <code>carol</code>; разделы 5–9 сопровождаются демонстрациями
-(<code>assets/demos/01–09</code>).
+(<code>assets/demos/01–13</code>).
 </div>
 
 <style>
@@ -944,7 +944,7 @@ PAM-aware приложение без своего файла. Консерва�
 
 <div class="text-xs mb-1"><b>Журналирование</b> – syslog, facility <code>auth</code>/<code>authpriv</code>:</div>
 
-<CodeSnippet src="snippets/auth-log-listfile.txt" lang="text" title="/var/log/auth.log" tag="демо 08" :numbers="false" class="!mt-0">
+<CodeSnippet src="snippets/auth-log-listfile.txt" lang="text" title="/var/log/auth.log" tag="демо 12" :numbers="false" class="!mt-0">
   <TCallout :line="2" :col="3" :span="28" :n="1" />
 </CodeSnippet>
 
@@ -2470,7 +2470,7 @@ layout: section
 | <Man p="pam_faillock(8)" /> | счётчик неудачных попыток и временная блокировка | auth, account | 6 |
 | <Man p="pam_nologin(8)" /> | при наличии `/etc/nologin` вход разрешён только root | auth, account | 5.1 |
 | <Man p="pam_securetty(8)" /> | вход root только с терминалов, перечисленных в `/etc/securetty` | auth | 3.2 |
-| <Man p="pam_wheel(8)" /> | `su` только членам группы `wheel` (`sudo`) | auth, account | – |
+| <Man p="pam_wheel(8)" /> | `su` только членам группы `wheel` (`sudo`) | auth, account | 5.5 |
 | <Man p="pam_access(8)" /> | политика по пользователю, группе, хосту и терминалу: `access.conf` | все четыре | 5.2 |
 | <Man p="pam_listfile(8)" /> | разрешить или запретить по списку из файла | все четыре | 5.2, 4.5 |
 | <Man p="pam_time(8)" /> | ограничение по времени суток и дням недели: `time.conf` | account | 5.3 |
@@ -2511,12 +2511,12 @@ listfile, succeed_if – почти все мы увидим в работе в 
 | <Man p="pam_env(8)" /> | переменные окружения из `/etc/environment`, `pam_env.conf` | auth, session | 4 |
 | <Man p="pam_limits(8)" /> | лимиты ресурсов сеанса: `limits.conf` | session | 5.4 |
 | <Man p="pam_systemd(8)" /> | регистрация сеанса в systemd-logind | session | 4 |
-| <Man p="pam_mkhomedir(8)" /> | создать отсутствующий домашний каталог (доменные пользователи) | session | – |
+| <Man p="pam_mkhomedir(8)" /> | создать отсутствующий домашний каталог (доменные пользователи) | session | 5.7 |
 | <Man p="pam_keyinit(8)" />, <Man p="pam_loginuid(8)" /> | связка ключей ядра для сеанса; auid для подсистемы аудита | session | 4 |
 | <Man p="pam_umask(8)" />, <Man p="pam_motd(8)" /> | маска прав новых файлов; сообщение дня | session | 4 |
 | <DebianMan p="pam_pwquality(8)" pkg="libpam-pwquality" /> | качество нового пароля: длина, классы символов, словарь | password | 6 |
 | <Man p="pam_pwhistory(8)" /> | запрет повторного использования прежних паролей | password | 6 |
-| <Man p="pam_exec(8)" /> | запуск внешней программы на любом этапе | все четыре | 4.5 |
+| <Man p="pam_exec(8)" /> | запуск внешней программы на любом этапе | все четыре | 4.5, 5.6 |
 | <Man p="pam_warn(8)" /> | запись в журнал сведений о вызове: служба, пользователь, хост | все четыре | 2.2, 4.4 |
 | <Man p="pam_faildelay(8)" /> | задержка после неудачной попытки | auth | 4 |
 
@@ -4910,9 +4910,13 @@ layout: section
 
 <SectionTOC prefix="5" :current="1" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
-  'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
-  'Лимиты ресурсов: <code>pam_limits</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
 ]" />
 
 ---
@@ -4955,6 +4959,7 @@ layout: section
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10 text-xs">
 <b>Вывод:</b> типовой приём на время обслуживания: один файл закрывает все
 пути входа, использующие <code>pam_nologin</code>; удаление файла открывает их.
+Открытые сеансы не завершаются, а служба <code>su</code> модуль не вызывает.
 </div>
 
 </v-click>
@@ -4963,8 +4968,9 @@ layout: section
 </div>
 
 <SrcRef>
-См. <code>demos/01-nologin.sh</code>. Файл сообщения можно заменить аргументом
-<code>file=</code>; вариант ядра systemd – <code>/run/nologin</code> при останове.
+См. <code>demos/01-nologin.sh</code>. Файл-признак можно заменить аргументом
+<code>file=</code>; systemd создаёт собственный файл <code>/run/nologin</code> на время
+загрузки и перед плановым выключением.
 </SrcRef>
 
 <!--
@@ -4985,9 +4991,13 @@ layout: section
 
 <SectionTOC prefix="5" :current="2" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
-  'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
-  'Лимиты ресурсов: <code>pam_limits</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
 ]" />
 
 ---
@@ -5048,6 +5058,72 @@ layout: section
 
 ---
 
+# Демо 02: разрешающий список pam_access
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/05-access-listfile.txt" section="4" title="demo 02 · правила и подключение" fontSize="0.5rem">
+  <TCallout :line="4" :col="1" :span="14" :n="1" />
+  <TCallout :line="5" :col="1" :span="12" :n="2" />
+  <TCallout :line="6" :col="1" :span="9" :n="3" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/05-access-listfile.txt" section="5" lines="5-17" title="demo 02 · проверка: bob и root" fontSize="0.5rem">
+  <TCallout :line="3" :col="1" :span="38" :n="4" />
+  <TCallout :line="11" :col="50" :span="23" :n="5" />
+  <TCallout :line="13" :col="1" :span="35" :n="6" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> <code>+:(admins):ALL</code> – членам группы <code>admins</code> (<code>alice</code>) вход разрешён отовсюду; скобки обозначают группу</div>
+<div><span class="co-ball">2</span> <code>+:root:LOCAL</code> – root допускается только с локального терминала</div>
+<div><span class="co-ball">3</span> <code>-:ALL:ALL</code> – замыкающий запрет: все, кто не совпал с правилами выше, отклоняются</div>
+<div><span class="co-ball">4</span> <code>bob</code> в группу не входит: пароль принят, соединение закрыто</div>
+<div><span class="co-ball">5</span> root по сети отклонён: источник <code>127.0.0.1</code> не относится к <code>LOCAL</code></div>
+<div><span class="co-ball">6</span> локальная проверка той же записи root проходит – <DebianMan p="pamtester(1)" pkg="pamtester" /> не задаёт удалённого узла</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> применяется <b>первое совпавшее</b> правило, поэтому порядок строк –
+часть политики: запрет <code>-:ALL:ALL</code>, поставленный первым, закрывает
+вход и членам <code>admins</code>.
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/02-access-listfile.sh</code>. Стек account исполняется при любом
+методе аутентификации, поэтому правила действуют и при входе по ключу.
+</SrcRef>
+
+<!--
+Запрет одной учётной записи – частный случай. На практике политику чаще
+формулируют наоборот: перечисляют тех, кому вход разрешён, и запрещают всем
+остальным. Три строки access.conf: членам группы admins можно отовсюду, root –
+только с локального терминала, последняя строка отклоняет всех прочих. Модуль
+просматривает правила сверху вниз и применяет первое совпавшее – отсюда
+значение порядка: если замыкающий запрет окажется первым, до разрешений дело
+не дойдёт, и это проверено на том же стенде. alice, член группы, входит; bob
+отклонён после верного пароля; root по ssh отклонён, потому что сетевой адрес
+не считается локальным источником, и запись в журнале называет и пользователя,
+и источник. Локальная проверка через pamtester для root проходит. Правило стоит
+в стеке account, а он исполняется и при входе по ключу, – в отличие от правила
+на следующем слайде.
+-->
+
+---
+
 # Демо 02: запрет по произвольному списку – pam_listfile
 
 <div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-2 items-start">
@@ -5072,9 +5148,14 @@ layout: section
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
 <b>Сравните:</b> <Man p="pam_access(8)" /> отказал <b>после</b> верного пароля
-(account), <Man p="pam_listfile(8)" /> – <b>до</b> (auth): клиент видит обычное
-«Permission denied», как при неверном пароле. <code>item=</code> принимает
-также <code>group</code>, <code>tty</code>, <code>rhost</code>, <code>shell</code>.
+(account), <Man p="pam_listfile(8)" /> – <b>до</b> (auth): клиент получает то же
+сообщение «Permission denied», что и при неверном пароле.
+</div>
+
+<div class="mt-2 p-2 border-l-4 border-red-500 bg-red-500/10">
+<b>Ограничение:</b> при входе по ключу <code>sshd</code> стек auth не исполняет, и
+правило не действует. Запрет, обязательный при любом методе аутентификации,
+размещают в стеке account (раздел 5.8).
 </div>
 
 </v-click>
@@ -5092,10 +5173,16 @@ layout: section
 Файл со списком – произвольный, аргументами задаём: что сравнивать (item=user),
 смысл списка (sense=deny) и поведение при ошибке чтения (onerr=fail – отказ,
 важный выбор по умолчанию в сторону запрета). Поставили в auth с requisite –
-отказ происходит до проверки пароля, снаружи неотличим от неверного пароля:
-перебор не позволяет даже выяснить, что учётная запись заблокирована. Сравнение
-двух модулей показывает выбор стека как инструмент: account – после пароля,
-auth – до.
+отказ происходит до проверки пароля, и клиент получает то же сообщение, что при
+неверном пароле. Неотличимым такой отказ назвать нельзя: стек прерывается до
+pam_unix, поэтому ответ приходит без задержки, которую модуль вносит после
+неудачи (на стенде – 0,1 с против 2 с), а метод keyboard-interactive
+завершается без запроса – в захвате видно приглашение метода password вместо
+привычного. Сравнение двух модулей показывает выбор стека как инструмент:
+account – после пароля, auth – до. У размещения в auth есть существенное
+ограничение: при входе по ключу sshd проверяет ключ сам и стек auth не
+исполняет, поэтому пользователь с ключом в authorized_keys это правило
+обходит. Проверим это в разделе 5.8 и перенесём правило в стек account.
 -->
 
 ---
@@ -5106,9 +5193,13 @@ layout: section
 
 <SectionTOC prefix="5" :current="3" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
-  'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
-  'Лимиты ресурсов: <code>pam_limits</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
 ]" />
 
 ---
@@ -5162,8 +5253,9 @@ layout: section
 Для демонстрации используем «запрет всегда»: восклицательный знак – отрицание,
 Al0000-2400 – все дни круглосуточно. Модуль снова в account – та же точка, что
 pam_access. Реалистичный вариант – ограничение рабочими часами; к root
-применять осторожно: правило *;*;root;Wd... из PAM.pptx лишит администратора
-входа в выходные – сначала проверяйте на тестовой машине.
+применять осторожно: правило *;*;root;Wd1100-2300 из PAM.pptx оставляет root
+вход только по выходным с 11 до 23 часов, то есть в будни администратор в
+систему не войдёт, – сначала проверяйте на тестовой машине.
 -->
 
 ---
@@ -5174,9 +5266,13 @@ layout: section
 
 <SectionTOC prefix="5" :current="4" :items="[
   'Запрет входа всем: <code>pam_nologin</code>',
-  'Запрет по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
   'Ограничение по времени: <code>pam_time</code>',
-  'Лимиты ресурсов: <code>pam_limits</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
 ]" />
 
 ---
@@ -5214,9 +5310,9 @@ layout: section
 
 <div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
 <b>Вывод:</b> стек session – место «обустройства» сеанса: лимиты наследуются
-всеми процессами пользователя. Так ограничивают и число процессов
-(<code>nproc</code>), открытых файлов (<code>nofile</code>), память – защита
-от исчерпания ресурсов.
+всеми процессами этого сеанса. Так ограничивают и число процессов
+(<code>nproc</code>), открытых файлов (<code>nofile</code>), размер адресного
+пространства (<code>as</code>) – защита от исчерпания ресурсов.
 </div>
 
 </v-click>
@@ -5225,20 +5321,521 @@ layout: section
 </div>
 
 <SrcRef>
-См. <code>demos/04-limits.sh</code>. Лимиты действуют и на root
-(<Man p="pam_limits(8)" />); мягкие (<code>soft</code>) пользователь может
-поднимать до жёстких (<code>hard</code>).
+См. <code>demos/04-limits.sh</code>. На root действует только запись с именем
+<code>root</code>: правила для <code>*</code> и групп к нему не применяются
+(<Man p="limits.conf(5)" />); мягкий лимит (<code>soft</code>) пользователь может
+поднимать до жёсткого (<code>hard</code>).
 </SrcRef>
 
 <!--
-Последняя задача раздела – лимиты ресурсов, пример работы session-стека.
+Четвёртая задача – лимиты ресурсов, пример работы session-стека.
 Правило в limits.conf: домен (пользователь, группа или *), тип (hard/soft),
 ресурс, значение; у нас – жёсткий лимит размера создаваемого файла 1024 КБ.
 pam_limits уже стоит в session-стеке sshd и login. В сеансе bob: ulimit -f
 показывает лимит; маленький файл создаётся, попытка записать 2 МБ убивает dd
 сигналом SIGXFSZ, файл обрезан ровно на мегабайте. Лимиты – не только fsize:
-nproc защищает от fork-бомбы, nofile – от исчерпания дескрипторов. Соответствует
+nproc защищает от fork-бомбы, nofile – от исчерпания дескрипторов. Лимиты
+получают процессы сеанса, открытого через PAM; на службы systemd limits.conf не
+действует (раздел 3.1). На root распространяется только запись с его именем:
+на стенде при правиле для «*» root сохранил значение unlimited. Соответствует
 примеру 4 из PAM.pptx (там python; здесь dd – тот же эффект).
+-->
+
+---
+
+# Демо 04: число сеансов – maxlogins
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/07-limits.txt" section="3" title="demo 04 · лимит и открытые сеансы" fontSize="0.5rem">
+  <TCallout :line="1" :col="9" :span="29" :n="1" />
+  <TCallout :line="4" :col="31" :span="7" :rows="2" :n="2" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/07-limits.txt" section="4" title="demo 04 · второй сеанс bob" fontSize="0.5rem">
+  <TCallout :line="4" :col="1" :span="37" :n="3" />
+  <TCallout :line="8" :col="27" :span="31" :n="4" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/07-limits.txt" section="5" title="demo 04 · значение 1" fontSize="0.5rem">
+  <TCallout :line="7" :col="27" :span="58" :n="5" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> в <code>limits.conf</code> – не более двух одновременных сеансов <code>bob</code></div>
+<div><span class="co-ball">2</span> при одном открытом сеансе ssh у <code>bob</code> числятся два сеанса: пользовательский и сеанс менеджера <code class="whitespace-nowrap">systemd --user</code></div>
+<div><span class="co-ball">3</span> второй вход по ssh: пароль принят, сеанс не открыт – отказ происходит в стеке session</div>
+<div><span class="co-ball">4</span> причина записана в журнал от имени <code>pam_limits(sshd:session)</code></div>
+<div><span class="co-ball">5</span> значение 1 модуль не применяет: вход <code>carol</code> состоялся, в журнале – предупреждение</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> <code>maxlogins</code> – не лимит ядра: сеансы подсчитывает сам модуль,
+и превышение означает отказ во входе. В Ubuntu 26.04 подсчёт ведётся по сеансам
+<code>systemd-logind</code>, включая сеанс менеджера, поэтому значение <i>N</i>
+допускает <i>N</i> − 1 входов.
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/04-limits.sh</code>. Для демонстрации необходим работающий
+<code>systemd-logind</code>: захват снят в контейнере с systemd.
+</SrcRef>
+
+<!--
+Тот же модуль решает и другую задачу – ограничение числа одновременных сеансов.
+maxlogins стоит особняком среди записей limits.conf: это не ресурс ядра, вызова
+setrlimit здесь нет, модуль сам подсчитывает сеансы пользователя и при
+превышении возвращает отказ, то есть сеанс не открывается. Обратите внимание на
+особенность Ubuntu 26.04, выявленную на стенде: модуль считает сеансы по данным
+systemd-logind, а в них входит и сеанс менеджера systemd --user, который
+запускается при первом входе. Поэтому при значении 2 допускается один вход по
+ssh, при значении 3 – два; значение 1 модуль отвергает с предупреждением в
+журнале и вход не ограничивает. Практическое следствие: значение, перенесённое
+из документации без проверки, даёт на единицу меньше сеансов, чем ожидалось.
+-->
+
+---
+layout: section
+---
+
+# 5. Административные задачи
+
+<SectionTOC prefix="5" :current="5" :items="[
+  'Запрет входа всем: <code>pam_nologin</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Ограничение по времени: <code>pam_time</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
+]" />
+
+---
+
+# Демо 05: su только членам группы – pam_wheel
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/18-wheel.txt" section="1" title="demo 05 · правило в /etc/pam.d/su" fontSize="0.5rem">
+  <TCallout :line="6" :col="1" :span="36" :n="1" />
+  <TCallout :line="8" :col="12" :span="24" :n="2" />
+  <TCallout :line="9" :col="23" :span="23" :n="3" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/18-wheel.txt" section="2" title="demo 05 · проверка" fontSize="0.5rem">
+  <TCallout :line="4" :col="1" :span="21" :n="4" />
+  <TCallout :line="9" :col="1" :span="38" :n="5" />
+  <TCallout :line="14" :col="11" :span="23" :n="6" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> в файле службы <code>su</code> Ubuntu правило с <Man p="pam_wheel(8)" /> присутствует как закомментированный образец</div>
+<div><span class="co-ball">2</span> <code>pam_rootok</code> с флагом <code>sufficient</code> стоит первым: вызов от имени root завершается успехом до остальных правил</div>
+<div><span class="co-ball">3</span> правило включено с аргументом <code>group=sudo</code>: условие – членство вызывающего пользователя в группе <code>sudo</code></div>
+<div><span class="co-ball">4</span> <code>bob</code> ввёл <b>верный</b> пароль root и получил отказ: флаг <code>required</code> не прерывает стек, пароль запрашивается в любом случае</div>
+<div><span class="co-ball">5</span> <code>alice</code>, член группы, после того же пароля получает права root</div>
+<div><span class="co-ball">6</span> отказ фиксируется в журнале как неудачная попытка <code>su</code></div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-sky-500 bg-sky-500/10">
+Без аргумента <code>group=</code> модуль проверяет группу <code>wheel</code>, а при её
+отсутствии – группу с GID 0. В Ubuntu группы <code>wheel</code> нет: образец,
+включённый без правки, закрывает <code>su</code> и для <code>alice</code>.
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/05-wheel.sh</code>. Правило относится только к службе <code>su</code>:
+у <code>sudo</code> собственный файл службы (раздел 2.2).
+</SrcRef>
+
+<!--
+Пятая задача относится не к входу в систему, а к смене пользователя. По
+умолчанию команда su требует одного – знания пароля целевой учётной записи.
+pam_wheel добавляет второе условие: вызывающий пользователь должен состоять в
+указанной группе. В Ubuntu правило уже есть в файле службы su в виде
+закомментированного образца. Первая строка стека – pam_rootok с флагом
+sufficient: для root стек завершается успехом сразу, поэтому root переходит к
+любому пользователю без пароля и на него правило не действует. Мы включаем
+образец с аргументом group=sudo. bob вводит правильный пароль root и получает
+отказ; так как флаг required, стек не прерывается и пароль запрашивается –
+посторонний не узнаёт, какое условие не выполнено. alice входит в группу и
+получает права root. Аргумент group= в Ubuntu обязателен по существу: без него
+модуль ищет группу wheel, которой здесь нет, и переходит к группе с
+идентификатором 0, так что su оказывается закрыт для всех обычных
+пользователей – это также проверено на стенде.
+-->
+
+---
+layout: section
+---
+
+# 5. Административные задачи
+
+<SectionTOC prefix="5" :current="6" :items="[
+  'Запрет входа всем: <code>pam_nologin</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Ограничение по времени: <code>pam_time</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
+]" />
+
+---
+
+# Демо 06: обработчик входа – pam_exec
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/19-exec-hook.txt" section="1" title="demo 06 · сценарий и правило" fontSize="0.5rem">
+  <TCallout :line="4" :col="3" :span="26" :n="1" />
+  <TCallout :line="6" :col="20" :span="74" :n="2" />
+  <TCallout :line="8" :col="12" :span="24" :n="3" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/19-exec-hook.txt" section="2" lines="1,5-6" title="demo 06 · вход и запись в журнале" fontSize="0.5rem">
+  <TCallout :line="3" :col="29" :span="47" :n="4" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/19-exec-hook.txt" section="3" lines="4-10" title="demo 06 · сценарий с ошибкой и флаг required" fontSize="0.5rem">
+  <TCallout :line="2" :col="12" :span="24" :n="5" />
+  <TCallout :line="7" :col="1" :span="44" :n="6" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> <Man p="pam_exec(8)" /> вызывает сценарий и при открытии, и при закрытии сеанса; вид события передаётся в <code>PAM_TYPE</code></div>
+<div><span class="co-ball">2</span> сведения о транзакции – в переменных окружения <code>PAM_USER</code>, <code>PAM_SERVICE</code>, <code>PAM_RHOST</code>, <code>PAM_TTY</code></div>
+<div><span class="co-ball">3</span> флаг <code>optional</code>: код завершения сценария не влияет на итог стека</div>
+<div><span class="co-ball">4</span> после входа <code>alice</code> в журнале – кто, через какую службу, откуда</div>
+<div><span class="co-ball">5</span> тот же модуль с флагом <code>required</code> и сценарием с ошибкой</div>
+<div><span class="co-ball">6</span> сеанс не открывается никому: вход по ssh закрыт</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> <code>pam_exec</code> – точка расширения стека без разработки модуля.
+Сценарий исполняется с правами вызывающего процесса (для <code>sshd</code> – root):
+запись в его файл разрешают только root, а флаг выбирают по последствиям сбоя.
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/06-exec-hook.sh</code>. Так же устроена проверка свободного места
+при входе в Astra Linux (раздел 4.5).
+</SrcRef>
+
+<!--
+Шестая задача – выполнить собственное действие при входе пользователя, не
+разрабатывая модуль. pam_exec запускает внешнюю программу и передаёт ей сведения
+о транзакции переменными окружения: имя пользователя, служба, удалённый узел,
+терминал и вид события. В стеке session модуль вызывается дважды – при открытии
+и при закрытии сеанса, поэтому сценарий проверяет PAM_TYPE и реагирует только на
+открытие. Правило добавлено в конец файла sshd с флагом optional, и после входа
+alice в журнале появляется наша запись. Выбор флага здесь не формальность.
+Вторая часть демонстрации: сценарий, завершающийся с ненулевым кодом, и флаг
+required. Вход по ssh закрыт всем, включая администратора: ошибка в
+вспомогательном сценарии становится отказом в обслуживании. Второе
+обстоятельство – права: сценарий исполняется от имени процесса, открывающего
+сеанс, для sshd это root, поэтому файл сценария и каталог, где он лежит, должны
+быть защищены так же, как сама конфигурация PAM. Тот же приём мы видели в
+конфигурации Astra Linux.
+-->
+
+---
+layout: section
+---
+
+# 5. Административные задачи
+
+<SectionTOC prefix="5" :current="7" :items="[
+  'Запрет входа всем: <code>pam_nologin</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Ограничение по времени: <code>pam_time</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
+]" />
+
+---
+
+# Демо 07: домашний каталог – pam_mkhomedir
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/20-mkhomedir.txt" section="1" lines="6-9" title="demo 07 · учётная запись без каталога" fontSize="0.5rem">
+  <TCallout :line="3" :col="1" :span="44" :n="1" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/20-mkhomedir.txt" section="2" lines="1-3,6-11" title="demo 07 · профиль pam-auth-update" fontSize="0.5rem">
+  <TCallout :line="3" :col="1" :span="11" :n="2" />
+  <TCallout :line="7" :col="3" :span="34" :n="3" />
+  <TCallout :line="9" :col="1" :span="56" :n="4" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/20-mkhomedir.txt" section="3" lines="1-8" title="demo 07 · первый вход" fontSize="0.5rem">
+  <TCallout :line="3" :col="1" :span="10" :n="5" />
+  <TCallout :line="6" :col="1" :span="10" :n="6" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> учётная запись <code>dave</code> существует, каталога <code>/home/dave</code> нет: вход проходит, но сеанс открывается в <code>/</code></div>
+<div><span class="co-ball">2</span> профиль <code>mkhomedir</code> входит в поставку libpam выключенным</div>
+<div><span class="co-ball">3</span> включение – командой <DebianMan p="pam-auth-update(8)" pkg="libpam-runtime" />, а не правкой <code>common-session</code> (раздел 4.1)</div>
+<div><span class="co-ball">4</span> в <code>common-session</code> появилось правило типа session с флагом <code>optional</code></div>
+<div><span class="co-ball">5</span> при следующем входе каталог создан, сеанс открыт в нём</div>
+<div><span class="co-ball">6</span> права 0750 соответствуют значению <code>HOME_MODE</code> из <code>/etc/login.defs</code></div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> <Man p="pam_mkhomedir(8)" /> создаёт каталог в момент открытия первого
+сеанса и заполняет его из <code>/etc/skel</code>. Задача типична для учётных записей
+из каталога домена: запись приходит через NSS, а каталога на узле ещё нет.
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/07-mkhomedir.sh</code>. Профиль помечен
+<code>Session-Interactive-Only</code>: в <code>common-session-noninteractive</code>
+правило не попадает.
+</SrcRef>
+
+<!--
+Седьмая задача возникает при централизованном хранении учётных записей.
+Пользователь из каталога домена виден на каждом узле через NSS, но домашнего
+каталога на узле, куда он входит впервые, нет. Мы воспроизводим ситуацию
+локальной учётной записью, созданной без каталога: вход проходит, sshd сообщает,
+что перейти в домашний каталог не удалось, и сеанс открывается в корне. Решение
+– модуль pam_mkhomedir в стеке session. В Ubuntu его не вписывают в common-session
+вручную: в поставке есть готовый профиль, выключенный по умолчанию, и включается
+он командой pam-auth-update – это прямое применение механизма из раздела 4.1.
+После включения первый же вход создаёт каталог с правами из HOME_MODE и копирует
+в него содержимое /etc/skel. Профиль действует только для интерактивных служб:
+в файл common-session-noninteractive, который подключают cron и подобные службы,
+правило не попадает.
+-->
+
+---
+layout: section
+---
+
+# 5. Административные задачи
+
+<SectionTOC prefix="5" :current="8" :items="[
+  'Запрет входа всем: <code>pam_nologin</code>',
+  'Доступ по спискам: <code>pam_access</code> и <code>pam_listfile</code>',
+  'Ограничение по времени: <code>pam_time</code>',
+  'Лимиты ресурсов и сеансов: <code>pam_limits</code>',
+  'Ограничение <code>su</code>: <code>pam_wheel</code>',
+  'Обработчик событий входа: <code>pam_exec</code>',
+  'Домашний каталог при первом входе: <code>pam_mkhomedir</code>',
+  'Безопасная правка конфигурации',
+]" />
+
+---
+
+# Демо 08: проверка правки – стек и путь входа
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/21-safe-edit.txt" section="1" title="demo 08 · правило в стеке auth" fontSize="0.5rem">
+  <TCallout :line="1" :col="3" :span="40" :n="1" />
+  <TCallout :line="5" :col="1" :span="33" :n="2" />
+  <TCallout :line="7" :col="1" :span="35" :n="3" />
+  <TCallout :line="10" :col="1" :span="44" :n="4" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/21-safe-edit.txt" section="2" title="demo 08 · то же правило в стеке account" fontSize="0.5rem">
+  <TCallout :line="2" :col="1" :span="17" :n="5" />
+  <TCallout :line="7" :col="1" :span="38" :n="6" />
+  <TCallout :line="15" :col="1" :span="37" :rows="2" :n="7" />
+</TerminalCapture>
+
+</div>
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1.5">
+<div><span class="co-ball">1</span> до правки сохраняется копия файла службы</div>
+<div><span class="co-ball">2</span> <DebianMan p="pamtester(1)" pkg="pamtester" /> исполняет один названный стек: auth отклоняет <code>bob</code> – правило из демо 02 работает</div>
+<div><span class="co-ball">3</span> стек account того же файла правила не содержит и пропускает <code>bob</code></div>
+<div><span class="co-ball">4</span> вход по ключу: <code>sshd</code> проверяет ключ сам и стек auth не исполняет – <b>запрет обойдён</b></div>
+<div><span class="co-ball">5</span> то же правило перенесено в стек account</div>
+<div><span class="co-ball">6</span> теперь закрыты оба пути – и ключ, и пароль</div>
+<div><span class="co-ball">7</span> контрольная проверка: остальные пользователи проходят оба стека</div>
+</div>
+
+<v-click>
+
+<div class="mt-2 p-2 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Вывод:</b> правку проверяют <b>по каждому пути входа</b>, а не по одному.
+Запрет, обязательный при любом методе аутентификации, размещают в стеке account:
+он исполняется всегда, стек auth – только когда пароль проверяет PAM.
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/08-safe-edit.sh</code>. Операции <code>pamtester</code>:
+<code>authenticate</code>, <code>acct_mgmt</code>, <code>open_session</code>,
+<code>chauthtok</code> – по одной на тип правил.
+</SrcRef>
+
+<!--
+Последняя часть раздела – не новый модуль, а порядок работы. Вернёмся к правилу
+из демо 02: pam_listfile в стеке auth службы sshd. Сначала копия файла. Затем
+проверка утилитой pamtester, которая исполняет ровно тот стек, который ей назван:
+authenticate даёт отказ, правило работает; acct_mgmt проходит, потому что в стеке
+account этого правила нет. И третья проверка, ради которой слайд сделан: вход
+bob по ключу успешен. При аутентификации по ключу sshd проверяет ключ сам и
+стек auth не вызывает, так что правило, стоящее только там, ключом обходится.
+Переносим правило в стек account, который исполняется при любом методе, и
+повторяем проверки: отказ и по ключу, и по паролю; остальные пользователи
+проходят. Вывод общий для всех задач раздела: одного успешного отказа мало,
+правку нужно проверить по каждому пути входа, который есть у службы.
+-->
+
+---
+
+# Демо 08: опечатка закрывает вход всем
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-2 items-start">
+<div>
+
+<TerminalCapture src="captures/21-safe-edit.txt" section="3" lines="1-2,7-15" title="demo 08 · опечатка в имени модуля" fontSize="0.5rem">
+  <TCallout :line="2" :col="23" :span="15" :n="1" />
+  <TCallout :line="6" :col="1" :span="38" :n="2" />
+  <TCallout :line="9" :col="1" :span="28" :n="3" />
+  <TCallout :line="11" :col="1" :span="41" :n="4" />
+</TerminalCapture>
+
+<div class="mt-2" />
+
+<TerminalCapture src="captures/21-safe-edit.txt" section="4" title="demo 08 · откат из открытого сеанса root" fontSize="0.5rem">
+  <TCallout :line="1" :col="3" :span="40" :n="5" />
+</TerminalCapture>
+
+<div class="mt-2 p-2 border-l-4 border-red-500 bg-red-500/10 text-xs">
+<b>Конфигурация PAM применяется немедленно:</b> файл службы читается при каждой
+новой транзакции, поэтому ошибка действует со следующей попытки входа, а
+перезапуск службы её не устраняет.
+</div>
+
+</div>
+<div class="text-xs space-y-2">
+
+<div class="p-3 border-l-4 border-amber-500 bg-amber-500/10">
+<b>Читаем демонстрацию:</b>
+<div class="mt-1 space-y-1">
+<div><span class="co-ball">1</span> переставлены две буквы в имени модуля: файла <code>pam_listflie.so</code> нет</div>
+<div><span class="co-ball">2</span> правило с незагруженным модулем даёт отказ всем, включая root</div>
+<div><span class="co-ball">3</span> <code>pamtester</code> называет причину – модуль неизвестен (раздел 3.2)</div>
+<div><span class="co-ball">4</span> журнал указывает модуль, который не удалось загрузить</div>
+<div><span class="co-ball">5</span> исправить файл можно только из сеанса root, открытого <b>до</b> правки</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="p-3 border-l-4 border-teal-500 bg-teal-500/10">
+<b>Порядок безопасной правки:</b>
+<div class="mt-1 space-y-0.5">
+<div>1. до окончания проверки не закрывать сеанс root;</div>
+<div>2. сохранить копию файла; <code>common-*</code> изменять через <code>pam-auth-update</code>;</div>
+<div>3. проверить каждый затронутый стек утилитой <code>pamtester</code>;</div>
+<div>4. проверить каждый путь входа <b>новым</b> соединением;</div>
+<div>5. причину отказа искать в журнале: <code>модуль(служба:тип)</code>.</div>
+</div>
+</div>
+
+</v-click>
+
+</div>
+</div>
+
+<SrcRef>
+См. <code>demos/08-safe-edit.sh</code>. Сценарии демо выполняют пункты 1–2 сами:
+копия и восстановление – функции <code>backup_file</code> и <code>restore_files</code>.
+</SrcRef>
+
+<!--
+Вторая половина той же демонстрации – самая частая авария при правке PAM.
+В имени модуля переставлены две буквы. Библиотека не находит файл, помечает
+правило как неисправное, и оно возвращает отказ. Правило стоит в стеке account с
+флагом required, поэтому отказ получают все: alice, root, вход и по паролю, и по
+ключу. Сообщение клиенту ничего не объясняет – соединение просто закрывается.
+Причину называют два источника: pamtester сообщает, что модуль неизвестен, а в
+журнале есть запись с именем модуля. Теперь главное: конфигурация читается
+при каждой новой транзакции, поэтому ошибка начала действовать сразу после
+сохранения файла, и перезапуск sshd ничего не меняет. Исправить файл может
+только тот, кто уже находится в системе с правами root, – отсюда первое правило
+справа: сеанс root не закрывают, пока правка не проверена. Остальные пункты
+подытоживают раздел: копия файла, генератор вместо ручной правки общих файлов,
+проверка каждого стека и каждого пути входа, чтение журнала. Далее – парольная
+политика, где эти правила нам сразу понадобятся.
 -->
 
 ---
@@ -5250,12 +5847,12 @@ layout: section
 
 ---
 
-# Демо 05: установка pam_pwquality
+# Демо 09: установка pam_pwquality
 
 <div class="grid grid-cols-[1.45fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/08-password-policy.txt" section="1" title="demo 05 · до и после установки" fontSize="0.5rem">
+<TerminalCapture src="captures/08-password-policy.txt" section="1" title="demo 09 · до и после установки" fontSize="0.5rem">
   <TCallout :line="6" :col="12" :span="22" :n="1" />
   <TCallout :line="8" :col="49" :span="24" :n="2" />
   <TCallout :line="9" :col="69" :span="26" :n="3" />
@@ -5283,7 +5880,7 @@ layout: section
 </div>
 
 <SrcRef>
-См. <code>demos/05-password-policy.sh</code>.
+См. <code>demos/09-password-policy.sh</code>.
 </SrcRef>
 
 <!--
@@ -5321,7 +5918,7 @@ try_first_pass – конвенция передачи пароля по сте�
 
 <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
-<b>Пример политики</b> (демо 05): не короче 10 символов, минимум по 2 цифры,
+<b>Пример политики</b> (демо 09): не короче 10 символов, минимум по 2 цифры,
 прописных, строчных и спецсимвола; словарная проверка отключена ради
 предсказуемости демонстрации: <code>retry=7 minlen=10 dcredit=-2 ucredit=-2
 lcredit=-2 ocredit=-2 dictcheck=0</code>
@@ -5349,12 +5946,12 @@ faillock (далее) и chage из лекции 2.
 
 ---
 
-# Демо 05: политика в действии
+# Демо 09: политика в действии
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/08-password-policy.txt" section="3" title="demo 05 · passwd (пароли перечислены в комментарии)" fontSize="0.5rem">
+<TerminalCapture src="captures/08-password-policy.txt" section="3" title="demo 09 · passwd (пароли перечислены в комментарии)" fontSize="0.5rem">
   <TCallout :line="5" :col="15" :span="51" :n="1" />
   <TCallout :line="11" :col="15" :span="40" :n="2" />
   <TCallout :line="13" :col="15" :span="42" :n="3" />
@@ -5385,7 +5982,7 @@ faillock (далее) и chage из лекции 2.
 </div>
 
 <SrcRef>
-См. <code>demos/05-password-policy.sh</code>; последовательность паролей –
+См. <code>demos/09-password-policy.sh</code>; последовательность паролей –
 из методички (PAM.pptx, пример 5).
 </SrcRef>
 
@@ -5400,12 +5997,12 @@ common-password и действует на passwd, chpasswd, смену паро
 
 ---
 
-# Демо 05: pam_pwhistory – история паролей
+# Демо 09: pam_pwhistory – история паролей
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/08-password-policy.txt" section="4" title="demo 05 · история паролей" fontSize="0.47rem">
+<TerminalCapture src="captures/08-password-policy.txt" section="4" title="demo 09 · история паролей" fontSize="0.47rem">
   <TCallout :line="3" :col="49" :span="39" :n="1" />
   <TCallout :line="17" :col="1" :span="47" :n="2" />
   <TCallout :line="24" :col="1" :span="17" :n="3" />
@@ -5432,7 +6029,7 @@ common-password и действует на passwd, chpasswd, смену паро
 </div>
 
 <SrcRef>
-См. <code>demos/05-password-policy.sh</code>.
+См. <code>demos/09-password-policy.sh</code>.
 </SrcRef>
 
 <!--
@@ -5451,7 +6048,7 @@ common-password и действует на passwd, chpasswd, смену паро
 <div class="grid grid-cols-[1.4fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/09-faillock.txt" section="1" title="demo 06 · faillock.conf и common-auth" fontSize="0.5rem">
+<TerminalCapture src="captures/09-faillock.txt" section="1" title="demo 10 · faillock.conf и common-auth" fontSize="0.5rem">
   <TCallout :line="2" :col="1" :span="8" :n="1" />
   <TCallout :line="5" :col="41" :span="23" :n="2" />
   <TCallout :line="6" :col="10" :span="9" :n="3" />
@@ -5482,7 +6079,7 @@ common-password и действует на passwd, chpasswd, смену паро
 </div>
 
 <SrcRef>
-См. <code>demos/06-faillock.sh</code>. Строка <code>authsucc</code> обнуляет
+См. <code>demos/10-faillock.sh</code>. Строка <code>authsucc</code> обнуляет
 счётчик после успешного входа.
 </SrcRef>
 
@@ -5500,19 +6097,19 @@ pam_unix проверяет, не заблокирован ли пользова
 
 ---
 
-# Демо 06: блокировка в действии
+# Демо 10: блокировка в действии
 
 <div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/09-faillock.txt" section="2" title="demo 06 · пять неудач, затем верный пароль">
+<TerminalCapture src="captures/09-faillock.txt" section="2" title="demo 10 · пять неудач, затем верный пароль">
   <TCallout :line="3" :col="1" :span="21" :n="1" />
   <TCallout :line="5" :col="1" :span="45" :n="2" />
 </TerminalCapture>
 
 <div class="mt-2" />
 
-<TerminalCapture src="captures/09-faillock.txt" section="3" title="demo 06 · счётчик и сброс" lines="1-9" fontSize="0.47rem">
+<TerminalCapture src="captures/09-faillock.txt" section="3" title="demo 10 · счётчик и сброс" lines="1-9" fontSize="0.47rem">
   <TCallout :line="1" :col="3" :span="19" :n="3" />
 </TerminalCapture>
 
@@ -5539,7 +6136,7 @@ pam_unix проверяет, не заблокирован ли пользова
 </div>
 
 <SrcRef>
-См. <code>demos/06-faillock.sh</code>. Счётчики – файлы в <code>/var/run/faillock/</code>,
+См. <code>demos/10-faillock.sh</code>. Счётчики – файлы в <code>/var/run/faillock/</code>,
 сбрасываются перезагрузкой.
 </SrcRef>
 
@@ -5620,12 +6217,12 @@ HMAC(секрет, текущее 30-секундное окно). Совпад�
 
 ---
 
-# Демо 07: настройка TOTP для пользователя
+# Демо 11: настройка TOTP для пользователя
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/10-totp.txt" section="1" title="demo 07 · google-authenticator (alice)" fontSize="0.5rem">
+<TerminalCapture src="captures/10-totp.txt" section="1" title="demo 11 · google-authenticator (alice)" fontSize="0.5rem">
   <TCallout :line="1" :col="24" :span="22" :n="1" />
   <TCallout :line="5" :col="25" :span="32" :n="2" />
   <TCallout :line="8" :col="1" :span="33" :n="3" />
@@ -5655,7 +6252,7 @@ HMAC(секрет, текущее 30-секундное окно). Совпад�
 </div>
 
 <SrcRef>
-См. <code>demos/07-totp-ssh.sh</code>; секрет и коды – из одноразового
+См. <code>demos/11-totp-ssh.sh</code>; секрет и коды – из одноразового
 демо-контейнера.
 </SrcRef>
 
@@ -5671,19 +6268,19 @@ HMAC(секрет, текущее 30-секундное окно). Совпад�
 
 ---
 
-# Демо 07: второй фактор в sshd
+# Демо 11: второй фактор в sshd
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/10-totp.txt" section="2" title="demo 07 · конфигурация sshd">
+<TerminalCapture src="captures/10-totp.txt" section="2" title="demo 11 · конфигурация sshd">
   <TCallout :line="3" :col="25" :span="27" :n="1" />
   <TCallout :line="5" :col="1" :span="32" :n="2" />
 </TerminalCapture>
 
 <div class="mt-2" />
 
-<TerminalCapture src="captures/10-totp.txt" section="3" title="demo 07 · вход: пароль + код" fontSize="0.5rem">
+<TerminalCapture src="captures/10-totp.txt" section="3" title="demo 11 · вход: пароль + код" fontSize="0.5rem">
   <TCallout :line="3" :col="19" :span="18" :n="3" />
   <TCallout :line="8" :col="19" :span="18" :n="4" />
 </TerminalCapture>
@@ -5711,7 +6308,7 @@ HMAC(секрет, текущее 30-секундное окно). Совпад�
 </div>
 
 <SrcRef>
-См. <code>demos/07-totp-ssh.sh</code>. Аргумент <code>nullok</code> у модуля
+См. <code>demos/11-totp-ssh.sh</code>. Аргумент <code>nullok</code> у модуля
 разрешил бы вход не настроившим TOTP пользователям – этап внедрения.
 </SrcRef>
 
@@ -6058,7 +6655,7 @@ libpam_misc делает ровно это; им и воспользуемся.
 <div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-2 items-start">
 <div>
 
-<CodeSnippet src="snippets/authprint-start.c" title="authprint.c" tag="демо 08" fontSize="0.5rem">
+<CodeSnippet src="snippets/authprint-start.c" title="authprint.c" tag="демо 12" fontSize="0.5rem">
   <TCallout :line="4" :col="31" :span="19" :n="1" />
   <TCallout :line="8" :col="50" :span="11" :n="2" />
   <TCallout :line="14" :col="10" :span="18" :n="3" />
@@ -6077,7 +6674,7 @@ libpam_misc делает ровно это; им и воспользуемся.
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
 <span class="co-ball">2</span> <b>Имя службы</b> по умолчанию – <code>authprint</code>; аргумент
 командной строки оставлен для учебных экспериментов со службами
-(демо 09) – в боевой программе имя фиксировано.
+(демо 13) – в боевой программе имя фиксировано.
 </div>
 
 <div class="p-2 border-l-4 border-amber-500 bg-amber-500/10">
@@ -6103,7 +6700,7 @@ libpam_misc делает ровно это; им и воспользуемся.
 Первая половина authprint – подготовка. Структура pam_conv со стандартной
 misc_conv. Пользователь – владелец процесса: getuid + getpwuid, связь с
 идентификаторами из лекции 2. Имя службы по умолчанию authprint; возможность
-передать его аргументом – учебная, чтобы в демо 09 прогнать ту же программу
+передать его аргументом – учебная, чтобы в демо 13 прогнать ту же программу
 через службу mathtest; в реальных программах служба фиксирована (см.
 предупреждение прошлого слайда). Программа соответствует
 pam_authenticated_printf из методички, переписана и прокомментирована.
@@ -6116,7 +6713,7 @@ pam_authenticated_printf из методички, переписана и про
 <div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<CodeSnippet src="snippets/authprint-end.c" title="authprint.c" tag="демо 08" fontSize="0.5rem">
+<CodeSnippet src="snippets/authprint-end.c" title="authprint.c" tag="демо 12" fontSize="0.5rem">
   <TCallout :line="2" :col="10" :span="25" :n="1" />
   <TCallout :line="6" :col="14" :span="22" :n="2" />
   <TCallout :line="11" :col="51" :span="22" :n="3" />
@@ -6177,18 +6774,18 @@ pam_acct_mgmt нельзя пропускать: верный пароль не 
 
 ---
 
-# Демо 08: сборка и запуск
+# Демо 12: сборка и запуск
 
 <div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/11-authprint.txt" section="1" title="demo 08 · сборка">
+<TerminalCapture src="captures/11-authprint.txt" section="1" title="demo 12 · сборка">
   <TCallout :line="1" :col="38" :span="16" :n="1" />
 </TerminalCapture>
 
 <div class="mt-2" />
 
-<TerminalCapture src="captures/11-authprint.txt" section="2" title="demo 08 · запуск: служба other">
+<TerminalCapture src="captures/11-authprint.txt" section="2" title="demo 12 · запуск: служба other">
   <TCallout :line="1" :col="3" :span="11" :n="2" />
   <TCallout :line="3" :col="1" :span="24" :n="3" />
   <TCallout :line="7" :col="1" :span="40" :n="4" />
@@ -6218,7 +6815,7 @@ SGID-помощник <Man p="unix_chkpwd(8)" />), а не наш код.
 </div>
 
 <SrcRef>
-См. <code>demos/08-authprint.sh</code>; исходный код – <code>assets/src/authprint.c</code>.
+См. <code>demos/12-authprint.sh</code>; исходный код – <code>assets/src/authprint.c</code>.
 </SrcRef>
 
 <!--
@@ -6233,12 +6830,12 @@ pam_unix через свой SGID-помощник unix_chkpwd; программ
 
 ---
 
-# Демо 08: собственная служба authprint
+# Демо 12: собственная служба authprint
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/11-authprint.txt" section="3" title="demo 08 · /etc/pam.d/authprint" fontSize="0.5rem">
+<TerminalCapture src="captures/11-authprint.txt" section="3" title="demo 12 · /etc/pam.d/authprint" fontSize="0.5rem">
   <TCallout :line="3" :col="37" :span="58" :n="1" />
   <TCallout :line="4" :col="1" :span="20" :n="2" />
   <TCallout :line="13" :col="1" :span="40" :n="3" />
@@ -6269,7 +6866,7 @@ login и sshd: ей можно назначить любой стек – спи
 </div>
 
 <SrcRef>
-См. <code>demos/08-authprint.sh</code>.
+См. <code>demos/12-authprint.sh</code>.
 </SrcRef>
 
 <!--
@@ -6396,7 +6993,7 @@ pam_error, pam_info – обёртки над функцией диалога; p
 <div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-2 items-start">
 <div>
 
-<CodeSnippet src="snippets/pam_math-auth1.c" title="pam_math.c" tag="демо 09" fontSize="0.5rem">
+<CodeSnippet src="snippets/pam_math-auth1.c" title="pam_math.c" tag="демо 13" fontSize="0.5rem">
   <TCallout :line="1" :col="1" :span="33" :rows="2" :n="1" />
   <TCallout :line="14" :col="13" :span="27" :n="2" />
   <TCallout :line="18" :col="10" :span="31" :n="3" />
@@ -6455,7 +7052,7 @@ pam_error, pam_info – обёртки над функцией диалога; p
 <div class="grid grid-cols-[1.35fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<CodeSnippet src="snippets/pam_math-auth2.c" title="pam_math.c" tag="демо 09" fontSize="0.5rem">
+<CodeSnippet src="snippets/pam_math-auth2.c" title="pam_math.c" tag="демо 13" fontSize="0.5rem">
   <TCallout :line="3" :col="27" :span="18" :n="1" />
   <TCallout :line="13" :col="9" :span="33" :n="2" />
   <TCallout :line="17" :col="5" :span="11" :n="3" />
@@ -6510,19 +7107,19 @@ pam_error, pam_info – обёртки над функцией диалога; p
 
 ---
 
-# Демо 09: сборка, установка, служба
+# Демо 13: сборка, установка, служба
 
 <div class="grid grid-cols-[1.3fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/12-pam-math.txt" section="1" title="demo 09 · сборка и установка" fontSize="0.5rem">
+<TerminalCapture src="captures/12-pam-math.txt" section="1" title="demo 13 · сборка и установка" fontSize="0.5rem">
   <TCallout :line="1" :col="13" :span="13" :n="1" />
   <TCallout :line="5" :col="30" :span="35" :n="2" />
 </TerminalCapture>
 
 <div class="mt-2" />
 
-<TerminalCapture src="captures/12-pam-math.txt" section="2" title="demo 09 · служба mathtest: клиент – authprint" fontSize="0.5rem">
+<TerminalCapture src="captures/12-pam-math.txt" section="2" title="demo 13 · служба mathtest: клиент – authprint" fontSize="0.5rem">
   <TCallout :line="2" :col="21" :span="18" :n="3" />
   <TCallout :line="6" :col="1" :span="26" :n="4" />
   <TCallout :line="10" :col="24" :span="1" :n="5" />
@@ -6552,7 +7149,7 @@ pam_error, pam_info – обёртки над функцией диалога; p
 </div>
 
 <SrcRef>
-См. <code>demos/09-pam-math.sh</code>; исходный код – <code>assets/src/pam_math.c</code>.
+См. <code>demos/13-pam-math.sh</code>; исходный код – <code>assets/src/pam_math.c</code>.
 </SrcRef>
 
 <!--
@@ -6567,12 +7164,12 @@ Authentication failure. Приложение и модуль не знают д�
 
 ---
 
-# Демо 09: модуль как второй фактор в sshd
+# Демо 13: модуль как второй фактор в sshd
 
 <div class="grid grid-cols-[1.25fr_1fr] gap-4 mt-1 items-start">
 <div>
 
-<TerminalCapture src="captures/12-pam-math.txt" section="3" title="demo 09 · pam_math в стеке sshd">
+<TerminalCapture src="captures/12-pam-math.txt" section="3" title="demo 13 · pam_math в стеке sshd">
   <TCallout :line="3" :col="25" :span="11" :n="1" />
   <TCallout :line="7" :col="17" :span="25" :n="2" />
 </TerminalCapture>
@@ -6608,7 +7205,7 @@ Authentication failure. Приложение и модуль не знают д�
 </div>
 
 <SrcRef>
-См. <code>demos/09-pam-math.sh</code>.
+См. <code>demos/13-pam-math.sh</code>.
 </SrcRef>
 
 <!--

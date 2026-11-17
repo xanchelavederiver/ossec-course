@@ -20,7 +20,7 @@ printf '\n--- 1. build and install the module ---\n'
 run gcc -Wall -fPIC -shared "$SRC_DIR/pam_math.c" -o "$DEMO_TMP/pam_math.so" -lpam
 run install -m 644 "$DEMO_TMP/pam_math.so" "$MODDIR/"
 
-printf '\n--- 2. test service (use authprint from demo 08 or pamtester) ---\n'
+printf '\n--- 2. test service (use authprint from demo 12 or pamtester) ---\n'
 cat > /etc/pam.d/mathtest <<'EOF'
 auth     required   pam_math.so max=50
 account  required   pam_permit.so
@@ -31,6 +31,6 @@ printf 'Run:  su - %s -c "authprint mathtest"   # answer the arithmetic prompt\n
 printf '\n--- 3. the module as a second factor for sshd ---\n'
 sed -i '/^@include common-auth/a auth\trequired\tpam_math.so max=50' /etc/pam.d/sshd
 run grep pam_math /etc/pam.d/sshd
-printf 'Needs KbdInteractiveAuthentication yes (see demo 07).\n'
+printf 'Needs KbdInteractiveAuthentication yes (see demo 11).\n'
 printf 'Try:  ssh %s@<vm> id   # Password: then the math prompt\n' "$DEMO_USER"
 pause_demo

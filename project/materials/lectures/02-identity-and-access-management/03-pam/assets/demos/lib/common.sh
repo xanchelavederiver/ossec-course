@@ -72,6 +72,12 @@ new_user() {
 }
 remove_user() {
   if [[ ${DEMO_CREATED:-0} == 1 ]]; then
+    # A finished ssh session leaves "systemd --user" running for a few seconds;
+    # userdel refuses to remove an account that still owns processes.
+    if command -v loginctl >/dev/null; then
+      loginctl terminate-user "$DEMO_USER" 2>/dev/null
+      local i; for i in 1 2 3 4 5; do pgrep -u "$DEMO_USER" >/dev/null || break; sleep 1; done
+    fi
     userdel -r "$DEMO_USER" 2>/dev/null || userdel "$DEMO_USER" || {
       printf 'Cleanup failed: remove %s manually before reusing VM\n' "$DEMO_USER" >&2
       return 1

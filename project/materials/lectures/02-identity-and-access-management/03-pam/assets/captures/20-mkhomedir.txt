@@ -1,0 +1,41 @@
+===== Учётная запись без домашнего каталога =====
+
+# getent passwd dave
+dave:x:1004:1004::/home/dave:/bin/bash
+# ls -d /home/dave
+ls: cannot access '/home/dave': No such file or directory
+
+$ ssh dave@127.0.0.1 pwd
+(dave@127.0.0.1) Password:
+Could not chdir to home directory /home/dave: No such file or directory
+/
+
+===== pam-auth-update: профиль mkhomedir =====
+
+# cat /usr/share/pam-configs/mkhomedir
+Name: Create home directory on login
+Default: no
+Priority: 0
+Session-Type: Additional
+Session-Interactive-Only: yes
+Session:
+        optional                        pam_mkhomedir.so
+# pam-auth-update --enable mkhomedir
+# grep mkhomedir /etc/pam.d/common-session
+session optional                        pam_mkhomedir.so
+
+===== Первый вход: каталог создан =====
+
+$ ssh dave@127.0.0.1 pwd
+(dave@127.0.0.1) Password:
+/home/dave
+
+# ls -ld /home/dave
+drwxr-x--- 3 dave dave 4096 Nov 17 05:46 /home/dave
+# grep '^HOME_MODE' /etc/login.defs
+HOME_MODE       0750
+# ls -A /home/dave
+.bash_logout
+.bashrc
+.cache
+.profile

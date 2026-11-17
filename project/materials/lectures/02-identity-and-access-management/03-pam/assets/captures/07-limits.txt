@@ -20,3 +20,33 @@ File size limit exceeded   (core dumped) dd if=/dev/zero of=big bs=1M count=2
 bob@srv:/tmp$ ls -l small big
 -rw-rw-r-- 1 bob bob 1048576 Oct 25 19:12 big
 -rw-rw-r-- 1 bob bob  524288 Oct 25 19:12 small
+===== pam_limits: число одновременных сеансов =====
+
+# echo 'bob    hard    maxlogins    2' >> /etc/security/limits.conf
+# loginctl list-sessions          # первый сеанс bob по ssh уже открыт
+SESSION  UID USER SEAT LEADER CLASS   TTY IDLE SINCE
+    c10 1001 bob  -    325    user    -   no   -
+    c11 1001 bob  -    332    manager -   no   -
+
+2 sessions listed.
+
+===== Второй сеанс bob: отказ =====
+
+$ ssh bob@127.0.0.1
+(bob@127.0.0.1) Password:
+Welcome to Ubuntu 26.04.1 LTS (GNU/Linux 7.0.0-43-generic x86_64)
+There were too many logins for 'bob'.
+Connection to 127.0.0.1 closed.
+
+# grep -o 'pam_limits.*' /var/log/auth.log | tail -1
+pam_limits(sshd:session): Too many logins (max 2) for bob
+
+===== maxlogins 1 при systemd-logind =====
+
+# tail -1 /etc/security/limits.conf
+carol    hard    maxlogins    1
+$ ssh carol@127.0.0.1 id
+(carol@127.0.0.1) Password:
+uid=1002(carol) gid=1002(carol) groups=1002(carol)
+# grep -o 'pam_limits.*' /var/log/auth.log | tail -1
+pam_limits(sshd:session): Maxlogin limit needs to be 2 or higher with systemd-logind

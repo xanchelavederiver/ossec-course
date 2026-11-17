@@ -5,8 +5,8 @@ Library snippets come from **Linux-PAM v1.7.0** – the version packaged in
 Ubuntu 26.04 (1.7.0-5ubuntu3.2); source tree: sparse clone in
 `.sources/linux-pam` (tag `v1.7.0`). Links on the slides point to
 `github.com/linux-pam/linux-pam/blob/v1.7.0/…`. Snippets of the lecture's own
-programs are cut from `assets/src/authprint.c` (demo 08) and
-`assets/src/pam_math.c` (demo 09).
+programs are cut from `assets/src/authprint.c` (demo 12) and
+`assets/src/pam_math.c` (demo 13).
 
 Format: lines are copied byte-for-byte; a marker line `@@ <n>` says the
 following lines are file lines `<n>, <n+1>, …` (at the top of the file it only
@@ -47,7 +47,7 @@ Text snippets (rendered with `lang="text"`, no line numbers):
 
 | Snippet | Source |
 |---|---|
-| `auth-log-listfile.txt` | syslog record of demo 08 (`assets/captures/11-authprint.txt`), wrapped for the slide |
+| `auth-log-listfile.txt` | syslog record of demo 12 (`assets/captures/11-authprint.txt`), wrapped for the slide |
 | `pam-conf-controls.txt` | `doc/man/pam.conf-syntax.xml`, lines 349–377: short control flags and their bracket forms |
 | `sag-other.conf` | `doc/sag/Linux-PAM_SAG.xml`, lines 359–369: conservative `/etc/pam.d/other` |
 

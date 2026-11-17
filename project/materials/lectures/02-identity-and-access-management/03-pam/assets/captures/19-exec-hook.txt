@@ -1,0 +1,35 @@
+===== pam_exec: сценарий и правило =====
+
+# cat /usr/local/sbin/login-hook
+#!/bin/sh
+# вызывается pam_exec: сведения о транзакции – в переменных PAM_*
+[ "$PAM_TYPE" = open_session ] || exit 0
+logger -p auth.notice -t login-hook \
+  "session opened: user=$PAM_USER service=$PAM_SERVICE rhost=${PAM_RHOST:-local} tty=$PAM_TTY"
+# tail -1 /etc/pam.d/sshd
+session    optional     pam_exec.so /usr/local/sbin/login-hook
+
+===== pam_exec: вход и запись в журнале =====
+
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+uid=1003(alice) gid=1003(alice) groups=1003(alice),27(sudo),1010(admins)
+
+# grep -o 'login-hook.*' /var/log/auth.log | tail -1
+login-hook: session opened: user=alice service=sshd rhost=127.0.0.1 tty=ssh
+
+===== pam_exec: сценарий с ошибкой и флаг required =====
+
+# cat /usr/local/sbin/bad-hook
+#!/bin/sh
+exit 1
+# tail -1 /etc/pam.d/sshd
+session    required     pam_exec.so /usr/local/sbin/bad-hook
+
+$ ssh alice@127.0.0.1 id
+(alice@127.0.0.1) Password:
+Welcome to Ubuntu 26.04.1 LTS (GNU/Linux 7.0.0-43-generic x86_64)
+/usr/local/sbin/bad-hook failed: exit code 1
+
+# grep -o 'pam_exec.*' /var/log/auth.log | tail -1
+pam_exec(sshd:session): /usr/local/sbin/bad-hook failed: exit code 1
