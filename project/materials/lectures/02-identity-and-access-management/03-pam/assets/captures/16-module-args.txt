@@ -92,7 +92,7 @@ auth    required        pam_unix.so
 Password:                          # пустой пароль
 pamtester: Authentication failure
 # tail -n 1 /var/log/auth.log
-19:06:08 srv pamtester: pam_unix(demo-k:auth): authentication failure; logname=ubuntu uid=0 euid=0 tty= ruser= rhost=  user=alice
+19:06:08 srv pamtester: pam_unix(demo-k:auth): authentication failure; logname=ubuntu … user=alice
 
 # cat /etc/pam.d/demo-k2
 auth    required        pam_unix.so nullok

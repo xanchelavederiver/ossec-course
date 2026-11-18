@@ -593,11 +593,11 @@ layout: section
 
 | Расположение | Назначение |
 |---|---|
-| <span class="co-ball">1</span> `/etc/pam.d/` | основной каталог: политики служб под управлением администратора, **по файлу на службу** |
-| <span class="co-ball">2</span> `/etc/pam.conf` | старый единый файл конфигурации |
-| <span class="co-ball">3</span> `/usr/lib/pam.d/` | политики пакетов (`polkit-1`, `systemd-user`); просматривается **всегда** (Linux-PAM ≥ 1.2) |
-| `<vendordir>/pam.d/` | дополнительный каталог поставщика – только в сборках с опцией `vendordir` |
-| <span class="co-ball">4</span> `/etc/security/` | файлы параметров отдельных модулей |
+| <span class="co-ball">1</span> `/etc/pam.d/` | основной каталог администратора: **по файлу на службу** |
+| <span class="co-ball">2</span> `/etc/pam.conf` | старый единый файл |
+| <span class="co-ball">3</span> `/usr/lib/pam.d/` | политики пакетов; просматривается **всегда** (Linux-PAM ≥ 1.2) |
+| `<vendordir>/pam.d/` | каталог поставщика – только при сборке с `vendordir` |
+| <span class="co-ball">4</span> `/etc/security/` | файлы параметров модулей |
 | `/usr/lib/<triplet>/security/`, `/usr/lib64/security/` | модули `pam_*.so` (см. слайд 11) |
 
 </div>
@@ -4094,7 +4094,7 @@ common-password есть точка подключения парольной п
 
 <TerminalCapture src="captures/17-pam-auth-update.txt" section="Профили" title="Ubuntu Server 26.04 · профили и шаблон common-auth" fontSize="0.45rem" class="!mt-0">
   <TCallout :line="1" :col="6" :span="23" :n="1" />
-  <TCallout :line="8" :col="1" :span="12" :rows="2" :n="2" />
+  <TCallout :line="8" :col="1" :span="13" :rows="2" :n="2" />
   <TCallout :line="10" :col="1" :span="18" :n="3" />
   <TCallout :line="12" :col="10" :span="11" :n="4" />
   <TCallout :line="13" :col="1" :span="13" :n="5" />

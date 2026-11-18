@@ -29,7 +29,8 @@ Writing superblocks and filesystem accounting information: done
 # debugfs -R "stat file.txt" $LOOP 2>/dev/null | grep -A 1 "BLOCKS:"
 BLOCKS:
 (0):1037
-# OFFSET=$(debugfs -R "stat file.txt" $LOOP 2>/dev/null | grep -A 1 "BLOCKS:" | tail -n 1 | cut -d ":" -f 2)
+# OFFSET=$(debugfs -R "stat file.txt" $LOOP 2>/dev/null | grep -A 1 "BLOCKS:" \
+    | tail -n 1 | cut -d ":" -f 2)
 # BS=$(dumpe2fs $LOOP 2>/dev/null | grep "Block size" | awk "{print \$3}")
 # echo "Block offset: $OFFSET  Block size: $BS"
 Block offset: 1037  Block size: 4096

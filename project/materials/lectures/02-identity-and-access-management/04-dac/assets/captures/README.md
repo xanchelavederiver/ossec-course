@@ -74,3 +74,8 @@
 - `15-acl-mask.txt` – chmod↔маска, `#effective`, маска в выводе `ls`.
 - `16-acl-default.txt` – default ACL: наследование, umask не используется,
   независимость списков, `system.posix_acl_default`.
+
+Курирование для ширины терминала (17.11.2026): в `09-chattr-append.txt` метки времени
+`auth.log` сокращены до `ЧЧ:ММ:СС`; в `13-acl-basics.txt` значение
+`system.posix_acl_access` сокращено многоточием; в `11-secure-delete.txt` длинная команда
+`OFFSET=$(…)` перенесена на вторую строку через `\`.

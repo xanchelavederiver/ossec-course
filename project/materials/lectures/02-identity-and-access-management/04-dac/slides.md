@@ -341,7 +341,7 @@ layout: section
 <TerminalCapture src="captures/01-file-perms.txt" section="1" title="bob@srv · ELF без права чтения" fontSize="0.55rem">
   <TCallout :line="2" :col="3" :span="10" :n="1" />
   <TCallout :line="5" :col="1" :span="12" :n="2" />
-  <TCallout :line="8" :col="1" :span="25" :n="3" />
+  <TCallout :line="8" :col="1" :span="26" :n="3" />
 </TerminalCapture>
 
 </div>
@@ -384,9 +384,9 @@ argv[0]; переименованная копия отвечает «unknown pr
 <div>
 
 <TerminalCapture src="captures/01-file-perms.txt" section="2" title="bob@srv · скрипты: bash и python" fontSize="0.5rem">
-  <TCallout :line="4" :col="1" :span="31" :n="1" />
+  <TCallout :line="4" :col="1" :span="32" :n="1" />
   <TCallout :line="6" :col="1" :span="9" :n="2" />
-  <TCallout :line="14" :col="1" :rows="3" :span="40" :n="3" />
+  <TCallout :line="14" :col="1" :rows="3" :span="66" :n="3" />
   <TCallout :line="20" :col="1" :span="18" :n="4" />
 </TerminalCapture>
 
@@ -435,7 +435,7 @@ argv[0]; переименованная копия отвечает «unknown pr
 
 <TerminalCapture src="captures/02-dir-perms.txt" section="2" title="bob@srv · x без r" fontSize="0.5rem" padBottom="0.4em">
   <TCallout :line="5" :col="1" :span="10" :n="4" />
-  <TCallout :line="7" :col="1" :span="45" :n="5" />
+  <TCallout :line="7" :col="1" :span="50" :n="5" />
   <TCallout :line="9" :col="1" :span="6" :n="6" />
 </TerminalCapture>
 
@@ -477,7 +477,7 @@ argv[0]; переименованная копия отвечает «unknown pr
 
 <TerminalCapture src="captures/02-dir-perms.txt" section="3" title="bob@srv · w без x и w с x" fontSize="0.5rem">
   <TCallout :line="5" :col="1" :span="10" :n="1" />
-  <TCallout :line="6" :col="1" :rows="8" :span="43" :n="2" />
+  <TCallout :line="6" :col="1" :rows="8" :span="53" :n="2" />
   <TCallout :line="15" :col="1" :rows="6" :span="30" :n="3" />
 </TerminalCapture>
 
@@ -939,7 +939,7 @@ layout: section
 
 <TerminalCapture src="captures/05-sticky.txt" section="3" title="bob@srv · /tmp со sticky (drwxrwxrwt)" fontSize="0.5rem" padBottom="0.4em">
   <TCallout :line="4" :col="14" :span="5" :n="3" />
-  <TCallout :line="6" :col="1" :span="52" :n="4" />
+  <TCallout :line="6" :col="1" :span="59" :n="4" />
 </TerminalCapture>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
@@ -2007,7 +2007,7 @@ layout: section
 
 <TerminalCapture src="captures/08-chattr-immutable.txt" section="2" title="root@srv · chattr +i common-*" fontSize="0.45rem" padBottom="0.4em">
   <TCallout :line="4" :col="5" :span="1" :n="3" />
-  <TCallout :line="10" :col="1" :rows="6" :span="48" :n="4" />
+  <TCallout :line="10" :col="1" :rows="6" :span="85" :n="4" />
 </TerminalCapture>
 
 </div>
@@ -2048,14 +2048,14 @@ layout: section
 <TerminalCapture src="captures/09-chattr-append.txt" section="2" title="root@srv · chattr +a и новый вход по ssh" fontSize="0.44rem">
   <TCallout :line="3" :col="6" :span="1" :n="1" />
   <TCallout :line="5" :col="1" :span="16" :n="2" />
-  <TCallout :line="10" :col="1" :rows="3" :span="40" :n="3" />
+  <TCallout :line="10" :col="1" :rows="3" :span="86" :n="3" />
 </TerminalCapture>
 
 </div>
 <div>
 
 <TerminalCapture src="captures/09-chattr-append.txt" section="3" title="root@srv · попытки изменить журнал" fontSize="0.44rem" padBottom="0.4em">
-  <TCallout :line="2" :col="1" :rows="6" :span="46" :n="4" />
+  <TCallout :line="2" :col="1" :rows="6" :span="89" :n="4" />
   <TCallout :line="9" :col="1" :span="38" :n="5" />
 </TerminalCapture>
 
@@ -2095,7 +2095,7 @@ may_open навязывает O_APPEND и запрещает O_TRUNC для IS_A
 
 <TerminalCapture src="captures/10-chattr-dir.txt" section="2" title="bob@srv · +a: удалять нельзя, создавать можно" fontSize="0.47rem">
   <TCallout :line="3" :col="6" :span="1" :n="1" />
-  <TCallout :line="5" :col="1" :rows="9" :span="42" :n="2" />
+  <TCallout :line="5" :col="1" :rows="9" :span="50" :n="2" />
   <TCallout :line="15" :col="1" :rows="2" :span="28" :n="3" />
 </TerminalCapture>
 
@@ -2104,7 +2104,7 @@ may_open навязывает O_APPEND и запрещает O_TRUNC для IS_A
 
 <TerminalCapture src="captures/10-chattr-dir.txt" section="3" title="bob@srv · +i: структура фиксируется" fontSize="0.47rem" padBottom="0.4em">
   <TCallout :line="4" :col="5" :span="1" :n="4" />
-  <TCallout :line="6" :col="1" :rows="6" :span="45" :n="5" />
+  <TCallout :line="6" :col="1" :rows="6" :span="67" :n="5" />
 </TerminalCapture>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
@@ -2168,7 +2168,7 @@ layout: section
 
 <TerminalCapture src="captures/11-secure-delete.txt" section="1" title="root@srv · ext2 на loop-устройстве" fontSize="0.45rem" lines="1-19">
   <TCallout :line="5" :col="8" :span="33" :n="1" />
-  <TCallout :line="18" :col="27" :span="25" :n="2" />
+  <TCallout :line="18" :col="27" :span="20" :n="2" />
 </TerminalCapture>
 
 </div>
@@ -2176,7 +2176,7 @@ layout: section
 
 <TerminalCapture src="captures/11-secure-delete.txt" section="2" title="root@srv · где лежит содержимое файла" fontSize="0.45rem" padBottom="0.4em">
   <TCallout :line="3" :col="1" :span="8" :n="3" />
-  <TCallout :line="10" :col="11" :rows="3" :span="40" :n="4" />
+  <TCallout :line="11" :col="11" :rows="3" :span="40" :n="4" />
 </TerminalCapture>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">
@@ -2414,8 +2414,8 @@ system – вообще не доступно напрямую, только ч�
 
 <TerminalCapture src="captures/12-xattr.txt" section="1" title="bob@srv · setfattr и getfattr" fontSize="0.47rem">
   <TCallout :line="4" :col="15" :span="12" :n="1" />
-  <TCallout :line="7" :col="1" :rows="2" :span="38" :n="2" />
-  <TCallout :line="14" :col="1" :rows="3" :span="22" :n="3" />
+  <TCallout :line="7" :col="1" :rows="2" :span="40" :n="2" />
+  <TCallout :line="14" :col="1" :rows="3" :span="24" :n="3" />
   <TCallout :line="27" :col="1" :span="37" :n="4" />
 </TerminalCapture>
 
@@ -2736,9 +2736,9 @@ layout: section
 <div>
 
 <TerminalCapture src="captures/14-acl-algorithm.txt" section="1" title="bob@srv · исполнение и привилегии" fontSize="0.5rem">
-  <TCallout :line="8" :col="1" :span="52" :n="1" />
+  <TCallout :line="8" :col="1" :span="74" :n="1" />
   <TCallout :line="14" :col="1" :span="17" :n="2" />
-  <TCallout :line="19" :col="1" :span="26" :n="3" />
+  <TCallout :line="19" :col="1" :span="28" :n="3" />
   <TCallout :line="21" :col="1" :span="6" :n="4" />
 </TerminalCapture>
 
@@ -2779,10 +2779,10 @@ ACL_USER_OBJ. Первое подходящее по субъекту прави
 
 <TerminalCapture src="captures/14-acl-algorithm.txt" section="2" title="bob@srv · ACL_USER_OBJ" fontSize="0.45rem">
   <TCallout :line="5" :col="1" :span="10" :n="1" />
-  <TCallout :line="14" :col="1" :span="26" :n="2" />
+  <TCallout :line="14" :col="1" :span="29" :n="2" />
   <TCallout :line="25" :col="1" :span="10" :n="3" />
   <TCallout :line="29" :col="1" :span="5" :n="4" />
-  <TCallout :line="31" :col="1" :span="26" :n="5" />
+  <TCallout :line="31" :col="1" :span="29" :n="5" />
 </TerminalCapture>
 
 </div>
@@ -2822,10 +2822,10 @@ ACL_USER_OBJ. Первое подходящее по субъекту прави
 
 <TerminalCapture src="captures/14-acl-algorithm.txt" section="3" title="bob@srv · ACL_USER" fontSize="0.45rem">
   <TCallout :line="8" :col="1" :span="14" :n="1" />
-  <TCallout :line="15" :col="1" :span="26" :n="2" />
+  <TCallout :line="15" :col="1" :span="29" :n="2" />
   <TCallout :line="17" :col="1" :span="5" :n="3" />
-  <TCallout :line="19" :col="1" :span="26" :n="4" />
-  <TCallout :line="29" :col="1" :rows="2" :span="26" :n="5" />
+  <TCallout :line="19" :col="1" :span="29" :n="4" />
+  <TCallout :line="29" :col="1" :rows="2" :span="29" :n="5" />
 </TerminalCapture>
 
 </div>
@@ -2868,7 +2868,7 @@ user:alice:r--. Три исхода: владелец – отказ (его п�
 
 <TerminalCapture src="captures/14-acl-algorithm.txt" section="4" title="bob@srv · ACL_GROUP_OBJ" fontSize="0.45rem">
   <TCallout :line="7" :col="3" :span="10" :n="1" />
-  <TCallout :line="17" :col="1" :rows="2" :span="9" :n="2" />
+  <TCallout :line="17" :col="1" :rows="2" :span="11" :n="2" />
   <TCallout :line="20" :col="1" :rows="3" :span="24" :n="3" />
 </TerminalCapture>
 
@@ -2877,8 +2877,8 @@ user:alice:r--. Три исхода: владелец – отказ (его п�
 
 <TerminalCapture src="captures/14-acl-algorithm.txt" section="5" title="bob@srv · ACL_GROUP" fontSize="0.45rem" padBottom="0.4em">
   <TCallout :line="11" :col="1" :span="14" :n="4" />
-  <TCallout :line="18" :col="1" :rows="2" :span="9" :n="5" />
-  <TCallout :line="21" :col="1" :rows="4" :span="33" :n="6" />
+  <TCallout :line="18" :col="1" :rows="2" :span="11" :n="5" />
+  <TCallout :line="21" :col="1" :rows="4" :span="37" :n="6" />
 </TerminalCapture>
 
 </div>
@@ -3350,7 +3350,7 @@ default-списка на существующие объекты не расп�
 
 <TerminalCapture src="captures/16-acl-default.txt" section="5" title="bob@srv · списки живут независимо" fontSize="0.42rem" padBottom="0.4em">
   <TCallout :line="1" :col="1" :span="33" :n="4" />
-  <TCallout :line="10" :col="1" :rows="5" :span="33" :n="5" />
+  <TCallout :line="10" :col="1" :rows="5" :span="54" :n="5" />
 </TerminalCapture>
 
 <div class="mt-2 p-2 border-l-4 border-amber-500 bg-amber-500/10 text-xs">

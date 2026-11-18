@@ -37,5 +37,5 @@ $ ls -l 2.txt
 
 $ getfattr -d -m "system.posix_acl_*" 2.txt
 # file: 2.txt
-system.posix_acl_access=0sAgAAAAEABgD/////AgAFAOsDAAAEAAQA/////xAABQD/////IAAEAP////8=
+system.posix_acl_access=0sAgAAAAEABgD/////AgAFAOsD…IAAEAP////8=
 

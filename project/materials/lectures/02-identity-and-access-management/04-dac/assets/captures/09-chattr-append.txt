@@ -6,7 +6,7 @@
 # lsattr /var/log/auth.log
 --------------e------- /var/log/auth.log
 # tail -n 1 /var/log/auth.log
-2026-11-17T19:02:50.781315+00:00 srv systemd-logind[908]: Removed session 6.
+19:02:50 srv systemd-logind[908]: Removed session 6.
 
 ===== Атрибут a: запись разрешена только в конец файла =====
 
@@ -19,9 +19,9 @@ bob@srv's password:
 uid=1001(bob) gid=1001(bob) groups=1001(bob),27(sudo),100(users)
 
 # tail -n 3 /var/log/auth.log
-2026-11-17T19:02:58.162527+00:00 srv sshd-session[2434]: pam_unix(sshd:session): session closed for user bob
-2026-11-17T19:02:58.170284+00:00 srv systemd-logind[908]: Session 8 logged out. Waiting for processes to exit.
-2026-11-17T19:02:58.174621+00:00 srv systemd-logind[908]: Removed session 8.
+19:02:58 srv sshd-session[2434]: pam_unix(sshd:session): session closed for user bob
+19:02:58 srv systemd-logind[908]: Session 8 logged out. Waiting for processes to exit.
+19:02:58 srv systemd-logind[908]: Removed session 8.
 
 ===== Файл с атрибутом a: усечение и удаление недоступны даже root =====
 
@@ -35,7 +35,7 @@ bash: /var/log/auth.log: Operation not permitted
 
 # echo "hehehe" >> /var/log/auth.log
 # tail -n 2 /var/log/auth.log
-2026-11-17T19:02:58.174621+00:00 srv systemd-logind[908]: Removed session 8.
+19:02:58 srv systemd-logind[908]: Removed session 8.
 hehehe
 
 ===== Сброс атрибута =====

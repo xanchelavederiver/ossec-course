@@ -698,7 +698,7 @@ SIGKILL; код возврата 137 = 128+9 канонически читает
   <TCallout :line="4" :col="1" :span="4" :n="2" />
   <TCallout :line="11" :col="1" :span="1" :n="3" />
   <TCallout :line="17" :col="1" :span="34" :n="4" />
-  <TCallout :line="19" :col="1" :span="54" :rows="2" :n="5" />
+  <TCallout :line="19" :col="1" :span="55" :rows="2" :n="5" />
 </TerminalCapture>
 
 </div>
@@ -1109,7 +1109,7 @@ cgroup.stat (из него grep-ом выбраны две строки о по�
 
 <TerminalCapture src="captures/04-cgroup-basics.txt" section="Добавление процесса в группу" title="bob@srv · echo $$ > cgroup.procs" fontSize="0.47rem">
   <TCallout :line="4" :col="1" :span="47" :n="1" />
-  <TCallout :line="5" :col="1" :span="62" :n="2" />
+  <TCallout :line="5" :col="1" :span="63" :n="2" />
   <TCallout :line="8" :col="1" :span="4" :rows="2" :n="3" />
   <TCallout :line="11" :col="1" :span="1" :n="4" />
   <TCallout :line="13" :col="5" :span="11" :n="5" />
@@ -1525,7 +1525,7 @@ layout: section
 <TerminalCapture src="captures/06-cgroup-cpu-quota.txt" section="Квоты по иерархии" title="bob@srv · cpu.max" fontSize="0.5rem">
   <TCallout :line="2" :col="1" :span="10" :n="1" />
   <TCallout :line="3" :col="8" :span="14" :n="2" />
-  <TCallout :line="5" :col="6" :span="37" :rows="6" :n="3" />
+  <TCallout :line="5" :col="1" :span="44" :rows="6" :n="3" />
 </TerminalCapture>
 
 </div>
